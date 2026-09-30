@@ -19,11 +19,13 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - [x] Route guard sans stockage de token dans le navigateur.
 - [x] Test unitaire du login local ajouté.
 - [x] Angular 22.2 aligné avec TypeScript 6.0 pour corriger `ERESOLVE`.
+- [x] Option TypeScript dépréciée `baseUrl` supprimée au lieu de masquer l'avertissement TS5101.
+- [x] Dépendance Bouncy Castle explicitement versionnée pour le support Argon2.
 - [x] Node 24 LTS documenté via `.nvmrc`.
 - [x] Script PostgreSQL local ajouté pour créer `timeflow` et ses droits.
 - [ ] Tests d'intégration Spring Security exécutés.
 - [ ] Parcours SSO validé avec un vrai App Registration Entra.
-- [ ] Build Maven/Angular exécuté sur environnement connecté.
+- [ ] Build Maven/Angular exécuté avec succès sur environnement développeur.
 
 ## 3. Sécurité analysée
 
@@ -37,8 +39,9 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 
 ## 4. Reste à faire
 
-- Exécuter `npm install`, `npm run build` et `npm test` avec Node 24 LTS.
-- Exécuter `mvn test` côté backend.
+- Rejouer `npm install`, `npm run build` et `npm test` avec Node 24 LTS.
+- Rejouer `mvn test` puis `mvn spring-boot:run` depuis le dossier `backend`.
+- Corriger tout défaut de compilation ou de démarrage remonté par ces commandes.
 - Valider les Redirect URIs dans Entra ID.
 - Ajouter le parcours invitation/réinitialisation de mot de passe (#7).
 - Ajouter une limitation distribuée par IP si l'application est exposée publiquement à forte volumétrie.
