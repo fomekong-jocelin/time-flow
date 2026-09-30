@@ -16,13 +16,28 @@
             "index": "src/index.html",
             "tsConfig": "tsconfig.app.json",
             "styles": ["src/styles.css"]
-          }
+          },
+          "configurations": {
+            "production": {
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "sourceMap": true,
+              "extractLicenses": false
+            }
+          },
+          "defaultConfiguration": "production"
         },
         "serve": {
           "builder": "@angular/build:dev-server",
           "configurations": {
-            "development": {"buildTarget": "time-flow-web:build:development"},
-            "production": {"buildTarget": "time-flow-web:build:production"}
+            "development": {
+              "buildTarget": "time-flow-web:build:development"
+            },
+            "production": {
+              "buildTarget": "time-flow-web:build:production"
+            }
           },
           "defaultConfiguration": "development"
         }
