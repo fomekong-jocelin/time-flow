@@ -9,10 +9,16 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
+
 @Component
 public class LocalAdminBootstrap implements ApplicationRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalAdminBootstrap.class);
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final char[] PASSWORD_ALPHABET =
+            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*-_+".toCharArray();
+    private static final int PASSWORD_LENGTH = 20;
 
     private final AuthProperties properties;
     private final AppUserRepository userRepository;
@@ -28,44 +34,41 @@ public class LocalAdminBootstrap implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        var email = trimToNull(properties.getBootstrapLocalAdminEmail());
-        var password = trimToNull(properties.getBootstrapLocalAdminPassword());
-
-        if (email == null && password == null) {
+        if (!properties.isAutoBootstrapLocalAdmin()) {
             return;
         }
 
-        if (email == null || password == null) {
-            throw new IllegalStateException(
-                    "TIMEFLOW_BOOTSTRAP_ADMIN_EMAIL and TIMEFLOW_BOOTSTRAP_ADMIN_PASSWORD must be configured together"
-            );
-        }
-
-        if (password.length() < 12) {
-            throw new IllegalStateException("Bootstrap admin password must contain at least 12 characters");
-        }
-
+        var email = properties.getBootstrapLocalAdminEmail().trim().toLowerCase();
         if (userRepository.existsByEmailIgnoreCase(email)) {
-            LOGGER.info("Bootstrap local administrator already exists; no password or role was changed");
+            LOGGER.info("TimeFlow local administrator already exists: {}. Password unchanged.", email);
             return;
         }
 
-        var displayName = trimToNull(properties.getBootstrapLocalAdminDisplayName());
-        if (displayName == null) {
-            displayName = "Administrateur TimeFlow";
-        }
+        var password = generatePassword();
+        var displayName = properties.getBootstrapLocalAdminDisplayName();
 
         localUserAdminService.create(email, displayName, UserRole.ADMIN, password);
-        LOGGER.warn(
-                "Initial TimeFlow local administrator created. Remove TIMEFLOW_BOOTSTRAP_ADMIN_PASSWORD from the environment before the next startup."
+
+        LOGGER.warn("\n" +
+                "============================================================\n" +
+                " TIMEFLOW - INITIAL ADMINISTRATOR CREATED\n" +
+                "------------------------------------------------------------\n" +
+                " Email    : {}\n" +
+                " Password : {}\n" +
+                " Role     : ADMIN\n" +
+                "------------------------------------------------------------\n" +
+                " Save this password now. It will not be displayed again.\n" +
+                "============================================================",
+                email,
+                password
         );
     }
 
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
+    private String generatePassword() {
+        var value = new StringBuilder(PASSWORD_LENGTH);
+        for (int i = 0; i < PASSWORD_LENGTH; i++) {
+            value.append(PASSWORD_ALPHABET[SECURE_RANDOM.nextInt(PASSWORD_ALPHABET.length)]);
         }
-        var trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
+        return value.toString();
     }
 }
