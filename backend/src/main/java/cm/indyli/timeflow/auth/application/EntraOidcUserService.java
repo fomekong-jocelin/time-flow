@@ -9,11 +9,12 @@ import cm.indyli.timeflow.auth.persistence.AuthIdentityEntity;
 import cm.indyli.timeflow.auth.persistence.AuthIdentityRepository;
 import cm.indyli.timeflow.auth.security.SecurityAuthorities;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
@@ -57,7 +58,7 @@ public class EntraOidcUserService {
         identity.registerSuccess();
         identityRepository.save(identity);
 
-        var authorities = new LinkedHashSet<>(oidcUser.getAuthorities());
+        LinkedHashSet<GrantedAuthority> authorities = new LinkedHashSet<>(oidcUser.getAuthorities());
         authorities.addAll(SecurityAuthorities.forRole(identity.getUser().getRole()));
         authorities.add(new SimpleGrantedAuthority("AUTH_PROVIDER_ENTRA"));
 
@@ -83,7 +84,10 @@ public class EntraOidcUserService {
             email = user.getClaimAsString("preferred_username");
         }
         if (email == null || email.isBlank()) {
-            throw new OAuth2AuthenticationException(new OAuth2Error("missing_email"), "The identity provider did not return an email");
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("missing_email"),
+                    "The identity provider did not return an email"
+            );
         }
         return email.trim().toLowerCase(Locale.ROOT);
     }
