@@ -15,6 +15,9 @@ public class AuthProperties {
     private int maxFailedAttempts = 5;
     private long lockDurationMinutes = 15;
     private List<String> bootstrapAdminEmails = new ArrayList<>();
+    private String bootstrapLocalAdminEmail;
+    private String bootstrapLocalAdminPassword;
+    private String bootstrapLocalAdminDisplayName = "Administrateur TimeFlow";
 
     public String getFrontendUrl() {
         return frontendUrl;
@@ -54,5 +57,29 @@ public class AuthProperties {
 
     public void setBootstrapAdminEmails(List<String> bootstrapAdminEmails) {
         this.bootstrapAdminEmails = bootstrapAdminEmails == null ? new ArrayList<>() : bootstrapAdminEmails;
+    }
+
+    public String getBootstrapLocalAdminEmail() {
+        return bootstrapLocalAdminEmail;
+    }
+
+    public void setBootstrapLocalAdminEmail(String bootstrapLocalAdminEmail) {
+        this.bootstrapLocalAdminEmail = bootstrapLocalAdminEmail;
+    }
+
+    public String getBootstrapLocalAdminPassword() {
+        return bootstrapLocalAdminPassword;
+    }
+
+    public void setBootstrapLocalAdminPassword(String bootstrapLocalAdminPassword) {
+        this.bootstrapLocalAdminPassword = bootstrapLocalAdminPassword;
+    }
+
+    public String getBootstrapLocalAdminDisplayName() {
+        return bootstrapLocalAdminDisplayName;
+    }
+
+    public void setBootstrapLocalAdminDisplayName(String bootstrapLocalAdminDisplayName) {
+        this.bootstrapLocalAdminDisplayName = bootstrapLocalAdminDisplayName;
     }
 }
