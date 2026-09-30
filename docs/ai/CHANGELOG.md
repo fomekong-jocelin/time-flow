@@ -14,6 +14,12 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 - Authentification hybride : SSO Microsoft Entra ID + comptes locaux externes.
 - Écran de connexion TimeFlow avec choix SSO ou email/mot de passe.
 - Provisioning administrateur des comptes locaux.
+- Script PostgreSQL idempotent pour créer la base `timeflow` et le rôle applicatif local.
+- `.nvmrc` pour standardiser le frontend sur Node 24 LTS.
+
+### Fixed
+
+- Alignement Angular 22.2 / TypeScript 6.0 pour corriger l'erreur npm `ERESOLVE`.
 
 ### Security
 
@@ -21,3 +27,4 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 - Session serveur HttpOnly : aucun access token OAuth n'est stocké dans le navigateur.
 - CSRF activé, Argon2id pour les mots de passe locaux et verrouillage temporaire après échecs répétés.
 - Liaison automatique entre identité SSO et locale interdite.
+- Le rôle PostgreSQL local n'obtient aucun privilège SUPERUSER, CREATEDB, CREATEROLE ou REPLICATION.
