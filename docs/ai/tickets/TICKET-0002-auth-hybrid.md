@@ -9,6 +9,10 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - [x] Architecture BFF/session documentée.
 - [x] OIDC Microsoft Entra ID intégré côté backend.
 - [x] Login local email/mot de passe implémenté.
+- [x] Les deux modes de connexion sont toujours visibles dans l'interface.
+- [x] Le bouton SSO indique clairement lorsqu'Entra n'est pas configuré dans l'environnement.
+- [x] Bootstrap du premier administrateur local par variables d'environnement.
+- [x] Aucun mot de passe administrateur n'est codé en dur dans Git.
 - [x] Argon2id configuré.
 - [x] Verrouillage après tentatives répétées implémenté.
 - [x] Endpoint `/api/v1/auth/me` disponible.
@@ -21,8 +25,6 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - [x] Angular 22.2 aligné avec TypeScript 6.0 pour corriger `ERESOLVE`.
 - [x] Option TypeScript dépréciée `baseUrl` supprimée au lieu de masquer l'avertissement TS5101.
 - [x] Dépendance Bouncy Castle explicitement versionnée pour le support Argon2.
-- [x] Import Spring Security du logout handler corrigé vers `web.authentication.logout`.
-- [x] Collection des autorités OIDC typée explicitement en `GrantedAuthority` pour éviter la capture `? extends GrantedAuthority` de `var`.
 - [x] Node 24 LTS documenté via `.nvmrc`.
 - [x] Script PostgreSQL local ajouté pour créer `timeflow` et ses droits.
 - [ ] Tests d'intégration Spring Security exécutés.
@@ -33,6 +35,8 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 
 - [x] Aucun token OAuth remis au SPA.
 - [x] Aucun secret Entra dans le code.
+- [x] Aucun mot de passe bootstrap réel dans le dépôt.
+- [x] Le bootstrap ne modifie jamais le mot de passe d'un compte déjà existant.
 - [x] Pas d'auto-liaison par email entre deux providers.
 - [x] Inscription publique désactivée.
 - [x] Session fixation prise en compte.
@@ -41,6 +45,7 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 
 ## 4. Reste à faire
 
+- Définir localement le mot de passe initial de `admin@indyli-services.com`, démarrer une fois, puis supprimer `TIMEFLOW_BOOTSTRAP_ADMIN_PASSWORD` de l'environnement.
 - Rejouer `npm install`, `npm run build` et `npm test` avec Node 24 LTS.
 - Rejouer `mvn test` puis `mvn spring-boot:run` depuis le dossier `backend`.
 - Corriger tout défaut de compilation ou de démarrage remonté par ces commandes.
