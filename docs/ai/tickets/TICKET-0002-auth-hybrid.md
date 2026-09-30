@@ -11,7 +11,9 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - [x] Login local email/mot de passe implémenté.
 - [x] Les deux modes de connexion sont toujours visibles dans l'interface.
 - [x] Le bouton SSO indique clairement lorsqu'Entra n'est pas configuré dans l'environnement.
-- [x] Bootstrap du premier administrateur local par variables d'environnement.
+- [x] Premier administrateur local créé automatiquement au premier démarrage.
+- [x] Email admin par défaut : `admin@indyli-services.com`.
+- [x] Mot de passe initial généré avec `SecureRandom` et affiché une seule fois dans la console.
 - [x] Aucun mot de passe administrateur n'est codé en dur dans Git.
 - [x] Argon2id configuré.
 - [x] Verrouillage après tentatives répétées implémenté.
@@ -37,6 +39,7 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - [x] Aucun secret Entra dans le code.
 - [x] Aucun mot de passe bootstrap réel dans le dépôt.
 - [x] Le bootstrap ne modifie jamais le mot de passe d'un compte déjà existant.
+- [x] Le mot de passe initial n'est affiché que lors de la création effective du compte.
 - [x] Pas d'auto-liaison par email entre deux providers.
 - [x] Inscription publique désactivée.
 - [x] Session fixation prise en compte.
@@ -45,9 +48,9 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 
 ## 4. Reste à faire
 
-- Définir localement le mot de passe initial de `admin@indyli-services.com`, démarrer une fois, puis supprimer `TIMEFLOW_BOOTSTRAP_ADMIN_PASSWORD` de l'environnement.
 - Rejouer `npm install`, `npm run build` et `npm test` avec Node 24 LTS.
 - Rejouer `mvn test` puis `mvn spring-boot:run` depuis le dossier `backend`.
+- Récupérer dans la console le mot de passe initial de `admin@indyli-services.com` lors du premier démarrage.
 - Corriger tout défaut de compilation ou de démarrage remonté par ces commandes.
 - Valider les Redirect URIs dans Entra ID.
 - Ajouter le parcours invitation/réinitialisation de mot de passe (#7).
