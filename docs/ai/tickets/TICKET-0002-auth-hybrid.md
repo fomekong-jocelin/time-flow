@@ -21,6 +21,8 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - [x] Angular 22.2 aligné avec TypeScript 6.0 pour corriger `ERESOLVE`.
 - [x] Option TypeScript dépréciée `baseUrl` supprimée au lieu de masquer l'avertissement TS5101.
 - [x] Dépendance Bouncy Castle explicitement versionnée pour le support Argon2.
+- [x] Import Spring Security du logout handler corrigé vers `web.authentication.logout`.
+- [x] Collection des autorités OIDC typée explicitement en `GrantedAuthority` pour éviter la capture `? extends GrantedAuthority` de `var`.
 - [x] Node 24 LTS documenté via `.nvmrc`.
 - [x] Script PostgreSQL local ajouté pour créer `timeflow` et ses droits.
 - [ ] Tests d'intégration Spring Security exécutés.
