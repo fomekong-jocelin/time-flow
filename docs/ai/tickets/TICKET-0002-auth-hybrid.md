@@ -31,6 +31,9 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - [x] Dépendance Bouncy Castle explicitement versionnée pour le support Argon2.
 - [x] Node 24 LTS documenté via `.nvmrc`.
 - [x] Script PostgreSQL local ajouté pour créer `timeflow` et ses droits.
+- [x] Formulaire local : validation affichée par champ (email incomplet, champ vide) au lieu d'un bouton désactivé sans explication.
+- [x] Shell applicatif : utilisateur connecté, rôle et bouton de déconnexion (voir TICKET-0009).
+- [x] Polissage UI connexion / Mes temps : contraste de l'avertissement SSO, états désactivés lisibles, état vide sans texte technique.
 - [ ] Tests d'intégration Spring Security exécutés.
 - [ ] Parcours SSO validé avec un vrai App Registration Entra.
 - [ ] Build Maven/Angular exécuté avec succès sur environnement développeur.
@@ -54,6 +57,8 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - Rejouer `mvn test` puis `mvn spring-boot:run` depuis le dossier `backend`.
 - Retester la connexion locale de `admin@indyli-services.com` et vérifier la création de session JDBC.
 - Corriger tout défaut de compilation ou de démarrage remonté par ces commandes.
+- Ajouter des tests unitaires Angular (aucun spec frontend à ce jour) pour le formulaire de connexion et la déconnexion.
+- Afficher les dates réelles de la semaine lorsque l'API feuille de temps fournira la période (TICKET-0004).
 - Valider les Redirect URIs dans Entra ID.
 - Ajouter le parcours invitation/réinitialisation de mot de passe (#7).
 - Ajouter une limitation distribuée par IP si l'application est exposée publiquement à forte volumétrie.

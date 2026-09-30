@@ -4,7 +4,7 @@
 
 | Champ | Valeur |
 |---|---|
-| Dernière mise à jour | 2026-09-30 |
+| Dernière mise à jour | 2026-10-01 |
 | Phase | Sprint 0 / Authentification |
 | État | IN_PROGRESS |
 | Cible V1 | Sync projets Azure DevOps + saisie hebdomadaire + validation + reporting de base |
@@ -22,12 +22,14 @@
 | TICKET-0006 | à créer | Formations | TODO | P1 |
 | TICKET-0007 | à créer | Dashboard / reporting | TODO | P1 |
 | TICKET-0008 | à créer | Exports / préparation facturation | TODO | P1 |
+| TICKET-0009 | à créer | Application de la charte visuelle v0.1 | REVIEW | P1 |
 
 ## Décisions actées
 
 - Authentification hybride : SSO Entra ID pour internes + comptes locaux pour externes.
 - Modèle BFF/session : aucun access token OAuth dans le SPA.
 - Inscription publique désactivée.
+- Charte visuelle v0.1 appliquée au frontend (TimeFlow by INDYLI, palette Indigo/Violet/Teal, Inter, Dark Mode).
 
 ## Décisions produit encore ouvertes
 
