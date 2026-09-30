@@ -18,9 +18,7 @@
             "styles": ["src/styles.css"]
           },
           "configurations": {
-            "production": {
-              "outputHashing": "all"
-            },
+            "production": { "outputHashing": "all" },
             "development": {
               "optimization": false,
               "sourceMap": true,
@@ -31,13 +29,10 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": { "proxyConfig": "proxy.conf.json" },
           "configurations": {
-            "development": {
-              "buildTarget": "time-flow-web:build:development"
-            },
-            "production": {
-              "buildTarget": "time-flow-web:build:production"
-            }
+            "development": { "buildTarget": "time-flow-web:build:development" },
+            "production": { "buildTarget": "time-flow-web:build:production" }
           },
           "defaultConfiguration": "development"
         }

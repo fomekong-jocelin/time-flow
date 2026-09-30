@@ -11,6 +11,23 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  security:
+    oauth2:
+      client:
+        registration:
+          entra:
+            provider: entra
+            client-id: ${ENTRA_CLIENT_ID:not-configured}
+            client-secret: ${ENTRA_CLIENT_SECRET:not-configured}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          entra:
+            issuer-uri: https://login.microsoftonline.com/${ENTRA_TENANT_ID:common}/v2.0
 
 management:
   endpoints:
@@ -22,5 +39,22 @@ management:
       probes:
         enabled: true
 
+timeflow:
+  auth:
+    frontend-url: ${FRONTEND_URL:http://localhost:4200}
+    sso-enabled: ${ENTRA_SSO_ENABLED:false}
+    max-failed-attempts: ${AUTH_MAX_FAILED_ATTEMPTS:5}
+    lock-duration-minutes: ${AUTH_LOCK_DURATION_MINUTES:15}
+    bootstrap-admin-emails: ${BOOTSTRAP_ADMIN_EMAILS:}
+
 server:
   port: ${PORT:8080}
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      timeout: ${SESSION_TIMEOUT:8h}
+      cookie:
+        name: TIMEFLOWSESSION
+        http-only: true
+        secure: ${SESSION_COOKIE_SECURE:false}
+        same-site: lax
