@@ -10,6 +10,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
+import java.util.Locale;
 
 @Component
 public class LocalAdminBootstrap implements ApplicationRunner {
@@ -38,7 +39,7 @@ public class LocalAdminBootstrap implements ApplicationRunner {
             return;
         }
 
-        var email = properties.getBootstrapLocalAdminEmail().trim().toLowerCase();
+        var email = properties.getBootstrapLocalAdminEmail().trim().toLowerCase(Locale.ROOT);
         if (userRepository.existsByEmailIgnoreCase(email)) {
             LOGGER.info("TimeFlow local administrator already exists: {}. Password unchanged.", email);
             return;
