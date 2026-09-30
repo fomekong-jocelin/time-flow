@@ -10,7 +10,7 @@ Mettre en place un socle exécutable et gouverné pour commencer les développem
 - [x] Architecture backend/frontend définie.
 - [x] Backend Spring Boot Java 21 initialisé.
 - [x] PostgreSQL/Flyway configurés.
-- [x] Workflow de statut CRA modélisé et testé unitairement.
+- [x] Workflow de statut CRA modélisé et testé unitairement dans le code source.
 - [x] Frontend Angular/Tailwind initialisé avec design tokens TimeFlow.
 - [x] Premier écran `Mes temps` sans données fictives.
 - [x] Docker Compose PostgreSQL disponible.
@@ -34,13 +34,22 @@ Mettre en place un socle exécutable et gouverné pour commencer les développem
 - Sécurité deny-by-default au bootstrap.
 - Azure DevOps traité comme intégration serveur ; aucune clé côté navigateur.
 
-## 5. Reste à faire
+## 5. Vérifications
 
-- Authentification et rôles.
-- Synchronisation Azure DevOps.
-- Persistence complète des feuilles de temps.
-- Workflow manager et reporting.
+- [x] Diff GitHub contrôlé : branche en avance sur `main`, sans divergence.
+- [x] Les fichiers de gouvernance, backend, frontend et DB sont présents dans la branche.
+- [ ] `mvn test` non exécuté depuis cet environnement : accès réseau aux dépendances indisponible.
+- [ ] `npm install && npm run build` non exécuté depuis cet environnement : accès réseau aux dépendances indisponible.
 
-## 6. Statut
+## 6. Reste à faire
 
-Status: IN_PROGRESS
+- Valider la PR bootstrap.
+- Authentification et rôles : issue #1.
+- Synchronisation Azure DevOps : issue #2.
+- API feuille de temps : issue #3.
+- Interface Mes temps : issue #4.
+- Workflow manager : issue #5.
+
+## 7. Statut
+
+Status: REVIEW
