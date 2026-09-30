@@ -54,8 +54,8 @@ timeflow:
     max-failed-attempts: ${AUTH_MAX_FAILED_ATTEMPTS:5}
     lock-duration-minutes: ${AUTH_LOCK_DURATION_MINUTES:15}
     bootstrap-admin-emails: ${BOOTSTRAP_ADMIN_EMAILS:}
-    bootstrap-local-admin-email: ${TIMEFLOW_BOOTSTRAP_ADMIN_EMAIL:}
-    bootstrap-local-admin-password: ${TIMEFLOW_BOOTSTRAP_ADMIN_PASSWORD:}
+    auto-bootstrap-local-admin: ${TIMEFLOW_AUTO_BOOTSTRAP_ADMIN:true}
+    bootstrap-local-admin-email: ${TIMEFLOW_BOOTSTRAP_ADMIN_EMAIL:admin@indyli-services.com}
     bootstrap-local-admin-display-name: ${TIMEFLOW_BOOTSTRAP_ADMIN_NAME:Administrateur TimeFlow}
 
 server:
