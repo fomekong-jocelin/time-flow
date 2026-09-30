@@ -2,6 +2,7 @@ package cm.indyli.timeflow.config;
 
 import cm.indyli.timeflow.auth.application.EntraOidcUserService;
 import cm.indyli.timeflow.auth.config.AuthProperties;
+import cm.indyli.timeflow.auth.security.SpaCsrfTokenRequestHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -37,7 +38,9 @@ public class SecurityConfig {
         csrfRepository.setCookiePath("/");
 
         return http
-                .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository))
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(csrfRepository)
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/v1/auth/csrf", "/api/v1/auth/config", "/api/v1/auth/login").permitAll()

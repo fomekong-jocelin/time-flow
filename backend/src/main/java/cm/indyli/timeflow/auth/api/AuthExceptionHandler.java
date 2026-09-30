@@ -1,5 +1,6 @@
 package cm.indyli.timeflow.auth.api;
 
+import cm.indyli.timeflow.auth.application.DuplicateUserException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -26,9 +27,9 @@ public class AuthExceptionHandler {
         return problem(HttpStatus.FORBIDDEN, "account_disabled", "Ce compte est désactivé.");
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    ProblemDetail conflict(IllegalStateException exception) {
-        return problem(HttpStatus.CONFLICT, "conflict", exception.getMessage());
+    @ExceptionHandler(DuplicateUserException.class)
+    ProblemDetail conflict(DuplicateUserException exception) {
+        return problem(HttpStatus.CONFLICT, "duplicate_user", exception.getMessage());
     }
 
     private ProblemDetail problem(HttpStatus status, String code, String detail) {

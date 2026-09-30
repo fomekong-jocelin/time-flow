@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, switchMap, tap } from 'rxjs';
 import { AuthConfig, CurrentUser } from './auth.models';
 
 @Injectable({ providedIn: 'root' })
@@ -19,33 +19,20 @@ export class AuthService {
   }
 
   loginLocal(email: string, password: string): Observable<CurrentUser> {
-    return new Observable<CurrentUser>(subscriber => {
-      this.http.get('/api/v1/auth/csrf').subscribe({
-        next: () => this.http.post<CurrentUser>('/api/v1/auth/login', { email, password }).subscribe({
-          next: user => {
-            this.currentUser.set(user);
-            subscriber.next(user);
-            subscriber.complete();
-          },
-          error: error => subscriber.error(error)
-        }),
-        error: error => subscriber.error(error)
-      });
-    });
+    return this.http.get('/api/v1/auth/csrf').pipe(
+      switchMap(() => this.http.post<CurrentUser>('/api/v1/auth/login', { email, password })),
+      tap(user => this.currentUser.set(user))
+    );
   }
 
   loginWithMicrosoft(): void {
     window.location.assign('/oauth2/authorization/entra');
   }
 
-  logout(): void {
-    this.http.get('/api/v1/auth/csrf').subscribe(() => {
-      this.http.post<void>('/api/v1/auth/logout', {}).subscribe({
-        next: () => {
-          this.currentUser.set(null);
-          window.location.assign('/connexion');
-        }
-      });
-    });
+  logout(): Observable<void> {
+    return this.http.get('/api/v1/auth/csrf').pipe(
+      switchMap(() => this.http.post<void>('/api/v1/auth/logout', {})),
+      tap(() => this.currentUser.set(null))
+    );
   }
 }

@@ -78,7 +78,7 @@ public class AuthController {
 
     public record LocalLoginRequest(
             @NotBlank @Email @Size(max = 320) String email,
-            @NotBlank @Size(min = 12, max = 128) String password
+            @NotBlank @Size(max = 128) String password
     ) {
     }
 

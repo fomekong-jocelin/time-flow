@@ -16,9 +16,11 @@ Adopter deux fournisseurs d'identité derrière une session TimeFlow unique :
 
 Le navigateur suit un modèle **BFF** : Spring Boot réalise l'échange OAuth/OIDC, conserve les informations d'authentification côté serveur et ne remet au navigateur qu'un cookie de session `HttpOnly`. Aucun access token n'est stocké dans `localStorage` ou `sessionStorage`.
 
+Les sessions sont persistées en PostgreSQL via Spring Session JDBC afin de permettre plusieurs instances applicatives sans session sticky.
+
 ## Contrôles de sécurité
 
-- CSRF activé avec token double-submit compatible Angular.
+- CSRF compatible SPA avec protection BREACH pour les réponses et acceptation du token brut envoyé par Angular dans l'en-tête.
 - Cookie de session HttpOnly, Secure en production et SameSite=Lax.
 - Rotation de l'identifiant de session lors du login local ; Spring Security gère la fixation de session OIDC.
 - Mots de passe locaux hashés avec Argon2id.
@@ -32,5 +34,5 @@ Le navigateur suit un modèle **BFF** : Spring Boot réalise l'échange OAuth/OI
 
 - L'expérience interne reste fluide avec SSO.
 - Les intervenants externes n'ont pas besoin d'un tenant Microsoft.
-- Le backend doit gérer le cycle de vie des comptes locaux et des sessions.
+- Aucun jeton OAuth n'est exposé au JavaScript applicatif.
 - Une fonctionnalité d'invitation / réinitialisation de mot de passe devra compléter la V1 avant un déploiement externe à grande échelle.

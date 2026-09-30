@@ -32,7 +32,7 @@ public class LocalUserAdminService {
         var normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         if (userRepository.existsByEmailIgnoreCase(normalizedEmail)
                 || identityRepository.existsByProviderAndSubject(AuthProvider.LOCAL, normalizedEmail)) {
-            throw new IllegalStateException("A user with this email already exists");
+            throw new DuplicateUserException("A user with this email already exists");
         }
 
         var user = userRepository.save(AppUserEntity.create(normalizedEmail, displayName, role));

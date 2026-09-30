@@ -3,6 +3,7 @@ package cm.indyli.timeflow.auth.security;
 import cm.indyli.timeflow.auth.domain.AuthProvider;
 import cm.indyli.timeflow.auth.domain.UserRole;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 public record TimeFlowPrincipal(
@@ -11,5 +12,5 @@ public record TimeFlowPrincipal(
         String displayName,
         UserRole role,
         AuthProvider provider
-) {
+) implements Serializable {
 }
