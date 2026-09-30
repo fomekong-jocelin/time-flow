@@ -24,6 +24,8 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 - [x] Écran Angular hybride SSO + login local.
 - [x] Route guard sans stockage de token dans le navigateur.
 - [x] Test unitaire du login local ajouté.
+- [x] Le principal de session expose l'email via `Principal#getName()` afin de garder `SPRING_SESSION.PRINCIPAL_NAME` stable et court.
+- [x] Test ajouté pour vérifier que `Authentication#getName()` retourne l'email.
 - [x] Angular 22.2 aligné avec TypeScript 6.0 pour corriger `ERESOLVE`.
 - [x] Option TypeScript dépréciée `baseUrl` supprimée au lieu de masquer l'avertissement TS5101.
 - [x] Dépendance Bouncy Castle explicitement versionnée pour le support Argon2.
@@ -50,7 +52,7 @@ Fournir une authentification sécurisée adaptée aux collaborateurs internes et
 
 - Rejouer `npm install`, `npm run build` et `npm test` avec Node 24 LTS.
 - Rejouer `mvn test` puis `mvn spring-boot:run` depuis le dossier `backend`.
-- Récupérer dans la console le mot de passe initial de `admin@indyli-services.com` lors du premier démarrage.
+- Retester la connexion locale de `admin@indyli-services.com` et vérifier la création de session JDBC.
 - Corriger tout défaut de compilation ou de démarrage remonté par ces commandes.
 - Valider les Redirect URIs dans Entra ID.
 - Ajouter le parcours invitation/réinitialisation de mot de passe (#7).
