@@ -7,6 +7,8 @@ import { IconComponent } from '../../shared/ui/icon.component';
 import { ManagedUser, NewUser, problemMessage, ROLE_OPTIONS, UserAdminService } from './user-admin.service';
 import { UserFormComponent } from './user-form.component';
 import { UserAccountActionsComponent } from './user-account-actions.component';
+import { WorkScheduleProfile } from '../work-schedules/work-schedule.models';
+import { WorkScheduleService } from '../work-schedules/work-schedule.service';
 
 type Panel = { mode: 'create' } | { mode: 'edit'; id: string } | null;
 const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map(option => [option.value, option.label]));
@@ -70,7 +72,10 @@ const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map(option => [option.value,
                   </span>
                   <span class="rounded-md border border-border px-2 py-1 text-xs text-muted">{{ user.accountType === 'SSO' ? 'SSO' : 'Local' }}</span>
                   <span class="w-28 text-sm">{{ roleLabel(user.role) }}</span>
-                  <span class="hidden w-36 truncate text-sm text-muted md:block">{{ user.managerName ?? 'Sans manager' }}</span>
+                  <span class="hidden w-32 truncate text-sm text-muted md:block">{{ user.managerName ?? 'Sans manager' }}</span>
+                  <span class="hidden w-36 truncate text-xs font-medium text-brand-800 bg-brand-50 rounded-md px-2 py-0.5 lg:block" [title]="user.workScheduleProfileName || 'Standard 35h'">
+                    {{ user.workScheduleProfileName || 'Standard 35h' }}
+                  </span>
                   <span class="rounded-full px-3 py-1 text-xs font-medium" [class]="statusClass(user)">{{ statusLabel(user) }}</span>
                   <span class="hidden w-28 text-right text-xs text-muted lg:block">{{ user.lastLoginAt ? (user.lastLoginAt | date:'dd/MM/yyyy') : 'Jamais connecté' }}</span>
                 </button>
@@ -87,11 +92,11 @@ const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map(option => [option.value,
           @if (current.mode === 'edit' && selectedUser(); as user) {
             <p class="mb-4 break-all text-sm text-muted">{{ user.email }}</p>
             @for (editing of [user]; track editing.id) {
-              <tf-user-form [user]="user" [users]="users()" [busy]="saving()" (saved)="save($event)" (cancelled)="close()" />
+              <tf-user-form [user]="user" [users]="users()" [workSchedules]="workSchedules()" [busy]="saving()" (saved)="save($event)" (cancelled)="close()" />
               <tf-user-account-actions [user]="user" [currentUserId]="currentUserId()" (changed)="load()" />
             }
           } @else if (current.mode === 'create') {
-            <tf-user-form [users]="users()" [busy]="saving()" (saved)="save($event)" (cancelled)="close()" />
+            <tf-user-form [users]="users()" [workSchedules]="workSchedules()" [busy]="saving()" (saved)="save($event)" (cancelled)="close()" />
           }
           @if (panelError()) { <p class="mt-4 text-sm text-error" role="alert">{{ panelError() }}</p> }
         </aside>
@@ -102,11 +107,13 @@ const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map(option => [option.value,
 })
 export class UsersPageComponent {
   private readonly api = inject(UserAdminService);
+  private readonly workScheduleService = inject(WorkScheduleService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly auth = inject(AuthService);
   readonly currentUserId = computed(() => this.auth.currentUser()?.id ?? null);
 
   readonly users = signal<ManagedUser[]>([]);
+  readonly workSchedules = signal<WorkScheduleProfile[]>([]);
   readonly loading = signal(true);
   readonly error = signal(false);
   readonly saving = signal(false);
@@ -135,6 +142,10 @@ export class UsersPageComponent {
       next: users => { this.users.set(users); this.loading.set(false); },
       error: () => { this.error.set(true); this.loading.set(false); }
     });
+    this.workScheduleService.listAll(true).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: schedules => this.workSchedules.set(schedules),
+      error: () => {}
+    });
   }
 
   openCreate(): void { this.panel.set({ mode: 'create' }); this.panelError.set(''); this.notice.set(''); }
@@ -144,10 +155,10 @@ export class UsersPageComponent {
   save(value: NewUser): void {
     const panel = this.panel();
     if (!panel || this.saving()) return;
-    const { displayName, role, managerId, weeklyTargetMinutes } = value;
+    const { displayName, role, managerId, weeklyTargetMinutes, workScheduleProfileId } = value;
     const request = panel.mode === 'create'
       ? this.api.create(value)
-      : this.api.update(panel.id, { displayName, role, managerId, weeklyTargetMinutes });
+      : this.api.update(panel.id, { displayName, role, managerId, weeklyTargetMinutes, workScheduleProfileId });
     this.saving.set(true);
     this.panelError.set('');
     request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

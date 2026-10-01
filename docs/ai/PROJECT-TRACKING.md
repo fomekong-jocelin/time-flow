@@ -24,6 +24,7 @@
 | TICKET-0008 | à créer | Exports / préparation facturation | TODO | P1 |
 | TICKET-0009 | PR #8 | Application de la charte visuelle v0.1 | DONE | P1 |
 | TICKET-0010 | PR #10 | Gestion des utilisateurs SSO + locaux (rôle, manager, temps théorique, activation) | DONE | P0 |
+| TICKET-0011 | à créer | Groupes de configuration du temps de travail & paramètres dynamiques (Work Schedules) | DONE | P0 |
 
 ## Décisions actées
 
@@ -33,11 +34,11 @@
 - Type de compte exclusif SSO **ou** local ; un ADMIN peut pré-provisionner un compte SSO, lié à la première connexion uniquement depuis le tenant `ENTRA_TENANT_ID` (TICKET-0010).
 - Aucun compte n'est supprimé : désactivation uniquement, sessions révoquées.
 - Charte visuelle v0.1 appliquée au frontend (TimeFlow by INDYLI, palette Indigo/Violet/Teal, Inter, Dark Mode).
+- Configuration dynamique des temps de travail (TICKET-0011) : profils configurables (jours ouvrés, volume hebdo/journalier, plafonds légaux, autorisation week-end), affectation aux collaborateurs et adaptation dynamique de la saisie CRA.
 
 ## Décisions produit encore ouvertes
 
 - Projet seul ou Work Item Azure DevOps dès V1.
 - Règle de validation : manager, chef de projet ou double validation (hypothèse TICKET-0010 : manager direct `app_user.manager_id`).
-- Temps théorique par profil.
 - Périodicité hebdomadaire uniquement ou mensuelle également.
 - Taux journalier et budget temps dans V1 ou V1.1.

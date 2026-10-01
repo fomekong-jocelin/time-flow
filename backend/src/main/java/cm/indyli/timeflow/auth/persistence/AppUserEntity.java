@@ -37,6 +37,9 @@ public class AppUserEntity {
     @Column(name = "weekly_target_minutes", nullable = false)
     private int weeklyTargetMinutes = DEFAULT_WEEKLY_TARGET_MINUTES;
 
+    @Column(name = "work_schedule_profile_id")
+    private UUID workScheduleProfileId;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -86,11 +89,19 @@ public class AppUserEntity {
         this.updatedAt = OffsetDateTime.now();
     }
 
+    public UUID getWorkScheduleProfileId() { return workScheduleProfileId; }
+    public void setWorkScheduleProfileId(UUID workScheduleProfileId) { this.workScheduleProfileId = workScheduleProfileId; }
+
     public void updateAdministrativeProfile(String displayName, UserRole role, UUID managerId, int weeklyTargetMinutes) {
+        updateAdministrativeProfile(displayName, role, managerId, weeklyTargetMinutes, this.workScheduleProfileId);
+    }
+
+    public void updateAdministrativeProfile(String displayName, UserRole role, UUID managerId, int weeklyTargetMinutes, UUID workScheduleProfileId) {
         this.displayName = displayName.trim();
         this.role = role;
         this.managerId = managerId;
         this.weeklyTargetMinutes = weeklyTargetMinutes;
+        this.workScheduleProfileId = workScheduleProfileId;
         this.updatedAt = OffsetDateTime.now();
     }
 

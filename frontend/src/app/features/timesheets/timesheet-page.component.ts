@@ -5,6 +5,8 @@ import { addWeeks, calendarWeek, CalendarWeek, toIsoDateString } from './current
 import { ActiveProject, ActivityType, SaveTimesheetPayload, TimesheetOverview, TimesheetStatus } from './timesheet.models';
 import { problemMessage, TimesheetService } from './timesheet.service';
 import { TimesheetSidePanelComponent } from './timesheet-side-panel.component';
+import { WorkScheduleService } from '../work-schedules/work-schedule.service';
+import { WorkScheduleProfile } from '../work-schedules/work-schedule.models';
 
 interface RowViewModel {
   projectId: string;
@@ -147,12 +149,12 @@ interface RowViewModel {
         </div>
       }
 
-      @if (totalHours() > 48) {
+      @if (totalHours() > maxWeeklyHours()) {
         <div class="rounded-ui border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-600 flex items-start gap-2.5">
           <tf-icon name="alert" [size]="18" class="text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <span class="font-semibold text-amber-500">Avertissement de conformité légale (Code du travail) :</span>
-            Votre saisie totalise <strong>{{ formatHours(totalHours()) }}</strong>, ce qui dépasse la durée légale maximale hebdomadaire de 48 heures (Art. L. 3121-20). Veuillez vérifier votre saisie ou justifier les heures exceptionnelles.
+            <span class="font-semibold text-amber-500">Avertissement de conformité du temps de travail :</span>
+            Votre saisie totalise <strong>{{ formatHours(totalHours()) }}</strong>, ce qui dépasse le plafond maximal hebdomadaire de <strong>{{ formatHours(maxWeeklyHours()) }}</strong> défini pour votre régime contractuel. Veuillez vérifier votre saisie ou justifier les heures exceptionnelles.
           </div>
         </div>
       }
@@ -218,7 +220,12 @@ interface RowViewModel {
                       <th scope="col" class="w-20 px-3 py-3 text-center font-medium">Fact.</th>
                       @for (day of week().days; track day.isoDate) {
                         <th scope="col" class="w-20 px-2 py-2 text-center font-medium" [class]="day.isToday ? 'bg-brand-50 text-brand-600 font-semibold' : ''">
-                          <span class="block">{{ day.label }}</span>
+                          <div class="flex items-center justify-center gap-1">
+                            <span>{{ day.label }}</span>
+                            @if (!day.isWorkingDay) {
+                              <span class="rounded bg-amber-100 text-amber-800 px-1 text-[9px] font-medium" title="Jour non ouvré pour votre profil">Repos</span>
+                            }
+                          </div>
                           <span class="block tabular-nums" [class.font-normal]="!day.isToday">{{ day.date }}</span>
                         </th>
                       }
@@ -282,7 +289,10 @@ interface RowViewModel {
 
                           <!-- Saisie par jour -->
                           @for (day of week().days; track day.isoDate) {
-                            <td class="px-1.5 py-2 text-center" [class]="day.isToday ? 'bg-brand-50/40' : ''">
+                            <td class="px-1.5 py-2 text-center"
+                              [class.bg-brand-50/40]="day.isToday"
+                              [class.bg-app/70]="!day.isWorkingDay"
+                              [title]="!day.isWorkingDay ? 'Jour non ouvré pour votre profil' : ''">
                               @if (isEditable()) {
                                 <input
                                   type="number"
@@ -292,7 +302,10 @@ interface RowViewModel {
                                   [ngModel]="row.hoursByDate[day.isoDate] || 0"
                                   (ngModelChange)="onHourChange(row, day.isoDate, $event)"
                                   [attr.aria-label]="row.projectName + ' ' + day.label"
-                                  class="w-16 rounded-md border border-border bg-surface px-1.5 py-1.5 text-center text-sm tabular-nums text-foreground transition focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600" />
+                                  class="w-16 rounded-md border bg-surface px-1.5 py-1.5 text-center text-sm tabular-nums text-foreground transition focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                                  [class.border-border]="day.isWorkingDay"
+                                  [class.border-dashed]="!day.isWorkingDay"
+                                  [class.border-amber-300]="!day.isWorkingDay && (row.hoursByDate[day.isoDate] || 0) > 0" />
                               } @else {
                                 <span class="tabular-nums font-medium text-foreground">
                                   {{ (row.hoursByDate[day.isoDate] || 0) > 0 ? (row.hoursByDate[day.isoDate] || 0) + ' h' : '—' }}
@@ -451,9 +464,17 @@ interface RowViewModel {
 })
 export class TimesheetPageComponent implements OnInit {
   private readonly timesheetService = inject(TimesheetService);
+  private readonly workScheduleService = inject(WorkScheduleService);
 
   readonly currentDate = signal<Date>(new Date());
-  readonly week = computed<CalendarWeek>(() => calendarWeek(this.currentDate()));
+  readonly mySchedule = signal<WorkScheduleProfile | null>(null);
+
+  readonly week = computed<CalendarWeek>(() => {
+    const sched = this.mySchedule();
+    const workingDays = sched ? sched.workingDays : ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+    const allowWeekend = sched ? sched.allowWeekendEntry : false;
+    return calendarWeek(this.currentDate(), new Date(), workingDays, allowWeekend);
+  });
 
   readonly timesheet = signal<TimesheetOverview | null>(null);
   readonly activeProjects = signal<ActiveProject[]>([]);
@@ -474,8 +495,20 @@ export class TimesheetPageComponent implements OnInit {
   readonly isEditable = computed<boolean>(() => this.timesheet()?.editable ?? true);
 
   readonly targetHours = computed<number>(() => {
+    const sched = this.mySchedule();
+    if (sched) return sched.weeklyTargetMinutes / 60;
     const minutes = this.timesheet()?.weeklyTargetMinutes ?? 2100;
     return minutes / 60;
+  });
+
+  readonly maxWeeklyHours = computed<number>(() => {
+    const sched = this.mySchedule();
+    return sched ? sched.maxWeeklyMinutes / 60 : 48;
+  });
+
+  readonly maxDailyHours = computed<number>(() => {
+    const sched = this.mySchedule();
+    return sched ? sched.maxDailyMinutes / 60 : 10;
   });
 
   readonly dailyTotals = computed<Record<string, number>>(() => {
@@ -525,8 +558,16 @@ export class TimesheetPageComponent implements OnInit {
   readonly columnCount = computed<number>(() => this.week().days.length + (this.isEditable() ? 5 : 4));
 
   ngOnInit(): void {
+    this.loadMySchedule();
     this.loadActiveProjects();
     this.loadTimesheet();
+  }
+
+  loadMySchedule(): void {
+    this.workScheduleService.getMyWorkSchedule().subscribe({
+      next: schedule => this.mySchedule.set(schedule),
+      error: () => { /* fallback automatique au profil standard */ }
+    });
   }
 
   previousWeek(): void {

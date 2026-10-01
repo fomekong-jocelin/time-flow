@@ -14,6 +14,8 @@ import cm.indyli.timeflow.users.domain.UserNotFoundException;
 import cm.indyli.timeflow.users.infrastructure.UserAdminAuditEntity;
 import cm.indyli.timeflow.users.infrastructure.UserAdminAuditRepository;
 import cm.indyli.timeflow.users.infrastructure.UserSessionRevoker;
+import cm.indyli.timeflow.workschedule.persistence.WorkScheduleProfileEntity;
+import cm.indyli.timeflow.workschedule.persistence.WorkScheduleProfileRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,7 @@ public class UserAdministrationService {
     private final PasswordEncoder passwordEncoder;
     private final UserAdminAuditRepository auditRepository;
     private final UserSessionRevoker sessionRevoker;
+    private final WorkScheduleProfileRepository workScheduleRepository;
 
     public UserAdministrationService(AppUserRepository userRepository,
                                      AuthIdentityRepository identityRepository,
@@ -42,12 +45,23 @@ public class UserAdministrationService {
                                      PasswordEncoder passwordEncoder,
                                      UserAdminAuditRepository auditRepository,
                                      UserSessionRevoker sessionRevoker) {
+        this(userRepository, identityRepository, localUserAdminService, passwordEncoder, auditRepository, sessionRevoker, null);
+    }
+
+    public UserAdministrationService(AppUserRepository userRepository,
+                                     AuthIdentityRepository identityRepository,
+                                     LocalUserAdminService localUserAdminService,
+                                     PasswordEncoder passwordEncoder,
+                                     UserAdminAuditRepository auditRepository,
+                                     UserSessionRevoker sessionRevoker,
+                                     WorkScheduleProfileRepository workScheduleRepository) {
         this.userRepository = userRepository;
         this.identityRepository = identityRepository;
         this.localUserAdminService = localUserAdminService;
         this.passwordEncoder = passwordEncoder;
         this.auditRepository = auditRepository;
         this.sessionRevoker = sessionRevoker;
+        this.workScheduleRepository = workScheduleRepository;
     }
 
     @Transactional
@@ -125,10 +139,22 @@ public class UserAdministrationService {
     private void validateProfile(UUID userId, UserProfileChange profile) {
         checkWeeklyTarget(profile.weeklyTargetMinutes());
         checkManager(userId, profile.managerId(), userRepository::findById);
+        if (profile.workScheduleProfileId() != null && workScheduleRepository != null
+                && !workScheduleRepository.existsById(profile.workScheduleProfileId())) {
+            throw new UserAdministrationException("invalid_schedule_profile", "Le groupe de configuration du temps de travail spécifié n'existe pas.");
+        }
     }
 
     private void applyProfile(AppUserEntity user, UserProfileChange profile) {
-        user.updateAdministrativeProfile(profile.displayName(), profile.role(), profile.managerId(), profile.weeklyTargetMinutes());
+        UUID scheduleId = profile.workScheduleProfileId();
+        if (scheduleId == null && user.getWorkScheduleProfileId() == null && workScheduleRepository != null) {
+            scheduleId = workScheduleRepository.findByIsDefaultTrue()
+                    .map(WorkScheduleProfileEntity::getId)
+                    .orElse(null);
+        } else if (scheduleId == null) {
+            scheduleId = user.getWorkScheduleProfileId();
+        }
+        user.updateAdministrativeProfile(profile.displayName(), profile.role(), profile.managerId(), profile.weeklyTargetMinutes(), scheduleId);
         userRepository.save(user);
     }
 

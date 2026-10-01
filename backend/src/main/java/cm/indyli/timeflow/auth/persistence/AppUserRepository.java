@@ -14,4 +14,5 @@ public interface AppUserRepository extends JpaRepository<AppUserEntity, UUID> {
     long countByRoleAndActiveTrue(UserRole role);
     List<AppUserEntity> findAllByOrderByDisplayNameAsc();
     List<AppUserEntity> findByManagerId(UUID managerId);
+    long countByWorkScheduleProfileId(UUID profileId);
 }
