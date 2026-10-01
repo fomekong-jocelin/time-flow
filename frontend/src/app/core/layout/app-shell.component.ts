@@ -83,26 +83,38 @@ const ROLE_LABELS: Record<CurrentUser['role'], string> = {
       </aside>
 
       <div class="min-w-0">
-        <header class="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/90 px-4 py-3 backdrop-blur lg:hidden">
-          <a routerLink="/mes-temps" aria-label="TimeFlow by INDYLI — accueil"><tf-logo [size]="26" /></a>
-          @if (user()) {
-            <div class="flex items-center gap-2">
-              <span class="grid size-9 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800" aria-hidden="true">{{ initials() }}</span>
-              <button type="button" (click)="logout()" [disabled]="loggingOut()" class="grid size-11 place-items-center rounded-lg text-muted transition hover:bg-app hover:text-ink" aria-label="Se déconnecter">
-                <tf-icon name="logout" />
-              </button>
-            </div>
-          }
+        <!-- En-tête mobile sticky complet (branding + navigation horizontale tactile) -->
+        <header class="sticky top-0 z-30 flex flex-col border-b border-border bg-surface/95 backdrop-blur-md lg:hidden">
+          <div class="flex items-center justify-between px-4 py-2.5">
+            <a routerLink="/mes-temps" aria-label="TimeFlow by INDYLI — accueil" class="flex items-center gap-2">
+              <tf-logo [size]="26" />
+            </a>
+            @if (user()) {
+              <div class="flex items-center gap-2">
+                <span class="grid size-8 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800" aria-hidden="true">{{ initials() }}</span>
+                <button type="button" (click)="logout()" [disabled]="loggingOut()" class="grid size-9 place-items-center rounded-lg text-muted transition hover:bg-app hover:text-ink" aria-label="Se déconnecter">
+                  <tf-icon name="logout" [size]="16" />
+                </button>
+              </div>
+            }
+          </div>
+
+          <nav aria-label="Navigation mobile" class="flex gap-1.5 overflow-x-auto px-3 pb-2 pt-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            @for (item of navItems(); track item.label) {
+              @if (item.path) {
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="bg-brand-50 text-brand-600 font-semibold shadow-2xs"
+                  ariaCurrentWhenActive="page"
+                  class="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-muted transition hover:bg-app hover:text-ink whitespace-nowrap">
+                  <tf-icon [name]="item.icon" [size]="15" />
+                  <span>{{ item.label }}</span>
+                </a>
+              }
+            }
+          </nav>
         </header>
 
-        <nav aria-label="Navigation mobile" class="flex gap-2 border-b border-border bg-surface px-4 py-2 lg:hidden">
-          @for (item of navItems(); track item.label) {
-            @if (item.path) {
-              <a [routerLink]="item.path" routerLinkActive="bg-brand-50 text-brand-800" ariaCurrentWhenActive="page"
-                class="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm"><tf-icon [name]="item.icon" [size]="18" />{{ item.label }}</a>
-            }
-          }
-        </nav>
         <main class="mx-auto w-full max-w-[100rem] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <router-outlet />
         </main>

@@ -177,9 +177,14 @@ interface RowViewModel {
               </span>
               <div>
                 <p class="text-2xl font-bold tabular-nums leading-tight">{{ formatHours(totalHours()) }}</p>
-                <p class="text-xs text-muted">
-                  Total saisi (objectif : {{ formatHours(targetHours()) }})
-                </p>
+                <div class="mt-0.5 flex items-center gap-1.5 flex-wrap text-xs text-muted">
+                  <span>Cible : {{ formatHours(targetHours()) }}</span>
+                  @if (overtimeHours() > 0) {
+                    <span class="inline-flex items-center rounded bg-brand-50 px-1.5 py-0.2 text-[10px] font-bold text-brand-700 whitespace-nowrap">
+                      +{{ formatHours(overtimeHours()) }} OT
+                    </span>
+                  }
+                </div>
               </div>
             </article>
 
@@ -222,7 +227,9 @@ interface RowViewModel {
                         <th scope="col" class="w-20 px-2 py-2 text-center font-medium" [class]="day.isToday ? 'bg-brand-50 text-brand-600 font-semibold' : ''">
                           <div class="flex items-center justify-center gap-1">
                             <span>{{ day.label }}</span>
-                            @if (!day.isWorkingDay) {
+                            @if (day.holiday) {
+                              <span class="rounded bg-purple-100 text-purple-800 px-1 text-[9px] font-semibold whitespace-nowrap" [title]="day.holiday.name + (day.holiday.isWorked ? ' (Travaillé)' : ' (Chômé)')">Férié</span>
+                            } @else if (!day.isWorkingDay) {
                               <span class="rounded bg-amber-100 text-amber-800 px-1 text-[9px] font-medium" title="Jour non ouvré pour votre profil">Repos</span>
                             }
                           </div>
@@ -291,8 +298,9 @@ interface RowViewModel {
                           @for (day of week().days; track day.isoDate) {
                             <td class="px-1.5 py-2 text-center"
                               [class.bg-brand-50/40]="day.isToday"
-                              [class.bg-app/70]="!day.isWorkingDay"
-                              [title]="!day.isWorkingDay ? 'Jour non ouvré pour votre profil' : ''">
+                              [class.bg-purple-50/20]="day.holiday && !day.isToday"
+                              [class.bg-app/70]="!day.isWorkingDay && !day.holiday && !day.isToday"
+                              [title]="day.holiday ? (day.holiday.name + ' · ' + (day.holiday.isWorked ? 'Férié travaillé' : 'Férié chômé')) : (!day.isWorkingDay ? 'Jour non ouvré pour votre profil' : '')">
                               @if (isEditable()) {
                                 <input
                                   type="number"
@@ -469,14 +477,22 @@ export class TimesheetPageComponent implements OnInit {
   readonly currentDate = signal<Date>(new Date());
   readonly mySchedule = signal<WorkScheduleProfile | null>(null);
 
+  readonly timesheet = signal<TimesheetOverview | null>(null);
+
   readonly week = computed<CalendarWeek>(() => {
     const sched = this.mySchedule();
     const workingDays = sched ? sched.workingDays : ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
     const allowWeekend = sched ? sched.allowWeekendEntry : false;
-    return calendarWeek(this.currentDate(), new Date(), workingDays, allowWeekend);
+    const holidays = this.timesheet()?.holidays || [];
+    return calendarWeek(this.currentDate(), new Date(), workingDays, allowWeekend, holidays);
   });
 
-  readonly timesheet = signal<TimesheetOverview | null>(null);
+  readonly overtimeHours = computed<number>(() => {
+    const total = this.totalHours();
+    const target = this.targetHours();
+    return total > target ? +(total - target).toFixed(2) : 0;
+  });
+
   readonly activeProjects = signal<ActiveProject[]>([]);
   readonly rows = signal<RowViewModel[]>([]);
 

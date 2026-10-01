@@ -35,6 +35,9 @@ export interface TimesheetOverview {
   lines: TimesheetLine[];
   rejectionComment?: string | null;
   editable: boolean;
+  holidays?: { date: string; name: string; isWorked: boolean }[];
+  overtimeMinutes?: number;
+  extraTimeMinutes?: number;
 }
 
 export interface SaveTimesheetPayload {

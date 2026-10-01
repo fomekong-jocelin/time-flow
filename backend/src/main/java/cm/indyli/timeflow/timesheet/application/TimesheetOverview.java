@@ -24,8 +24,59 @@ public record TimesheetOverview(
         Map<String, Integer> dailyTotals,
         List<TimesheetLineOverview> lines,
         String rejectionComment,
-        boolean editable
+        boolean editable,
+        List<HolidayOverview> holidays,
+        int overtimeMinutes,
+        int extraTimeMinutes
 ) {
+    public TimesheetOverview(
+            UUID id,
+            UUID userId,
+            LocalDate weekStart,
+            LocalDate weekEnd,
+            TimesheetStatus status,
+            OffsetDateTime submittedAt,
+            OffsetDateTime validatedAt,
+            OffsetDateTime lockedAt,
+            int weeklyTargetMinutes,
+            int totalMinutes,
+            int billableMinutes,
+            int internalMinutes,
+            Map<String, Integer> dailyTotals,
+            List<TimesheetLineOverview> lines,
+            String rejectionComment,
+            boolean editable
+    ) {
+        this(
+                id,
+                userId,
+                weekStart,
+                weekEnd,
+                status,
+                submittedAt,
+                validatedAt,
+                lockedAt,
+                weeklyTargetMinutes,
+                totalMinutes,
+                billableMinutes,
+                internalMinutes,
+                dailyTotals,
+                lines,
+                rejectionComment,
+                editable,
+                List.of(),
+                Math.max(0, totalMinutes - weeklyTargetMinutes),
+                0
+        );
+    }
+
+    public record HolidayOverview(
+            LocalDate date,
+            String name,
+            boolean isWorked
+    ) {
+    }
+
     public record TimesheetLineOverview(
             UUID projectId,
             String projectName,

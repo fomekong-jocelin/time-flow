@@ -2,6 +2,7 @@ package cm.indyli.timeflow.timesheet.application;
 
 import cm.indyli.timeflow.auth.persistence.AppUserEntity;
 import cm.indyli.timeflow.auth.persistence.AppUserRepository;
+import cm.indyli.timeflow.holidays.persistence.PublicHolidayRepository;
 import cm.indyli.timeflow.projects.infrastructure.ProjectStore;
 import cm.indyli.timeflow.timesheet.domain.TimesheetPolicy;
 import cm.indyli.timeflow.timesheet.domain.TimesheetStatus;
@@ -16,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class TimesheetService {
@@ -25,15 +25,18 @@ public class TimesheetService {
     private final AppUserRepository userRepository;
     private final ProjectStore projectStore;
     private final JdbcClient jdbc;
+    private final PublicHolidayRepository publicHolidayRepository;
 
     public TimesheetService(TimesheetRepository timesheetRepository,
                             AppUserRepository userRepository,
                             ProjectStore projectStore,
-                            JdbcClient jdbc) {
+                            JdbcClient jdbc,
+                            PublicHolidayRepository publicHolidayRepository) {
         this.timesheetRepository = timesheetRepository;
         this.userRepository = userRepository;
         this.projectStore = projectStore;
         this.jdbc = jdbc;
+        this.publicHolidayRepository = publicHolidayRepository;
     }
 
     @Transactional(readOnly = true)
@@ -143,6 +146,9 @@ public class TimesheetService {
         for (int i = 0; i < 7; i++) {
             dailyTotals.put(weekStart.plusDays(i).toString(), 0);
         }
+
+        List<TimesheetOverview.HolidayOverview> holidays = getHolidaysForWeek(weekStart);
+
         return new TimesheetOverview(
                 null,
                 userId,
@@ -159,7 +165,10 @@ public class TimesheetService {
                 dailyTotals,
                 List.of(),
                 null,
-                true
+                true,
+                holidays,
+                0,
+                0
         );
     }
 
@@ -221,6 +230,10 @@ public class TimesheetService {
         }
 
         boolean editable = timesheet.getStatus() == TimesheetStatus.DRAFT || timesheet.getStatus() == TimesheetStatus.REJECTED;
+        List<TimesheetOverview.HolidayOverview> holidays = getHolidaysForWeek(weekStart);
+
+        int overtimeMinutes = Math.max(0, totalMinutes - weeklyTargetMinutes);
+        int extraTimeMinutes = 0;
 
         return new TimesheetOverview(
                 timesheet.getId(),
@@ -238,8 +251,21 @@ public class TimesheetService {
                 dailyTotals,
                 lines,
                 rejectionComment,
-                editable
+                editable,
+                holidays,
+                overtimeMinutes,
+                extraTimeMinutes
         );
+    }
+
+    private List<TimesheetOverview.HolidayOverview> getHolidaysForWeek(LocalDate weekStart) {
+        if (publicHolidayRepository == null) {
+            return List.of();
+        }
+        return publicHolidayRepository.findByHolidayDateBetweenOrderByHolidayDateAsc(weekStart, weekStart.plusDays(6))
+                .stream()
+                .map(h -> new TimesheetOverview.HolidayOverview(h.getHolidayDate(), h.getName(), h.isWorked()))
+                .toList();
     }
 
     private String findLatestRejectionComment(UUID timesheetId) {
