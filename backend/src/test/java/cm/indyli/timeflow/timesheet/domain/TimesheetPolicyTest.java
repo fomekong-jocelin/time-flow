@@ -60,24 +60,28 @@ class TimesheetPolicyTest {
     }
 
     @Test
-    void ensureDailyTotalsWithinLimit_rejectsExceeding24Hours() {
-        Map<LocalDate, Integer> valid = Map.of(monday, 480, monday.plusDays(1), 1440);
+    void ensureDailyTotalsWithinLimit_rejectsExceeding12Hours() {
+        Map<LocalDate, Integer> valid = Map.of(monday, 480, monday.plusDays(1), 720);
         assertThatCode(() -> TimesheetPolicy.ensureDailyTotalsWithinLimit(valid))
                 .doesNotThrowAnyException();
 
-        Map<LocalDate, Integer> invalid = Map.of(monday, 1441);
+        Map<LocalDate, Integer> invalid = Map.of(monday, 721);
         assertThatThrownBy(() -> TimesheetPolicy.ensureDailyTotalsWithinLimit(invalid))
                 .isInstanceOf(TimesheetValidationException.class)
-                .hasMessageContaining("dépasse la limite autorisée de 24 h");
+                .hasMessageContaining("dépasse la limite légale maximale de 12 h");
     }
 
     @Test
-    void ensureCanSubmit_requiresNonZeroMinutes() {
+    void ensureCanSubmit_requiresNonZeroMinutesAndUnderWeeklyCap() {
         assertThatCode(() -> TimesheetPolicy.ensureCanSubmit(TimesheetStatus.DRAFT, 420))
                 .doesNotThrowAnyException();
 
         assertThatThrownBy(() -> TimesheetPolicy.ensureCanSubmit(TimesheetStatus.DRAFT, 0))
                 .isInstanceOf(TimesheetValidationException.class)
                 .hasMessageContaining("0 heure ne peut pas être soumise");
+
+        assertThatThrownBy(() -> TimesheetPolicy.ensureCanSubmit(TimesheetStatus.DRAFT, 3601))
+                .isInstanceOf(TimesheetValidationException.class)
+                .hasMessageContaining("dépasse le plafond absolu dérogatoire de 60 h");
     }
 }

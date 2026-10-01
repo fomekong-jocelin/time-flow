@@ -84,7 +84,8 @@ class TimesheetManagerSecurityTest {
         var summary = new PendingTimesheetSummary(
                 timesheetId, UUID.randomUUID(), "Jean Dupont", "jean@indyli.com",
                 LocalDate.of(2026, 10, 5), LocalDate.of(2026, 10, 11),
-                TimesheetStatus.SUBMITTED, OffsetDateTime.now(), 2100, 2100, 2
+                TimesheetStatus.SUBMITTED, OffsetDateTime.now(), 2100, 2100, 2,
+                false, List.of("TimeFlow"), 2100, false
         );
         when(validationService.listPending(eq(managerPrincipal), eq(TimesheetStatus.SUBMITTED), any()))
                 .thenReturn(List.of(summary));

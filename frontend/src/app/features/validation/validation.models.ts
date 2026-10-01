@@ -12,6 +12,10 @@ export interface PendingTimesheetSummary {
   totalMinutes: number;
   billableMinutes: number;
   linesCount: number;
+  selfTimesheet: boolean;
+  projectNames: string[];
+  weeklyTargetMinutes: number;
+  complianceAlert: boolean;
 }
 
 export interface ValidationHistoryItem {

@@ -6,6 +6,10 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Conformité légale et plafonds du Code du travail (CRA) : plafonnement journalier strict à 12h max (`ABSOLUTE_MAX_DAILY_MINUTES = 720`), seuil d'alerte quotidienne à 10h (`STATUTORY_MAX_DAILY_MINUTES = 600`), plafond hebdomadaire dérogatoire à 60h (`ABSOLUTE_MAX_WEEKLY_MINUTES = 3600`) et seuil d'alerte hebdomadaire légal à 48h (`STATUTORY_MAX_WEEKLY_MINUTES = 2880`).
+- Séparation des contrôles et principe des 4 yeux : détection automatique de `selfTimesheet`, masquage des boutons d'approbation sur sa propre feuille dans l'espace manager avec badge « Validation tierce requise », et exclusion de ses propres feuilles du compteur de tâches « À valider ».
+- UX avancée Espace Manager : refonte de la colonne Actions en groupe horizontal ergonomique, affichage des initiales en avatar, badges des vrais noms de projets (au lieu du chiffre brut), badges d'alerte de conformité légale si > 48h ou > 10h/jour, modale d'examen avec différenciation des jours de repos (week-end).
+- UX « Mes temps » (Collaborateur) : avertissement visuel immédiat en cas de dépassement hebdomadaire de 48h, contrainte `max="12"` sur les champs de saisie journalière.
 - Validation manager des feuilles de temps (TICKET-0005) : API manager `/api/v1/manager/timesheets`, consultation des feuilles en attente avec périmètre d'équipe strict (ou organisationnel pour Direction/Admin), consultation détaillée par jour et projet, approbation (`VALIDATED`) et rejet (`REJECTED`) avec motif obligatoire (min 3 caractères).
 - Traçabilité et historique de validation (TICKET-0005) : entité et table `timesheet_validation` conservant l'historique complet des décisions, horodatages et commentaires/motifs.
 - Règles de garde de validation (TICKET-0005) : vérification de statut `SUBMITTED`, interdiction d'auto-validation par un manager sur sa propre feuille, validation stricte du périmètre d'équipe `app_user.manager_id`.
