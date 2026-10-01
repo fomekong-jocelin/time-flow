@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { WorkScheduleProfile } from './work-schedule.models';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'tf-overtime-policies-panel',
   standalone: true,
-  imports: [CommonModule, IconComponent],
+  imports: [CommonModule, IconComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-5">
@@ -17,10 +19,10 @@ import { WorkScheduleProfile } from './work-schedule.models';
             <tf-icon name="sliders" [size]="18" />
           </div>
           <div>
-            <h3 class="text-sm font-bold text-ink">Cadre des Heures Supplémentaires (OT) & Heures Complémentaires (ET)</h3>
+            <h3 class="text-sm font-bold text-ink">{{ 'workSchedules.overtime.bannerTitle' | translate }}</h3>
             <p class="mt-1 text-xs text-muted leading-relaxed">
-              <strong>OT (Overtime)</strong> s'applique aux heures excédant la durée légale ou contractuelle (ex: au-delà de 35h avec majoration de +25%, +50%, ou +100% le dimanche et jours fériés).<br>
-              <strong>ET (Extra Time)</strong> s'applique aux heures complémentaires effectuées par les collaborateurs à temps partiel (majoration de +10% dans la limite contractuelle autorisée).
+              <strong>OT (Overtime)</strong> {{ 'workSchedules.overtime.bannerOtDesc' | translate }}<br>
+              <strong>ET (Extra Time)</strong> {{ 'workSchedules.overtime.bannerEtDesc' | translate }}
             </p>
           </div>
         </div>
@@ -29,23 +31,23 @@ import { WorkScheduleProfile } from './work-schedule.models';
       <!-- KPI Synthétiques -->
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div class="rounded-xl border border-border bg-surface p-3.5 shadow-2xs">
-          <p class="text-xs font-medium uppercase tracking-wider text-muted">Seuil OT standard</p>
-          <p class="mt-1 text-2xl font-bold text-brand-600">35 h / sem</p>
-          <p class="mt-0.5 text-xs text-muted">Déclenchement des tranches T1 & T2</p>
+          <p class="text-xs font-medium uppercase tracking-wider text-muted">{{ 'workSchedules.overtime.kpiOtThreshold' | translate }}</p>
+          <p class="mt-1 text-2xl font-bold text-brand-600">35 h {{ 'workSchedules.perWeekShort' | translate }}</p>
+          <p class="mt-0.5 text-xs text-muted">{{ 'workSchedules.overtime.kpiOtThresholdSub' | translate }}</p>
         </div>
         <div class="rounded-xl border border-border bg-surface p-3.5 shadow-2xs">
-          <p class="text-xs font-medium uppercase tracking-wider text-muted">Majorations Légales OT</p>
+          <p class="text-xs font-medium uppercase tracking-wider text-muted">{{ 'workSchedules.overtime.kpiLegalBonuses' | translate }}</p>
           <div class="mt-1 flex items-center gap-2">
             <span class="rounded bg-brand-50 px-1.5 py-0.5 text-xs font-bold text-brand-700">+25%</span>
             <span class="rounded bg-brand-50 px-1.5 py-0.5 text-xs font-bold text-brand-700">+50%</span>
-            <span class="rounded bg-purple-100 px-1.5 py-0.5 text-xs font-bold text-purple-800">+100% Férié</span>
+            <span class="rounded bg-purple-100 px-1.5 py-0.5 text-xs font-bold text-purple-800">+100% {{ 'timesheets.holiday' | translate }}</span>
           </div>
-          <p class="mt-0.5 text-xs text-muted">Tranche 1, Tranche 2, Dimanches/Fériés</p>
+          <p class="mt-0.5 text-xs text-muted">{{ 'workSchedules.overtime.kpiLegalBonusesSub' | translate }}</p>
         </div>
         <div class="rounded-xl border border-border bg-surface p-3.5 shadow-2xs">
-          <p class="text-xs font-medium uppercase tracking-wider text-muted">Régimes avec Extra Time (ET)</p>
+          <p class="text-xs font-medium uppercase tracking-wider text-muted">{{ 'workSchedules.overtime.kpiEtRegimes' | translate }}</p>
           <p class="mt-1 text-2xl font-bold text-teal-600">{{ etEnabledCount() }} / {{ profiles.length }}</p>
-          <p class="mt-0.5 text-xs text-muted">Temps partiels & astreintes</p>
+          <p class="mt-0.5 text-xs text-muted">{{ 'workSchedules.overtime.kpiEtRegimesSub' | translate }}</p>
         </div>
       </div>
 
@@ -60,26 +62,26 @@ import { WorkScheduleProfile } from './work-schedule.models';
 
             <!-- Paramètres OT -->
             <div class="rounded-lg bg-app/50 p-2.5 space-y-1.5">
-              <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">Règles OT (Overtime)</p>
+              <p class="text-xs font-semibold uppercase tracking-wider text-brand-600">{{ 'workSchedules.overtime.otRules' | translate }}</p>
               <div class="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span class="text-muted">Seuil déclenchement : </span>
-                  <span class="font-medium text-ink">{{ formatMinutes(profile.overtimeThresholdMinutes) }} / sem</span>
+                  <span class="text-muted">{{ 'workSchedules.overtime.threshold' | translate }} </span>
+                  <span class="font-medium text-ink">{{ formatMinutes(profile.overtimeThresholdMinutes) }} {{ 'workSchedules.perWeekShort' | translate }}</span>
                 </div>
                 <div>
-                  <span class="text-muted">Compensation : </span>
+                  <span class="text-muted">{{ 'workSchedules.overtime.compensation' | translate }} </span>
                   <span class="font-medium text-ink">{{ compensationLabel(profile.overtimeCompensationMode) }}</span>
                 </div>
                 <div>
-                  <span class="text-muted">Tranche 1 : </span>
+                  <span class="text-muted">{{ 'workSchedules.overtime.tier1' | translate }} </span>
                   <span class="font-medium text-ink">+{{ formatRate(profile.overtimeRateTier1) }}%</span>
                 </div>
                 <div>
-                  <span class="text-muted">Tranche 2 : </span>
+                  <span class="text-muted">{{ 'workSchedules.overtime.tier2' | translate }} </span>
                   <span class="font-medium text-ink">+{{ formatRate(profile.overtimeRateTier2) }}%</span>
                 </div>
                 <div class="col-span-2">
-                  <span class="text-muted">Dimanche & Férié : </span>
+                  <span class="text-muted">{{ 'workSchedules.overtime.sundayHoliday' | translate }} </span>
                   <span class="font-bold text-purple-700">+{{ formatRate(profile.overtimeRateHoliday) }}%</span>
                 </div>
               </div>
@@ -88,21 +90,21 @@ import { WorkScheduleProfile } from './work-schedule.models';
             <!-- Paramètres ET -->
             <div class="rounded-lg bg-app/50 p-2.5 space-y-1.5">
               <div class="flex items-center justify-between">
-                <p class="text-xs font-semibold uppercase tracking-wider text-teal-600">Règles ET (Extra Time)</p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-teal-600">{{ 'workSchedules.overtime.etRules' | translate }}</p>
                 @if (profile.extraTimeAllowed) {
-                  <span class="rounded bg-teal-50 px-1.5 py-0.2 text-[10px] font-semibold text-teal-700">Autorisé</span>
+                  <span class="rounded bg-teal-50 px-1.5 py-0.2 text-[10px] font-semibold text-teal-700">{{ 'workSchedules.overtime.allowed' | translate }}</span>
                 } @else {
-                  <span class="rounded bg-zinc-100 px-1.5 py-0.2 text-[10px] font-semibold text-zinc-500">Non autorisé</span>
+                  <span class="rounded bg-zinc-100 px-1.5 py-0.2 text-[10px] font-semibold text-zinc-500">{{ 'workSchedules.overtime.notAllowed' | translate }}</span>
                 }
               </div>
               @if (profile.extraTimeAllowed) {
                 <div class="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span class="text-muted">Plafond max : </span>
-                    <span class="font-medium text-ink">{{ formatMinutes(profile.extraTimeMaxWeeklyMinutes) }} / sem</span>
+                    <span class="text-muted">{{ 'workSchedules.overtime.maxCap' | translate }} </span>
+                    <span class="font-medium text-ink">{{ formatMinutes(profile.extraTimeMaxWeeklyMinutes) }} {{ 'workSchedules.perWeekShort' | translate }}</span>
                   </div>
                   <div>
-                    <span class="text-muted">Majoration : </span>
+                    <span class="text-muted">{{ 'workSchedules.overtime.bonus' | translate }} </span>
                     <span class="font-medium text-ink">+{{ formatRate(profile.extraTimeRate) }}%</span>
                   </div>
                 </div>
@@ -114,7 +116,7 @@ import { WorkScheduleProfile } from './work-schedule.models';
                 type="button"
                 (click)="editRequested.emit(profile)"
                 class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink transition hover:bg-app">
-                Ajuster les règles OT / ET
+                {{ 'workSchedules.overtime.adjustRules' | translate }}
               </button>
             </div>
           </div>
@@ -126,14 +128,14 @@ import { WorkScheduleProfile } from './work-schedule.models';
         <table class="w-full text-left text-sm">
           <thead class="border-b border-border bg-app/50 text-xs font-semibold uppercase tracking-wider text-muted">
             <tr>
-              <th scope="col" class="px-5 py-3 whitespace-nowrap">Régime</th>
-              <th scope="col" class="px-5 py-3 whitespace-nowrap">Seuil OT Hebdo</th>
-              <th scope="col" class="px-5 py-3 whitespace-nowrap">Majoration T1</th>
-              <th scope="col" class="px-5 py-3 whitespace-nowrap">Majoration T2</th>
-              <th scope="col" class="px-5 py-3 whitespace-nowrap">Dimanche & Férié</th>
-              <th scope="col" class="px-5 py-3 whitespace-nowrap">Compensation OT</th>
-              <th scope="col" class="px-5 py-3 whitespace-nowrap">Extra Time (ET)</th>
-              <th scope="col" class="px-5 py-3 whitespace-nowrap text-right">Actions</th>
+              <th scope="col" class="px-5 py-3 whitespace-nowrap">{{ 'workSchedules.overtime.colRegime' | translate }}</th>
+              <th scope="col" class="px-5 py-3 whitespace-nowrap">{{ 'workSchedules.overtime.colOtThreshold' | translate }}</th>
+              <th scope="col" class="px-5 py-3 whitespace-nowrap">{{ 'workSchedules.overtime.colBonusT1' | translate }}</th>
+              <th scope="col" class="px-5 py-3 whitespace-nowrap">{{ 'workSchedules.overtime.colBonusT2' | translate }}</th>
+              <th scope="col" class="px-5 py-3 whitespace-nowrap">{{ 'workSchedules.overtime.colBonusHoliday' | translate }}</th>
+              <th scope="col" class="px-5 py-3 whitespace-nowrap">{{ 'workSchedules.overtime.colOtCompensation' | translate }}</th>
+              <th scope="col" class="px-5 py-3 whitespace-nowrap">{{ 'workSchedules.overtime.colExtraTime' | translate }}</th>
+              <th scope="col" class="px-5 py-3 whitespace-nowrap text-right">{{ 'common.actions' | translate }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
@@ -144,7 +146,7 @@ import { WorkScheduleProfile } from './work-schedule.models';
                   <div class="font-mono text-xs text-muted">{{ profile.code }}</div>
                 </td>
                 <td class="px-5 py-3.5 font-medium text-ink whitespace-nowrap">
-                  {{ formatMinutes(profile.overtimeThresholdMinutes) }} / sem
+                  {{ formatMinutes(profile.overtimeThresholdMinutes) }} {{ 'workSchedules.perWeekShort' | translate }}
                 </td>
                 <td class="px-5 py-3.5 whitespace-nowrap">
                   <span class="inline-flex rounded bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
@@ -173,7 +175,7 @@ import { WorkScheduleProfile } from './work-schedule.models';
                       <span class="text-muted ml-1">(+{{ formatRate(profile.extraTimeRate) }}%)</span>
                     </div>
                   } @else {
-                    <span class="text-xs text-muted">Non applicable</span>
+                    <span class="text-xs text-muted">{{ 'workSchedules.overtime.notApplicable' | translate }}</span>
                   }
                 </td>
                 <td class="px-5 py-3.5 text-right whitespace-nowrap">
@@ -181,7 +183,7 @@ import { WorkScheduleProfile } from './work-schedule.models';
                     type="button"
                     (click)="editRequested.emit(profile)"
                     class="rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-ink transition hover:bg-app whitespace-nowrap">
-                    Modifier
+                    {{ 'common.edit' | translate }}
                   </button>
                 </td>
               </tr>
@@ -193,6 +195,7 @@ import { WorkScheduleProfile } from './work-schedule.models';
   `
 })
 export class OvertimePoliciesPanelComponent {
+  readonly i18n = inject(I18nService);
   @Input({ required: true }) profiles: WorkScheduleProfile[] = [];
   @Output() editRequested = new EventEmitter<WorkScheduleProfile>();
 
@@ -212,12 +215,12 @@ export class OvertimePoliciesPanelComponent {
   compensationLabel(mode: string): string {
     switch (mode) {
       case 'RECOVERY':
-        return 'Repos compensateur / RTT';
+        return this.i18n.t('workSchedules.overtime.compRecovery');
       case 'HYBRID':
-        return 'Paiement ou RTT au choix';
+        return this.i18n.t('workSchedules.overtime.compHybrid');
       case 'PAY':
       default:
-        return 'Paiement majoré (Salaire)';
+        return this.i18n.t('workSchedules.overtime.compPay');
     }
   }
 }

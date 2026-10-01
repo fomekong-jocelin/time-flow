@@ -7,6 +7,8 @@ import { IconComponent } from '../../shared/ui/icon.component';
 import { AvatarComponent } from '../../shared/ui/avatar.component';
 import { KpiCardComponent } from '../../shared/ui/kpi-card.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { AnalyticsOverview } from './analytics.models';
 import { AnalyticsService } from './analytics.service';
 
@@ -24,7 +26,8 @@ interface PeriodPreset {
     IconComponent,
     AvatarComponent,
     KpiCardComponent,
-    StatusBadgeComponent
+    StatusBadgeComponent,
+    TranslatePipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -33,13 +36,13 @@ interface PeriodPreset {
       <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div class="flex items-center gap-2 text-sm font-medium text-brand-600">
-            <span>Pilotage & Décision</span>
+            <span>{{ 'nav.analytics' | translate }}</span>
             <span class="text-muted">/</span>
-            <span>Tableau de bord</span>
+            <span>{{ 'analytics.period' | translate }}</span>
           </div>
-          <h1 class="mt-1 text-2xl font-bold tracking-tight text-ink sm:text-3xl">Analyses & Reporting</h1>
+          <h1 class="mt-1 text-2xl font-bold tracking-tight text-ink sm:text-3xl">{{ 'analytics.title' | translate }}</h1>
           <p class="mt-1 text-sm text-muted">
-            Performance opérationnelle, taux d'activité facturable (TACE), suivi des heures supplémentaires et des projets.
+            {{ 'analytics.subtitle' | translate }}
           </p>
         </div>
 
@@ -49,13 +52,13 @@ interface PeriodPreset {
           [disabled]="loading()"
           class="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-xs font-semibold text-ink shadow-2xs transition hover:bg-app disabled:opacity-50 whitespace-nowrap self-start sm:self-auto">
           <tf-icon name="clock" [size]="14" />
-          <span>{{ loading() ? 'Actualisation...' : 'Actualiser' }}</span>
+          <span>{{ loading() ? ('common.loading' | translate) : ('common.filter' | translate) }}</span>
         </button>
       </header>
 
       <!-- Sélecteur de période fluide -->
       <div class="flex items-center gap-2 border-b border-border pb-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        @for (preset of periodPresets; track preset.key) {
+        @for (preset of periodPresets(); track preset.key) {
           <button
             type="button"
             (click)="selectPeriod(preset.key)"
@@ -70,52 +73,52 @@ interface PeriodPreset {
 
       <!-- Messages d'erreur -->
       @if (error()) {
-        <div class="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
-          <tf-icon name="alert" class="shrink-0 text-red-600" />
-          <span>Impossible de charger les données d'analyses. Veuillez réessayer.</span>
-          <button type="button" (click)="load()" class="ml-auto text-xs font-semibold underline">Réessayer</button>
+        <div class="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300" role="alert">
+          <tf-icon name="alert" class="shrink-0 text-red-600 dark:text-red-400" />
+          <span>{{ 'common.error' | translate }}</span>
+          <button type="button" (click)="load()" class="ml-auto text-xs font-semibold underline">{{ 'common.filter' | translate }}</button>
         </div>
       }
 
       @if (loading()) {
         <div class="rounded-xl border border-border bg-surface p-12 text-center text-muted">
-          <p>Calcul et consolidation des indicateurs en cours…</p>
+          <p>{{ 'analytics.calculating' | translate }}</p>
         </div>
       } @else if (overview(); as data) {
         <!-- 4 Cartes KPI synthétiques -->
         <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <tf-kpi-card
-            label="Taux de facturabilité (TACE)"
-            [value]="data.activityRate + ' %'"
+            [label]="'analytics.tace' | translate"
+            [value]="i18n.formatNumber(data.activityRate) + ' %'"
             [variant]="taceKpiVariant(data.activityRate)"
-            [description]="formatHours(data.billableMinutes) + ' facturables sur ' + formatHours(data.totalMinutes)" />
+            [description]="'analytics.taceDescDetail' | translate:{ billable: formatHours(data.billableMinutes), total: formatHours(data.totalMinutes) }" />
 
           <tf-kpi-card
-            label="Heures facturables client"
+            [label]="'analytics.billable' | translate"
             [value]="formatHours(data.billableMinutes)"
             variant="brand"
-            [description]="data.projectsBreakdown.length + ' projet(s) actif(s) sur la période'" />
+            [description]="'analytics.billableActiveProjects' | translate:{ count: data.projectsBreakdown.length }" />
 
           <tf-kpi-card
-            label="Interne & Formation"
+            [label]="'analytics.internal' | translate"
             [value]="formatHours(data.internalMinutes + data.trainingMinutes)"
-            description="Support, structure, avant-vente et formation" />
+            [description]="'analytics.internalSubDetail' | translate" />
 
           <tf-kpi-card
-            label="Heures supplémentaires (OT)"
+            [label]="'analytics.overtime' | translate"
             [value]="formatHours(data.overtimeMinutes)"
             [variant]="data.overtimeMinutes > 0 ? 'warning' : 'default'"
-            description="Heures réalisées au-delà des régimes légaux" />
+            [description]="'analytics.overtimeSubDetail' | translate" />
         </section>
 
         <!-- Barre de répartition proportionnelle des activités -->
         <section class="rounded-xl border border-border bg-surface p-5 shadow-2xs space-y-4">
           <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 class="text-base font-semibold text-ink">Répartition globale du temps travaillé</h2>
-              <p class="text-xs text-muted">Volume consolidé pour {{ data.periodLabel }} ({{ data.contributorsCount }} collaborateur(s) actif(s))</p>
+              <h2 class="text-base font-semibold text-ink">{{ 'analytics.activityDistributionTitle' | translate }}</h2>
+              <p class="text-xs text-muted">{{ 'analytics.activityDistributionSub' | translate:{ period: periodLabel(), count: data.contributorsCount } }}</p>
             </div>
-            <span class="text-xs font-semibold text-ink tabular-nums">Total : {{ formatHours(data.totalMinutes) }}</span>
+            <span class="text-xs font-semibold text-ink tabular-nums">{{ 'analytics.totalConsolidated' | translate:{ total: formatHours(data.totalMinutes) } }}</span>
           </div>
 
           <!-- Jauge segmentée -->
@@ -124,7 +127,7 @@ interface PeriodPreset {
               <div
                 [style.width.%]="act.sharePercentage"
                 [class]="activityColorClass(act.activityType)"
-                [title]="act.label + ' : ' + formatHours(act.totalMinutes) + ' (' + act.sharePercentage + '%)'"
+                [title]="(('activities.' + act.activityType) | translate) + ' : ' + formatHours(act.totalMinutes) + ' (' + i18n.formatNumber(act.sharePercentage) + '%)'"
                 class="h-full transition-all"></div>
             }
           </div>
@@ -135,8 +138,8 @@ interface PeriodPreset {
               <div class="flex items-center gap-2">
                 <span class="size-2.5 rounded-full shrink-0" [class]="activityDotClass(act.activityType)"></span>
                 <div class="min-w-0 flex-1">
-                  <span class="block text-muted truncate">{{ act.label }}</span>
-                  <span class="font-semibold text-ink">{{ formatHours(act.totalMinutes) }} <span class="text-[11px] text-muted">({{ act.sharePercentage }}%)</span></span>
+                  <span class="block text-muted truncate">{{ ('activities.' + act.activityType) | translate }}</span>
+                  <span class="font-semibold text-ink">{{ formatHours(act.totalMinutes) }} <span class="text-[11px] text-muted">({{ i18n.formatNumber(act.sharePercentage) }}%)</span></span>
                 </div>
               </div>
             }
@@ -156,7 +159,7 @@ interface PeriodPreset {
               [class.border-transparent]="activeTab() !== 'projects'"
               [class.text-muted]="activeTab() !== 'projects'">
               <tf-icon name="folder" [size]="16" />
-              <span>Répartition par Projet ({{ data.projectsBreakdown.length }})</span>
+              <span>{{ 'analytics.projectsTab' | translate:{ count: data.projectsBreakdown.length } }}</span>
             </button>
 
             <button
@@ -169,7 +172,7 @@ interface PeriodPreset {
               [class.border-transparent]="activeTab() !== 'team'"
               [class.text-muted]="activeTab() !== 'team'">
               <tf-icon name="users" [size]="16" />
-              <span>Bilan par Collaborateur ({{ data.usersBreakdown.length }})</span>
+              <span>{{ 'analytics.teamTab' | translate:{ count: data.usersBreakdown.length } }}</span>
             </button>
           </div>
         }
@@ -178,12 +181,12 @@ interface PeriodPreset {
         @if (activeTab() === 'projects') {
           <section class="rounded-xl border border-border bg-surface shadow-2xs overflow-hidden">
             <div class="border-b border-border p-4 sm:p-5">
-              <h2 class="text-base font-semibold text-ink">Consommation par Projet</h2>
-              <p class="text-xs text-muted mt-0.5">Ventilation des heures saisies et taux de facturation par mission.</p>
+              <h2 class="text-base font-semibold text-ink">{{ 'analytics.projectsBreakdown' | translate }}</h2>
+              <p class="text-xs text-muted mt-0.5">{{ 'analytics.projectsBreakdownSub' | translate }}</p>
             </div>
 
             @if (data.projectsBreakdown.length === 0) {
-              <p class="p-8 text-center text-sm text-muted">Aucune activité enregistrée sur cette période.</p>
+              <p class="p-8 text-center text-sm text-muted">{{ 'analytics.noData' | translate }}</p>
             } @else {
               <!-- Mobile view (< md) : cartes tactiles -->
               <div class="space-y-3 p-4 md:hidden">
@@ -207,11 +210,11 @@ interface PeriodPreset {
 
                     <div class="flex items-center justify-between text-xs pt-1 border-t border-border/50">
                       <div>
-                        <span class="text-muted block text-[11px]">Total saisi</span>
+                        <span class="text-muted block text-[11px]">{{ 'analytics.totalSaisi' | translate }}</span>
                         <span class="font-semibold text-ink">{{ formatHours(p.totalMinutes) }}</span>
                       </div>
                       <div class="text-right">
-                        <span class="text-muted block text-[11px]">Facturable</span>
+                        <span class="text-muted block text-[11px]">{{ 'timesheets.sidePanel.billableBadge' | translate }}</span>
                         <span class="font-semibold text-emerald-600">{{ formatHours(p.billableMinutes) }}</span>
                       </div>
                     </div>
@@ -224,11 +227,11 @@ interface PeriodPreset {
                 <table class="w-full text-left text-sm">
                   <thead class="border-b border-border bg-app/50 text-xs font-semibold uppercase tracking-wider text-muted">
                     <tr>
-                      <th scope="col" class="px-5 py-3.5 whitespace-nowrap">Projet</th>
-                      <th scope="col" class="px-4 py-3.5 whitespace-nowrap">Référence</th>
-                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">Total saisi</th>
-                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">Facturable</th>
-                      <th scope="col" class="px-5 py-3.5 whitespace-nowrap min-w-[12rem]">Part du temps</th>
+                      <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'activities.PROJECT' | translate }}</th>
+                      <th scope="col" class="px-4 py-3.5 whitespace-nowrap">{{ 'analytics.refCol' | translate }}</th>
+                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">{{ 'analytics.totalSaisi' | translate }}</th>
+                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">{{ 'timesheets.sidePanel.billableBadge' | translate }}</th>
+                      <th scope="col" class="px-5 py-3.5 whitespace-nowrap min-w-[12rem]">{{ 'analytics.shareOfTime' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-border">
@@ -267,12 +270,12 @@ interface PeriodPreset {
         @if (activeTab() === 'team' && canViewTeam()) {
           <section class="rounded-xl border border-border bg-surface shadow-2xs overflow-hidden">
             <div class="border-b border-border p-4 sm:p-5">
-              <h2 class="text-base font-semibold text-ink">Bilan individuel de l'équipe</h2>
-              <p class="text-xs text-muted mt-0.5">Taux d'activité et volume horaire par collaborateur.</p>
+              <h2 class="text-base font-semibold text-ink">{{ 'analytics.teamBreakdownTitle' | translate }}</h2>
+              <p class="text-xs text-muted mt-0.5">{{ 'analytics.teamBreakdownSub' | translate }}</p>
             </div>
 
             @if (data.usersBreakdown.length === 0) {
-              <p class="p-8 text-center text-sm text-muted">Aucune donnée trouvée pour les membres de l'équipe sur cette période.</p>
+              <p class="p-8 text-center text-sm text-muted">{{ 'analytics.noTeamData' | translate }}</p>
             } @else {
               <!-- Mobile view (< md) : cartes tactiles -->
               <div class="space-y-3 p-4 md:hidden">
@@ -281,28 +284,28 @@ interface PeriodPreset {
                     <div class="flex items-start justify-between gap-2">
                       <tf-avatar [name]="u.displayName" [subtext]="u.email" size="md" />
                       <tf-status-badge [variant]="taceBadgeVariant(u.activityRate)">
-                        {{ u.activityRate }} % TACE
+                        {{ i18n.formatNumber(u.activityRate) }} % {{ 'analytics.rateShort' | translate }}
                       </tf-status-badge>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
                       <div>
-                        <span class="text-muted block text-[11px]">Régime horaire</span>
+                        <span class="text-muted block text-[11px]">{{ 'users.colSchedule' | translate }}</span>
                         <span class="font-medium text-ink mt-0.5 block truncate">{{ u.workScheduleName }}</span>
                       </div>
                       <div>
-                        <span class="text-muted block text-[11px]">Heures sup (OT)</span>
+                        <span class="text-muted block text-[11px]">{{ 'analytics.overtimeOt' | translate }}</span>
                         <span class="font-semibold text-amber-600 mt-0.5 block">{{ formatHours(u.overtimeMinutes) }}</span>
                       </div>
                     </div>
 
                     <div class="flex items-center justify-between text-xs pt-1 border-t border-border/50">
                       <div>
-                        <span class="text-muted block text-[11px]">Total saisi</span>
+                        <span class="text-muted block text-[11px]">{{ 'analytics.totalSaisi' | translate }}</span>
                         <span class="font-bold text-ink">{{ formatHours(u.totalMinutes) }}</span>
                       </div>
                       <div class="text-right">
-                        <span class="text-muted block text-[11px]">Facturable client</span>
+                        <span class="text-muted block text-[11px]">{{ 'analytics.billableClient' | translate }}</span>
                         <span class="font-bold text-emerald-600">{{ formatHours(u.billableMinutes) }}</span>
                       </div>
                     </div>
@@ -315,12 +318,12 @@ interface PeriodPreset {
                 <table class="w-full text-left text-sm">
                   <thead class="border-b border-border bg-app/50 text-xs font-semibold uppercase tracking-wider text-muted">
                     <tr>
-                      <th scope="col" class="px-5 py-3.5 whitespace-nowrap">Collaborateur</th>
-                      <th scope="col" class="px-4 py-3.5 whitespace-nowrap">Régime</th>
-                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">Total saisi</th>
-                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">Facturable</th>
-                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">Heures sup (OT)</th>
-                      <th scope="col" class="px-5 py-3.5 text-right whitespace-nowrap">TACE (%)</th>
+                      <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'users.colCollaborator' | translate }}</th>
+                      <th scope="col" class="px-4 py-3.5 whitespace-nowrap">{{ 'workSchedules.overtime.colRegime' | translate }}</th>
+                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">{{ 'analytics.totalSaisi' | translate }}</th>
+                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">{{ 'timesheets.sidePanel.billableBadge' | translate }}</th>
+                      <th scope="col" class="px-4 py-3.5 text-right whitespace-nowrap">{{ 'analytics.overtimeOt' | translate }}</th>
+                      <th scope="col" class="px-5 py-3.5 text-right whitespace-nowrap">{{ 'analytics.taceCol' | translate }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-border">
@@ -343,7 +346,7 @@ interface PeriodPreset {
                         </td>
                         <td class="px-5 py-3.5 text-right whitespace-nowrap">
                           <tf-status-badge [variant]="taceBadgeVariant(u.activityRate)">
-                            {{ u.activityRate }} %
+                            {{ i18n.formatNumber(u.activityRate) }} %
                           </tf-status-badge>
                         </td>
                       </tr>
@@ -363,14 +366,20 @@ export class AnalyticsPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly periodPresets: PeriodPreset[] = [
-    { key: '2026-10', label: 'Octobre 2026' },
-    { key: '2026-09', label: 'Septembre 2026' },
-    { key: '2026-Q4', label: '4e Trimestre 2026' },
-    { key: '2026', label: 'Année 2026' }
-  ];
+  readonly i18n = inject(I18nService);
+
+  readonly periodPresets = computed<PeriodPreset[]>(() => {
+    const monthLabel = (month: number) => new Intl.DateTimeFormat(this.i18n.locale(), { month: 'long', year: 'numeric' }).format(new Date(2026, month, 1));
+    return [
+      { key: '2026-10', label: monthLabel(9) },
+      { key: '2026-09', label: monthLabel(8) },
+      { key: '2026-Q4', label: this.i18n.t('analytics.quarter', { quarter: 4, year: 2026 }) },
+      { key: '2026', label: this.i18n.t('analytics.year', { year: 2026 }) }
+    ];
+  });
 
   readonly selectedPeriod = signal('2026-10');
+  readonly periodLabel = computed(() => this.periodPresets().find(p => p.key === this.selectedPeriod())?.label ?? this.selectedPeriod());
   readonly overview = signal<AnalyticsOverview | null>(null);
   readonly loading = signal(true);
   readonly error = signal(false);

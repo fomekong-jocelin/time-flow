@@ -6,6 +6,13 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Internationalisation FR/EN et thèmes clair/sombre/système (TICKET-0014) :
+  - Service i18n Angular réactif avec Signals, détection navigateur, persistance `timeflow-lang`, interpolation sûre et pipe `translate` standalone.
+  - Dictionnaires FR/EN complets pour le shell, l’authentification, les CRA, la validation, les analyses, les utilisateurs, les projets, les régimes horaires et les jours fériés.
+  - Traduction dynamique des notifications, erreurs codées backend, statuts, dates, nombres, libellés d’activités et calendriers sans rechargement.
+  - Thème `light` / `dark` / `system` persistant dans `timeflow-theme`, écoute de `prefers-color-scheme`, amorçage anti-FOUC et contrôles accessibles dans le shell et la connexion.
+  - Tests Node de cohérence des dictionnaires, interpolation, persistance, changements système, bootstrap, templates et formats localisés.
+
 - Tableau de bord d'Analyses & Reporting (KPI, TACE, OT, Projets, Équipe) (TICKET-0007) :
   - Métriques de rentabilité et performance opérationnelle : calcul du TACE (Taux d'Activité Congés Exclus / Taux de Facturabilité), heures facturables, heures internes/support et suivi consolidé des heures supplémentaires (OT).
   - Répartition dynamique par projet avec part relative (%) et par collaborateur (temps total, facturable, OT et TACE individuel).

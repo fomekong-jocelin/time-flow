@@ -9,7 +9,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs transition hover:border-brand-300">
+    <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs transition hover:border-brand-300 dark:hover:border-brand-600">
       <p class="text-xs font-medium uppercase tracking-wider text-muted">{{ label() }}</p>
       <p class="mt-1 text-2xl font-bold tracking-tight" [class]="valueColorClass()">
         {{ value() }}
@@ -28,10 +28,10 @@ export class KpiCardComponent {
 
   protected readonly valueColorClass = computed(() => {
     switch (this.variant()) {
-      case 'brand': return 'text-brand-600';
-      case 'success': return 'text-emerald-600';
-      case 'warning': return 'text-amber-600';
-      case 'danger': return 'text-rose-600';
+      case 'brand': return 'text-brand-600 dark:text-brand-400';
+      case 'success': return 'text-emerald-600 dark:text-emerald-400';
+      case 'warning': return 'text-amber-600 dark:text-amber-400';
+      case 'danger': return 'text-rose-600 dark:text-rose-400';
       default: return 'text-ink';
     }
   });
