@@ -4,6 +4,8 @@ import cm.indyli.timeflow.auth.domain.UserRole;
 import cm.indyli.timeflow.auth.persistence.AppUserEntity;
 import cm.indyli.timeflow.auth.persistence.AppUserRepository;
 import cm.indyli.timeflow.auth.security.TimeFlowPrincipal;
+import cm.indyli.timeflow.projects.infrastructure.ProjectStore;
+import cm.indyli.timeflow.timesheet.domain.TimesheetPolicy;
 import cm.indyli.timeflow.timesheet.domain.TimesheetStatus;
 import cm.indyli.timeflow.timesheet.domain.TimesheetValidationException;
 import cm.indyli.timeflow.timesheet.domain.ValidationPolicy;
@@ -16,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,15 +30,18 @@ public class TimesheetValidationService {
     private final TimesheetValidationRepository validationRepository;
     private final AppUserRepository userRepository;
     private final TimesheetService timesheetService;
+    private final ProjectStore projectStore;
 
     public TimesheetValidationService(TimesheetRepository timesheetRepository,
                                       TimesheetValidationRepository validationRepository,
                                       AppUserRepository userRepository,
-                                      TimesheetService timesheetService) {
+                                      TimesheetService timesheetService,
+                                      ProjectStore projectStore) {
         this.timesheetRepository = timesheetRepository;
         this.validationRepository = validationRepository;
         this.userRepository = userRepository;
         this.timesheetService = timesheetService;
+        this.projectStore = projectStore;
     }
 
     @Transactional(readOnly = true)
@@ -80,6 +86,27 @@ public class TimesheetValidationService {
                     .distinct()
                     .count();
 
+            boolean selfTimesheet = principal.userId().equals(sheet.getUserId());
+            int weeklyTargetMinutes = user != null ? user.getWeeklyTargetMinutes() : AppUserEntity.DEFAULT_WEEKLY_TARGET_MINUTES;
+
+            List<String> projectNames = sheet.getEntries().stream()
+                    .map(TimeEntryEntity::getProjectId)
+                    .distinct()
+                    .map(pid -> projectStore.findById(pid).map(ProjectStore.ProjectView::name).orElse("Projet"))
+                    .toList();
+
+            Map<LocalDate, Integer> dailySums = new HashMap<>();
+            boolean hasWeekendWork = false;
+            for (var entry : sheet.getEntries()) {
+                dailySums.merge(entry.getEntryDate(), entry.getMinutes(), Integer::sum);
+                var dow = entry.getEntryDate().getDayOfWeek();
+                if ((dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY) && entry.getMinutes() > 0) {
+                    hasWeekendWork = true;
+                }
+            }
+            boolean hasExcessiveDay = dailySums.values().stream().anyMatch(m -> m > TimesheetPolicy.STATUTORY_MAX_DAILY_MINUTES);
+            boolean complianceAlert = totalMinutes > TimesheetPolicy.STATUTORY_MAX_WEEKLY_MINUTES || hasExcessiveDay || hasWeekendWork;
+
             summaries.add(new PendingTimesheetSummary(
                     sheet.getId(),
                     sheet.getUserId(),
@@ -91,7 +118,11 @@ public class TimesheetValidationService {
                     sheet.getSubmittedAt(),
                     totalMinutes,
                     billableMinutes,
-                    (int) distinctLines
+                    (int) distinctLines,
+                    selfTimesheet,
+                    projectNames,
+                    weeklyTargetMinutes,
+                    complianceAlert
             ));
         }
 

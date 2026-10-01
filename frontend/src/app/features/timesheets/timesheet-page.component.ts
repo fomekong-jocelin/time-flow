@@ -147,6 +147,16 @@ interface RowViewModel {
         </div>
       }
 
+      @if (totalHours() > 48) {
+        <div class="rounded-ui border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-600 flex items-start gap-2.5">
+          <tf-icon name="alert" [size]="18" class="text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <span class="font-semibold text-amber-500">Avertissement de conformité légale (Code du travail) :</span>
+            Votre saisie totalise <strong>{{ formatHours(totalHours()) }}</strong>, ce qui dépasse la durée légale maximale hebdomadaire de 48 heures (Art. L. 3121-20). Veuillez vérifier votre saisie ou justifier les heures exceptionnelles.
+          </div>
+        </div>
+      }
+
       @if (!isEditable() && status() !== 'REJECTED') {
         <div class="rounded-ui border border-border bg-surface p-3 text-xs text-muted flex items-center gap-2">
           <tf-icon name="lock" [size]="16" />
@@ -278,7 +288,7 @@ interface RowViewModel {
                                   type="number"
                                   step="0.5"
                                   min="0"
-                                  max="24"
+                                  max="12"
                                   [ngModel]="row.hoursByDate[day.isoDate] || 0"
                                   (ngModelChange)="onHourChange(row, day.isoDate, $event)"
                                   [attr.aria-label]="row.projectName + ' ' + day.label"

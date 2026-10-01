@@ -4,6 +4,7 @@ import cm.indyli.timeflow.timesheet.domain.TimesheetStatus;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record PendingTimesheetSummary(
@@ -17,6 +18,10 @@ public record PendingTimesheetSummary(
         OffsetDateTime submittedAt,
         int totalMinutes,
         int billableMinutes,
-        int linesCount
+        int linesCount,
+        boolean selfTimesheet,
+        List<String> projectNames,
+        int weeklyTargetMinutes,
+        boolean complianceAlert
 ) {
 }

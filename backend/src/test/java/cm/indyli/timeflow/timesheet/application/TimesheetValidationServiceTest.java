@@ -41,6 +41,8 @@ class TimesheetValidationServiceTest {
     private AppUserRepository userRepository;
     @Mock
     private TimesheetService timesheetService;
+    @Mock
+    private cm.indyli.timeflow.projects.infrastructure.ProjectStore projectStore;
 
     private TimesheetValidationService service;
 
@@ -57,7 +59,7 @@ class TimesheetValidationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TimesheetValidationService(timesheetRepository, validationRepository, userRepository, timesheetService);
+        service = new TimesheetValidationService(timesheetRepository, validationRepository, userRepository, timesheetService, projectStore);
     }
 
     @Test
