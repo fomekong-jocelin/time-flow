@@ -5,7 +5,7 @@
 | Champ | Valeur |
 |---|---|
 | Dernière mise à jour | 2026-10-01 |
-| Phase | Feuilles de temps / CRA (API & IHM) |
+| Phase | Validation manager des feuilles de temps (TICKET-0005) |
 | État | IN_PROGRESS |
 | Cible V1 | Sync projets Azure DevOps + saisie hebdomadaire + validation + reporting de base |
 | Risque actuel | Parcours SSO à valider avec une App Registration Microsoft Entra réelle |
@@ -17,8 +17,8 @@
 | TICKET-0001 | PR #6 | Bootstrap architecture + gouvernance | DONE | P0 |
 | TICKET-0002 | #1 (PR #8) | Authentification hybride et rôles | DONE | P0 |
 | TICKET-0003 | #2 (PR #9) | Catalogue projets + Azure DevOps + import/export Excel | DONE | P0 |
-| TICKET-0004 | #3 + #4 | Feuille de temps / CRA API + UI (64 tests backend OK, build Angular OK) | REVIEW | P0 |
-| TICKET-0005 | #5 | Validation manager | TODO | P0 |
+| TICKET-0004 | #3 + #4 (PR #11) | Feuille de temps / CRA API + UI | DONE | P0 |
+| TICKET-0005 | #5 | Validation manager | REVIEW | P0 |
 | TICKET-0006 | à créer | Formations | TODO | P1 |
 | TICKET-0007 | à créer | Dashboard / reporting | TODO | P1 |
 | TICKET-0008 | à créer | Exports / préparation facturation | TODO | P1 |

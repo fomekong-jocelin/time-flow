@@ -10,12 +10,15 @@ interface NavItem {
   icon: IconName;
   /** Route disponible ; absent = écran pas encore livré. */
   path?: string;
-  /** Rôle requis pour afficher l'entrée (l'autorisation reste appliquée par le backend). */
+  /** Rôle unique requis pour afficher l'entrée. */
   role?: CurrentUser['role'];
+  /** Plusieurs rôles autorisés pour afficher l'entrée. */
+  roles?: readonly CurrentUser['role'][];
 }
 
 const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Mes temps', icon: 'clock', path: '/mes-temps' },
+  { label: 'Validation', icon: 'check', path: '/validation', roles: ['MANAGER', 'DIRECTION', 'ADMIN'] },
   { label: 'Projets', icon: 'folder', path: '/projets' },
   { label: 'Formations', icon: 'graduation' },
   { label: 'Analyses', icon: 'analytics' },
@@ -111,8 +114,14 @@ export class AppShellComponent {
   private readonly router = inject(Router);
 
   readonly user = this.auth.currentUser;
-  protected readonly navItems = computed(() =>
-    NAV_ITEMS.filter(item => !item.role || item.role === this.user()?.role));
+  protected readonly navItems = computed(() => {
+    const userRole = this.user()?.role;
+    return NAV_ITEMS.filter(item => {
+      if (item.roles) return userRole ? item.roles.includes(userRole) : false;
+      if (item.role) return userRole ? item.role === userRole : false;
+      return true;
+    });
+  });
   readonly loggingOut = signal(false);
   readonly roleLabel = computed(() => {
     const user = this.user();
