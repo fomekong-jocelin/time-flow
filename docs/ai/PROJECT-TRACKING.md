@@ -5,7 +5,7 @@
 | Champ | Valeur |
 |---|---|
 | Dernière mise à jour | 2026-10-01 |
-| Phase | Préparation de la facturation & exports de contrôle (TICKET-0008) |
+| Phase | Module Formations : Catalogue, planification des sessions, formateurs et participants (TICKET-0006) |
 | État | DONE |
 | Cible V1 | Sync projets Azure DevOps + saisie hebdomadaire + validation + reporting de base |
 | Risque actuel | Parcours SSO à valider avec une App Registration Microsoft Entra réelle |
@@ -19,7 +19,7 @@
 | TICKET-0003 | #2 (PR #9) | Catalogue projets + Azure DevOps + import/export Excel | DONE | P0 |
 | TICKET-0004 | #3 + #4 (PR #11) | Feuille de temps / CRA API + UI | DONE | P0 |
 | TICKET-0005 | #5 (PR #12) | Validation manager | DONE | P0 |
-| TICKET-0006 | à créer | Formations | TODO | P1 |
+| TICKET-0006 | à créer | Formations | DONE | P1 |
 | TICKET-0007 | à créer | Dashboard / reporting (KPI, TACE, OT, Projets, Équipe) | DONE | P1 |
 | TICKET-0008 | à créer | Exports / préparation facturation (avec masquage financier TJM/prix) | DONE | P1 |
 | TICKET-0009 | PR #8 | Application de la charte visuelle v0.1 | DONE | P1 |
@@ -48,6 +48,11 @@
   - TJM de référence collaborateur (`app_user.daily_rate`) administrable dans `/admin/utilisateurs`.
   - Suivi budgétaire en temps réel sur la page de facturation (jauge de consommation jours et montants) et dans les exports Excel/CSV avec la devise réelle du projet.
   - Masquage financier backend absolu : `COLLABORATOR` et `MANAGER` ne reçoivent jamais de TJM ni de prix projet (`null`).
+- Module Formations (TICKET-0006) :
+  - Tables `training_session` et `training_participant` via migration Flyway `V9__training_sessions.sql`.
+  - Typologies de formation (Interne / Client), modalités (Présentiel, Distanciel, Hybride), planification avec statut (Planifiée, En cours, Terminée, Annulée).
+  - Contrôle d'accès RBAC : Admin et Direction pilotent le catalogue, créent, éditent et suppriment les sessions. Les formateurs (`TRAINER`) accèdent à leurs sessions et mettent à jour les présences (`ATTENDED`, `CANCELLED`). Les collaborateurs et managers consultent le catalogue et gèrent leurs inscriptions / désinscriptions.
+  - Interface Angular sous `/formations` avec tableau de bord KPI, filtres multi-critères, catalogue en grille de cartes responsives, jauges d'inscriptions et modales dédiées.
 
 ## Décisions produit encore ouvertes
 

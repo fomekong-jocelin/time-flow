@@ -20,6 +20,7 @@ export const routes: Routes = [
       { path: 'admin/configuration-temps', canActivate: [adminOrDirectionGuard], loadComponent: () => import('./features/work-schedules/work-schedules-page.component').then(m => m.WorkSchedulesPageComponent), title: 'Configuration temps · TimeFlow' },
       { path: 'admin/utilisateurs', canActivate: [adminGuard], loadComponent: () => import('./features/users/users-page.component').then(m => m.UsersPageComponent), title: 'Utilisateurs · TimeFlow' },
       { path: 'projets', loadComponent: () => import('./features/projects/projects-page.component').then(m => m.ProjectsPageComponent), title: 'Projets · TimeFlow' },
+      { path: 'formations', loadComponent: () => import('./features/training/training-page.component').then(m => m.TrainingPageComponent), title: 'Formations · TimeFlow' },
       { path: 'analyses', loadComponent: () => import('./features/analytics/analytics-page.component').then(m => m.AnalyticsPageComponent), title: 'Analyses · TimeFlow' }
     ]
   },

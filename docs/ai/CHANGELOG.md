@@ -6,6 +6,27 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Module Formations : Catalogue, planification des sessions, formateurs et participants (TICKET-0006) :
+  - **Modèle de données & Migration Flyway** :
+    - Migration `V9__training_sessions.sql` créant les tables `training_session` et `training_participant` avec contraintes d'intégrité, index de performance sur statuts et dates, et données d'amorçage réalistes.
+  - **Backend Domain, Application & API REST (`/api/v1/trainings`)** :
+    - Enums : `DeliveryMode` (`REMOTE`, `ON_SITE`, `HYBRID`), `TrainingCategory` (`INTERNAL`, `CLIENT`), `TrainingStatus` (`PLANNED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`), `ParticipantStatus` (`REGISTERED`, `ATTENDED`, `CANCELLED`).
+    - Entités JPA et repositories : `TrainingSessionEntity`, `TrainingParticipantEntity`, `TrainingSessionRepository`, `TrainingParticipantRepository`.
+    - Service métier `TrainingService` avec calcul dynamique des KPI (`TrainingKpiDto`), validation des règles temporelles (`endDate > startDate`, capacité > 0) et gestion d'erreurs dédiée (`TrainingExceptionHandler`).
+    - Contrôle d'accès RBAC deny-by-default : `ADMIN` et `DIRECTION` créent, modifient et suppriment les sessions ; `TRAINER` accède à ses sessions et gère la feuille de présence ; `COLLABORATOR` et `MANAGER` s'auto-inscrivent ou se désinscrivent.
+  - **Interface utilisateur Angular (`/formations`)** :
+    - Activation de la route `/formations` dans `app.routes.ts` et remplacement du badge « Bientôt » par le lien actif dans `app-shell.component.ts`.
+    - Dashboard avec 6 cartes KPI (Sessions totales, planifiées, en cours, terminées, heures planifiées, inscriptions).
+    - Barre de recherche et filtres multi-critères (statut, modalité, catégorie, filtre "Mes formations").
+    - Grille de cartes responsives avec badges de statut, détails pratiques, avatar du formateur référent, jauge de remplissage dynamique et boutons d'action adaptés au profil.
+    - Modale de création / édition de session (`tf-training-form`) avec sélection du formateur et validation des dates.
+    - Modale de gestion des participants (`tf-training-participants-modal`) avec inscription manuelle et pointage de présence en direct (`ATTENDED`, `CANCELLED`).
+  - **Qualité & Tests automatisés** :
+    - Tests de sécurité backend (`TrainingSecurityTest`, 6 tests) et tests de service (`TrainingServiceTest`, 8 tests).
+    - Tests unitaires frontend (`training.test.mjs`, tests CRUD, KPI, participants avec CSRF).
+    - Dictionnaires i18n FR/EN complets avec 0 texte en dur validé par `tests/i18n.test.mjs`.
+    - 154 tests backend et 15 tests frontend réussis, compilation AOT avec 0 avertissement.
+
 - Configuration du budget projet (jours globaux, prix/forfait), TJM et devises configurables (€, $, XAF...) (TICKET-0017) :
   - **Modèle de données & Migration Flyway** :
     - Migration `V8__project_budget_currency.sql` ajoutant `budget_days NUMERIC(10,2)`, `total_price NUMERIC(12,2)` et `currency VARCHAR(10) NOT NULL DEFAULT 'EUR'` sur la table `project`.

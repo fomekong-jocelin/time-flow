@@ -149,7 +149,7 @@ test('FR/EN keys and interpolation parameters match and all literal translation 
   function walk(dir) { return readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]); }
   for (const file of walk('src/app').filter(f => /\.(ts|html)$/.test(f) && !/[\\/]core[\\/]i18n[\\/]/.test(f))) {
     const source = readFileSync(file, 'utf8');
-    for (const match of source.matchAll(/['"]((?:nav|roles|common|theme|lang|auth|timesheets|validation|analytics|billing|users|workSchedules|projects|messages|activities|statuses|errors)\.[\w.]+)['"]/g)) {
+    for (const match of source.matchAll(/['"]((?:nav|roles|common|theme|lang|auth|timesheets|validation|analytics|billing|users|workSchedules|projects|training|messages|activities|statuses|errors)\.[\w.]+)['"]/g)) {
       assert.ok(fr[match[1]], `${file}: missing ${match[1]}`);
     }
   }

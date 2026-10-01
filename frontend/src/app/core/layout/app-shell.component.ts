@@ -21,7 +21,7 @@ const NAV_ITEM_DEFS: readonly NavItemDef[] = [
   { key: 'nav.validation', icon: 'check', path: '/validation', roles: ['MANAGER', 'DIRECTION', 'ADMIN'] },
   { key: 'nav.billing', icon: 'receipt', path: '/facturation', roles: ['MANAGER', 'DIRECTION', 'ADMIN'] },
   { key: 'nav.projects', icon: 'folder', path: '/projets' },
-  { key: 'nav.training', icon: 'graduation' },
+  { key: 'nav.training', icon: 'graduation', path: '/formations' },
   { key: 'nav.analytics', icon: 'analytics', path: '/analyses' },
   { key: 'nav.workSchedules', icon: 'sliders', path: '/admin/configuration-temps', roles: ['ADMIN', 'DIRECTION'] },
   { key: 'nav.users', icon: 'users', path: '/admin/utilisateurs', role: 'ADMIN' }
