@@ -286,7 +286,14 @@ export const FR = {
     "taceCol": "TACE (%)",
     "quarter": "{quarter}e trimestre {year}",
     "year": "Année {year}",
-    "rateShort": "TACE"
+    "rateShort": "TACE",
+    "hoursTrend": "Tendance des heures — {period}",
+    "hoursTrendDaily": "Heures saisies au quotidien (total : {total})",
+    "hoursTrendMonthly": "Heures saisies par mois (total : {total})",
+    "billableVsNonBillable": "Facturable vs Non facturable",
+    "billableHours": "Heures facturables",
+    "nonBillableHours": "Heures non facturables",
+    "dayHourTooltip": "{date} : {hours} ({billable} facturables)"
   },
   "users": {
     "title": "Gestion des utilisateurs",

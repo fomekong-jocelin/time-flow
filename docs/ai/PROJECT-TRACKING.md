@@ -5,7 +5,7 @@
 | Champ | Valeur |
 |---|---|
 | Dernière mise à jour | 2026-10-01 |
-| Phase | Internationalisation FR/EN & thèmes (TICKET-0014) |
+| Phase | Refonte du rendu Analytics épuré (TICKET-0015) |
 | État | DONE |
 | Cible V1 | Sync projets Azure DevOps + saisie hebdomadaire + validation + reporting de base |
 | Risque actuel | Parcours SSO à valider avec une App Registration Microsoft Entra réelle |
@@ -28,6 +28,7 @@
 | TICKET-0012 | à créer | Refonte mobile responsive, zéro coupure texte, Jours Fériés et OT/ET (Overtime & Extra Time) | DONE | P0 |
 | TICKET-0013 | à créer | Composants UI réutilisables, optimisation de l'espace et refonte mobile des tableaux | DONE | P0 |
 | TICKET-0014 | à créer | Thème Clair / Sombre (Light/Dark/System) & Internationalisation (i18n FR/EN) | DONE | P0 |
+| TICKET-0015 | à créer | Refonte du rendu Analytics épuré (Donut SVG, Tendance des heures, KPI visuels, mise en page sans redondance) | DONE | P0 |
 
 ## Décisions actées
 

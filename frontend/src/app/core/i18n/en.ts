@@ -289,7 +289,14 @@ export const EN: TranslationShape<typeof FR> = {
     "taceCol": "TACE (%)",
     "quarter": "Q{quarter} {year}",
     "year": "Year {year}",
-    "rateShort": "Billability"
+    "rateShort": "Billability",
+    "hoursTrend": "Hours Trend — {period}",
+    "hoursTrendDaily": "Daily logged hours (total: {total})",
+    "hoursTrendMonthly": "Monthly logged hours (total: {total})",
+    "billableVsNonBillable": "Billable vs Non-Billable Hours",
+    "billableHours": "Billable hours",
+    "nonBillableHours": "Non-billable hours",
+    "dayHourTooltip": "{date}: {hours} ({billable} billable)"
   },
   "users": {
     "title": "User Management",

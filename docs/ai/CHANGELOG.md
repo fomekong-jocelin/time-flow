@@ -6,6 +6,15 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Refonte du rendu Analytics & Reporting (Donut SVG, Tendance des heures, KPI visuels, mise en page épurée sans redondance) (TICKET-0015) :
+  - Restitution visuelle moderne et épurée inspirée du design dashboard sombre (Linear/modern BI style) sans les doublons de graphiques.
+  - Cartes KPI enrichies avec icônes distinctives en conteneurs arrondis (`%` pour le TACE, Document pour le facturable, Chapeau universitaire pour l'interne/formation, Horloge pour les OT) et sous-titres contextuels détaillés.
+  - Graphique Donut SVG réactif pour la répartition globale des activités (`Overall Work Time Distribution`), avec affichage central du volume total et du taux de rentabilité, légende interactive et intégration de la synthèse Facturable vs Non-facturable sans second donut redondant.
+  - Histogramme SVG dynamique de la tendance des heures (`Hours Trend`) avec graduation verticale en heures (0h-8h+), lignes repères en pointillés, barres quotidiennes avec coins arrondis, infobulles détaillées au survol et repères temporels lisibles (Oct 1, Oct 5, Oct 10...).
+  - Calcul et agrégation backend de la tendance journalière `DailyTrendItem` dans `AnalyticsService` pour garantir que le backend demeure le maître des règles métier et des données.
+  - Consommation par projet unifiée et non redondante avec barres de progression proportionnelles, références, heures facturables et préservation du bilan collaborateur pour les managers.
+  - Support bilingue FR/EN intégral et adaptation réactive fluide aux thèmes clair et sombre.
+
 - Internationalisation FR/EN et thèmes clair/sombre/système (TICKET-0014) :
   - Service i18n Angular réactif avec Signals, détection navigateur, persistance `timeflow-lang`, interpolation sûre et pipe `translate` standalone.
   - Dictionnaires FR/EN complets pour le shell, l’authentification, les CRA, la validation, les analyses, les utilisateurs, les projets, les régimes horaires et les jours fériés.

@@ -81,6 +81,7 @@ public class AnalyticsService {
         Map<String, Integer> activityMinutes = new HashMap<>();
         Map<UUID, UserAccumulator> userAcc = new HashMap<>();
         Map<String, MonthlyAccumulator> monthAcc = new TreeMap<>();
+        Map<LocalDate, DailyAccumulator> dayAcc = new HashMap<>();
 
         for (var sheet : sheets) {
             UUID sheetUserId = sheet.getUserId();
@@ -126,6 +127,9 @@ public class AnalyticsService {
                 String monthKey = date.format(DateTimeFormatter.ofPattern("yyyy-MM"));
                 var mAcc = monthAcc.computeIfAbsent(monthKey, MonthlyAccumulator::new);
                 mAcc.add(mins, entry.isBillable());
+
+                var dAcc = dayAcc.computeIfAbsent(date, DailyAccumulator::new);
+                dAcc.add(mins, entry.isBillable());
             }
 
             if (sheetPeriodMinutes > weeklyTarget) {
@@ -189,6 +193,20 @@ public class AnalyticsService {
                 })
                 .toList();
 
+        List<DailyTrendItem> dailyTrend = new ArrayList<>();
+        long daysSpan = java.time.temporal.ChronoUnit.DAYS.between(period.startDate(), period.endDate()) + 1;
+        if (daysSpan <= 62) {
+            LocalDate cursor = period.startDate();
+            DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("d MMM", Locale.FRENCH);
+            while (!cursor.isAfter(period.endDate())) {
+                DailyAccumulator d = dayAcc.get(cursor);
+                int dayTotal = d != null ? d.totalMinutes : 0;
+                int dayBillable = d != null ? d.billableMinutes : 0;
+                dailyTrend.add(new DailyTrendItem(cursor, cursor.format(dayFmt), cursor.getDayOfMonth(), dayTotal, dayBillable));
+                cursor = cursor.plusDays(1);
+            }
+        }
+
         return new AnalyticsOverview(
                 period.rawPeriod(),
                 period.label(),
@@ -205,7 +223,8 @@ public class AnalyticsService {
                 projectsBreakdown,
                 activitiesBreakdown,
                 usersBreakdown,
-                monthlyTrend
+                monthlyTrend,
+                dailyTrend
         );
     }
 
@@ -247,7 +266,7 @@ public class AnalyticsService {
                 period.startDate(),
                 period.endDate(),
                 0, 0, 0, 0, 0, 0.0, 0, 0,
-                List.of(), List.of(), List.of(), List.of()
+                List.of(), List.of(), List.of(), List.of(), List.of()
         );
     }
 
@@ -301,6 +320,18 @@ public class AnalyticsService {
         int billableMinutes = 0;
 
         MonthlyAccumulator(String month) { this.month = month; }
+        void add(int mins, boolean billable) {
+            totalMinutes += mins;
+            if (billable) billableMinutes += mins;
+        }
+    }
+
+    private static class DailyAccumulator {
+        final LocalDate date;
+        int totalMinutes = 0;
+        int billableMinutes = 0;
+
+        DailyAccumulator(LocalDate date) { this.date = date; }
         void add(int mins, boolean billable) {
             totalMinutes += mins;
             if (billable) billableMinutes += mins;
