@@ -9,6 +9,13 @@ export interface ProjectBillingItem {
   dailyRate?: number | null;
   totalAmount?: number | null;
   contributorsCount: number;
+  currency: string;
+  budgetDays?: number | null;
+  totalPrice?: number | null;
+  remainingDays?: number | null;
+  progressDaysPercent?: number | null;
+  remainingAmount?: number | null;
+  progressAmountPercent?: number | null;
 }
 
 export interface UserBillingItem {
@@ -38,6 +45,7 @@ export interface BillingDetailItem {
   dailyRate?: number | null;
   totalAmount?: number | null;
   comment?: string | null;
+  currency?: string;
 }
 
 export interface BillingOverview {

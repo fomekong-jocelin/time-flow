@@ -54,7 +54,7 @@ class BillingExportServiceTest {
                 assertThat(header).doesNotContainIgnoringCase("Montant");
                 assertThat(header).doesNotContainIgnoringCase("Taux");
             }
-            assertThat(row0.getLastCellNum()).isEqualTo((short) 7);
+            assertThat(row0.getLastCellNum()).isEqualTo((short) 10);
 
             var sheet2 = workbook.getSheet("Synthèse Collaborateurs");
             assertThat(sheet2).isNotNull();
@@ -75,7 +75,7 @@ class BillingExportServiceTest {
                 assertThat(header).doesNotContainIgnoringCase("Montant");
                 assertThat(header).doesNotContainIgnoringCase("Taux");
             }
-            assertThat(row3.getLastCellNum()).isEqualTo((short) 8);
+            assertThat(row3.getLastCellNum()).isEqualTo((short) 9);
         }
     }
 
@@ -110,12 +110,12 @@ class BillingExportServiceTest {
         try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             var sheet1 = workbook.getSheet("Synthèse Projets");
             var row0 = sheet1.getRow(0);
-            assertThat(row0.getCell(7).getStringCellValue()).isEqualTo("TJM Projet (€)");
-            assertThat(row0.getCell(8).getStringCellValue()).isEqualTo("Montant Total HT (€)");
+            assertThat(row0.getCell(10).getStringCellValue()).isEqualTo("TJM Projet");
+            assertThat(row0.getCell(12).getStringCellValue()).isEqualTo("Montant Facturé HT");
 
             var dataRow1 = sheet1.getRow(1);
-            assertThat(dataRow1.getCell(7).getNumericCellValue()).isEqualTo(500.0);
-            assertThat(dataRow1.getCell(8).getNumericCellValue()).isEqualTo(2500.0);
+            assertThat(dataRow1.getCell(10).getNumericCellValue()).isEqualTo(500.0);
+            assertThat(dataRow1.getCell(12).getNumericCellValue()).isEqualTo(2500.0);
 
             var sheet2 = workbook.getSheet("Synthèse Collaborateurs");
             var row2 = sheet2.getRow(0);
@@ -124,8 +124,8 @@ class BillingExportServiceTest {
 
             var sheet3 = workbook.getSheet("Détail Imputations");
             var row3 = sheet3.getRow(0);
-            assertThat(row3.getCell(7).getStringCellValue()).isEqualTo("Taux Journalier (€)");
-            assertThat(row3.getCell(8).getStringCellValue()).isEqualTo("Montant HT (€)");
+            assertThat(row3.getCell(8).getStringCellValue()).isEqualTo("Taux Journalier");
+            assertThat(row3.getCell(9).getStringCellValue()).isEqualTo("Montant HT");
         }
     }
 
@@ -148,7 +148,7 @@ class BillingExportServiceTest {
 
         assertThat(csv).doesNotContain("TJM");
         assertThat(csv).doesNotContain("Montant HT");
-        assertThat(csv).contains("05/10/2026;Jean Dupont;Projet Alpha;PROJET;7,00;OUI;1,00;Commentaire test");
+        assertThat(csv).contains("05/10/2026;Jean Dupont;Projet Alpha;PROJET;7,00;OUI;1,00;EUR;Commentaire test");
     }
 
     @Test
@@ -168,7 +168,7 @@ class BillingExportServiceTest {
         byte[] csvBytes = exportService.generateCsv(overview, details);
         String csv = new String(csvBytes, StandardCharsets.UTF_8);
 
-        assertThat(csv).contains("TJM (€);Montant HT (€)");
+        assertThat(csv).contains("TJM;Montant HT");
         assertThat(csv).contains("600,00;600,00");
     }
 }

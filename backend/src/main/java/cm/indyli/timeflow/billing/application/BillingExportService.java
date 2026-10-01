@@ -37,11 +37,13 @@ public class BillingExportService {
             // --- Sheet 1: Synthèse Projets ---
             List<String> projectHeaders = new ArrayList<>(List.of(
                     "Réf", "Projet", "Client / Organisation", "Contributeurs",
-                    "Total Heures", "Heures Facturables", "Jours Facturés"
+                    "Total Heures", "Heures Facturables", "Jours Facturés", "Devise", "Budget Jours", "Reste Jours"
             ));
             if (financials) {
-                projectHeaders.add("TJM Projet (€)");
-                projectHeaders.add("Montant Total HT (€)");
+                projectHeaders.add("TJM Projet");
+                projectHeaders.add("Budget Total HT");
+                projectHeaders.add("Montant Facturé HT");
+                projectHeaders.add("Reste Budget HT");
             }
             var sheet1 = createStyledSheet(workbook, "Synthèse Projets", projectHeaders, headerStyle);
 
@@ -69,22 +71,32 @@ public class BillingExportService {
                 cBillD.setCellValue(p.billableDays());
                 cBillD.setCellStyle(decimalStyle);
 
+                row.createCell(col++, CellType.STRING).setCellValue(p.currency() != null ? p.currency() : "EUR");
+
+                var cBudgetD = row.createCell(col++, CellType.NUMERIC);
+                cBudgetD.setCellValue(p.budgetDays() != null ? p.budgetDays().doubleValue() : 0.0);
+                cBudgetD.setCellStyle(decimalStyle);
+
+                var cRemainD = row.createCell(col++, CellType.NUMERIC);
+                cRemainD.setCellValue(p.remainingDays() != null ? p.remainingDays() : 0.0);
+                cRemainD.setCellStyle(decimalStyle);
+
                 if (financials) {
                     var cRate = row.createCell(col++, CellType.NUMERIC);
-                    if (p.dailyRate() != null) {
-                        cRate.setCellValue(p.dailyRate().doubleValue());
-                        cRate.setCellStyle(currencyStyle);
-                    } else {
-                        cRate.setCellValue(0.0);
-                    }
+                    cRate.setCellValue(p.dailyRate() != null ? p.dailyRate().doubleValue() : 0.0);
+                    cRate.setCellStyle(currencyStyle);
+
+                    var cBudgetAmount = row.createCell(col++, CellType.NUMERIC);
+                    cBudgetAmount.setCellValue(p.totalPrice() != null ? p.totalPrice().doubleValue() : 0.0);
+                    cBudgetAmount.setCellStyle(currencyStyle);
 
                     var cAmount = row.createCell(col++, CellType.NUMERIC);
-                    if (p.totalAmount() != null) {
-                        cAmount.setCellValue(p.totalAmount().doubleValue());
-                        cAmount.setCellStyle(currencyStyle);
-                    } else {
-                        cAmount.setCellValue(0.0);
-                    }
+                    cAmount.setCellValue(p.totalAmount() != null ? p.totalAmount().doubleValue() : 0.0);
+                    cAmount.setCellStyle(currencyStyle);
+
+                    var cRemainAmount = row.createCell(col++, CellType.NUMERIC);
+                    cRemainAmount.setCellValue(p.remainingAmount() != null ? p.remainingAmount().doubleValue() : 0.0);
+                    cRemainAmount.setCellStyle(currencyStyle);
                 }
             }
             autoSizeColumns(sheet1, projectHeaders.size());
@@ -148,11 +160,11 @@ public class BillingExportService {
             // --- Sheet 3: Détail des Imputations ---
             List<String> detailHeaders = new ArrayList<>(List.of(
                     "Date", "Collaborateur", "Projet", "Activité",
-                    "Heures", "Facturable", "Jours Facturés"
+                    "Heures", "Facturable", "Jours Facturés", "Devise"
             ));
             if (financials) {
-                detailHeaders.add("Taux Journalier (€)");
-                detailHeaders.add("Montant HT (€)");
+                detailHeaders.add("Taux Journalier");
+                detailHeaders.add("Montant HT");
             }
             detailHeaders.add("Commentaire");
 
@@ -176,6 +188,8 @@ public class BillingExportService {
                 var cBillD = row.createCell(col++, CellType.NUMERIC);
                 cBillD.setCellValue(d.billableDays());
                 cBillD.setCellStyle(decimalStyle);
+
+                row.createCell(col++, CellType.STRING).setCellValue(d.currency() != null ? d.currency() : "EUR");
 
                 if (financials) {
                     var cRate = row.createCell(col++, CellType.NUMERIC);
@@ -214,9 +228,9 @@ public class BillingExportService {
         boolean financials = overview.canViewFinancials();
 
         // CSV Header
-        sb.append("Date;Collaborateur;Projet;Activité;Heures;Facturable;Jours facturés");
+        sb.append("Date;Collaborateur;Projet;Activité;Heures;Facturable;Jours facturés;Devise");
         if (financials) {
-            sb.append(";TJM (€);Montant HT (€)");
+            sb.append(";TJM;Montant HT");
         }
         sb.append(";Commentaire\n");
 
@@ -227,7 +241,8 @@ public class BillingExportService {
             sb.append(escapeCsv(d.activityType() != null ? d.activityType() : "")).append(';');
             sb.append(String.format(Locale.FRENCH, "%.2f", d.minutes() / 60.0)).append(';');
             sb.append(d.billable() ? "OUI" : "NON").append(';');
-            sb.append(String.format(Locale.FRENCH, "%.2f", d.billableDays()));
+            sb.append(String.format(Locale.FRENCH, "%.2f", d.billableDays())).append(';');
+            sb.append(d.currency() != null ? d.currency() : "EUR");
 
             if (financials) {
                 sb.append(';');

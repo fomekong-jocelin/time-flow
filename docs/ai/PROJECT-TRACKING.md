@@ -30,6 +30,7 @@
 | TICKET-0014 | à créer | Thème Clair / Sombre (Light/Dark/System) & Internationalisation (i18n FR/EN) | DONE | P0 |
 | TICKET-0015 | à créer | Refonte du rendu Analytics épuré (Donut SVG, Tendance des heures, KPI visuels, mise en page sans redondance) | DONE | P0 |
 | TICKET-0016 | à créer | Filtrage multi-critères (qui, projet, quand, sommes en temps réel) & réactivité mobile (Manager/Admin) | DONE | P0 |
+| TICKET-0017 | à créer | Configuration du budget projet (jours globaux, prix/forfait), TJM et devises configurables (€, $, XAF...) | DONE | P0 |
 
 ## Décisions actées
 
@@ -41,10 +42,15 @@
 - Charte visuelle v0.1 appliquée au frontend (TimeFlow by INDYLI, palette Indigo/Violet/Teal, Inter, Dark Mode).
 - Configuration dynamique des temps de travail (TICKET-0011) : profils configurables (jours ouvrés, volume hebdo/journalier, plafonds légaux, autorisation week-end), affectation aux collaborateurs et adaptation dynamique de la saisie CRA.
 - Préparation de la facturation & exports de contrôle (TICKET-0008) : conversion heures en jours facturés (base 420 min / 7h), agrégation par projet et par collaborateur, classeur Excel multi-onglets (Apache POI) et export CSV. Cloisonnement strict de la confidentialité financière (Backend maître) : TJM, TH, coûts et montants HT exposés uniquement pour DIRECTION et ADMIN ; strictement masqués et omis pour MANAGER et COLLABORATOR.
+- Pilotage budgétaire et multi-devises par projet (TICKET-0017) :
+  - Configuration de budget temps (`budget_days`), prix/forfait total (`total_price`), TJM négocié (`daily_rate`) et devise personnalisable (`currency`, ex: EUR, USD, XAF, GBP, CHF, CAD...).
+  - Création et modification de projets par les profils autorisés (`ADMIN`, `DIRECTION`) via IHM et API REST (`POST / PUT /api/v1/admin/projects`).
+  - TJM de référence collaborateur (`app_user.daily_rate`) administrable dans `/admin/utilisateurs`.
+  - Suivi budgétaire en temps réel sur la page de facturation (jauge de consommation jours et montants) et dans les exports Excel/CSV avec la devise réelle du projet.
+  - Masquage financier backend absolu : `COLLABORATOR` et `MANAGER` ne reçoivent jamais de TJM ni de prix projet (`null`).
 
 ## Décisions produit encore ouvertes
 
 - Projet seul ou Work Item Azure DevOps dès V1.
 - Règle de validation : manager, chef de projet ou double validation (hypothèse TICKET-0010 : manager direct `app_user.manager_id`).
-- Périodicité hebdomadaire uniquement ou mensuelle également.
-- Taux journalier et budget temps dans V1 ou V1.1.
+- Périodicité hebdomadaire uniquement ou mensuelle également.

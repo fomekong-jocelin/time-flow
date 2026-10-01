@@ -304,6 +304,7 @@ interface PeriodPreset {
                       <th class="px-4 py-3 text-right">{{ 'billing.colTotalHours' | translate }}</th>
                       <th class="px-4 py-3 text-right">{{ 'billing.colBillableHours' | translate }}</th>
                       <th class="px-4 py-3 text-right font-bold text-brand-600 dark:text-brand-400">{{ 'billing.colBillableDays' | translate }}</th>
+                      <th class="px-4 py-3">{{ 'billing.budgetTracking' | translate }}</th>
                       @if (canViewFinancials()) {
                         <th class="px-4 py-3 text-right">{{ 'billing.colDailyRate' | translate }}</th>
                         <th class="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{{ 'billing.colTotalAmount' | translate }}</th>
@@ -314,15 +315,52 @@ interface PeriodPreset {
                     @for (p of overview()?.projects; track p.projectId) {
                       <tr class="hover:bg-app/50 transition">
                         <td class="px-4 py-3 font-mono text-muted">{{ p.projectReference || '-' }}</td>
-                        <td class="px-4 py-3 font-semibold text-ink">{{ p.projectName }}</td>
+                        <td class="px-4 py-3 font-semibold text-ink">
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <span>{{ p.projectName }}</span>
+                            @if (p.currency && p.currency !== 'EUR') {
+                              <span class="rounded bg-app px-1.5 py-0.2 text-[10px] font-bold text-muted border border-border">
+                                {{ p.currency }}
+                              </span>
+                            }
+                          </div>
+                        </td>
                         <td class="px-4 py-3 text-muted">{{ p.clientOrganization || '-' }}</td>
                         <td class="px-4 py-3 text-center font-medium">{{ p.contributorsCount }}</td>
                         <td class="px-4 py-3 text-right text-muted">{{ formatMinutesToHours(p.totalMinutes) }}</td>
                         <td class="px-4 py-3 text-right text-ink font-medium">{{ formatMinutesToHours(p.billableMinutes) }}</td>
                         <td class="px-4 py-3 text-right font-bold text-brand-600 dark:text-brand-400">{{ p.billableDays }} j</td>
+                        <td class="px-4 py-3">
+                          @if (p.budgetDays && p.budgetDays > 0) {
+                            <div class="space-y-1 min-w-[120px]">
+                              <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-medium" [class.text-error]="p.billableDays > p.budgetDays">
+                                  {{ p.billableDays }} / {{ p.budgetDays }} j
+                                </span>
+                                <span class="font-bold" [class.text-error]="p.billableDays > p.budgetDays" [class.text-muted]="p.billableDays <= p.budgetDays">
+                                  {{ Math.round((p.billableDays / p.budgetDays) * 100) }}%
+                                </span>
+                              </div>
+                              <div class="h-1.5 w-full rounded-full bg-app border border-border/40 overflow-hidden">
+                                <div
+                                  class="h-full rounded-full transition-all"
+                                  [class]="p.billableDays > p.budgetDays ? 'bg-error' : p.billableDays / p.budgetDays >= 0.8 ? 'bg-amber-500' : 'bg-brand-600'"
+                                  [style.width.%]="Math.min(100, (p.billableDays / p.budgetDays) * 100)">
+                                </div>
+                              </div>
+                            </div>
+                          } @else {
+                            <span class="text-muted text-[11px]">—</span>
+                          }
+                        </td>
                         @if (canViewFinancials()) {
-                          <td class="px-4 py-3 text-right text-muted font-mono">{{ formatCurrency(p.dailyRate) }}</td>
-                          <td class="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(p.totalAmount) }}</td>
+                          <td class="px-4 py-3 text-right text-muted font-mono">{{ formatCurrency(p.dailyRate, p.currency) }}</td>
+                          <td class="px-4 py-3 text-right font-mono">
+                            <span class="font-bold text-emerald-600 dark:text-emerald-400 block">{{ formatCurrency(p.totalAmount, p.currency) }}</span>
+                            @if (p.totalPrice && p.totalPrice > 0) {
+                              <span class="text-[10px] text-muted block mt-0.5">/ {{ formatCurrency(p.totalPrice, p.currency) }}</span>
+                            }
+                          </td>
                         }
                       </tr>
                     }
@@ -337,7 +375,14 @@ interface PeriodPreset {
                 <div class="rounded-2xl border border-border bg-surface p-4 shadow-2xs space-y-3">
                   <div class="flex items-start justify-between gap-2">
                     <div class="min-w-0">
-                      <p class="font-semibold text-ink truncate">{{ p.projectName }}</p>
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <p class="font-semibold text-ink truncate">{{ p.projectName }}</p>
+                        @if (p.currency && p.currency !== 'EUR') {
+                          <span class="rounded bg-app px-1.5 py-0.2 text-[10px] font-bold text-muted border border-border">
+                            {{ p.currency }}
+                          </span>
+                        }
+                      </div>
                       <p class="text-xs text-muted">{{ p.clientOrganization || '-' }}</p>
                     </div>
                     @if (p.projectReference) {
@@ -358,10 +403,33 @@ interface PeriodPreset {
                     </div>
                   </div>
 
+                  @if (p.budgetDays && p.budgetDays > 0) {
+                    <div class="border-t border-border/60 pt-2 space-y-1 text-xs">
+                      <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-muted">{{ 'billing.budgetTracking' | translate }} :</span>
+                        <span class="font-semibold" [class.text-error]="p.billableDays > p.budgetDays">
+                          {{ p.billableDays }} / {{ p.budgetDays }} j ({{ Math.round((p.billableDays / p.budgetDays) * 100) }}%)
+                        </span>
+                      </div>
+                      <div class="h-1.5 w-full rounded-full bg-app border border-border/40 overflow-hidden">
+                        <div
+                          class="h-full rounded-full transition-all"
+                          [class]="p.billableDays > p.budgetDays ? 'bg-error' : p.billableDays / p.budgetDays >= 0.8 ? 'bg-amber-500' : 'bg-brand-600'"
+                          [style.width.%]="Math.min(100, (p.billableDays / p.budgetDays) * 100)">
+                        </div>
+                      </div>
+                    </div>
+                  }
+
                   @if (canViewFinancials() && p.totalAmount !== null && p.totalAmount !== undefined) {
                     <div class="flex items-center justify-between border-t border-border/60 pt-2 text-xs">
                       <span class="text-muted">{{ 'billing.colTotalAmount' | translate }} :</span>
-                      <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(p.totalAmount) }}</span>
+                      <div class="text-right">
+                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ formatCurrency(p.totalAmount, p.currency) }}</span>
+                        @if (p.totalPrice && p.totalPrice > 0) {
+                          <span class="text-[10px] text-muted block">/ {{ formatCurrency(p.totalPrice, p.currency) }}</span>
+                        }
+                      </div>
                     </div>
                   }
                 </div>
@@ -564,6 +632,7 @@ interface PeriodPreset {
   `
 })
 export class BillingPageComponent implements OnInit {
+  protected readonly Math = Math;
   private readonly billingService = inject(BillingService);
   private readonly projectService = inject(ProjectService);
   private readonly validationService = inject(ValidationService);
@@ -747,14 +816,19 @@ export class BillingPageComponent implements OnInit {
     return `${hours.toFixed(2)} h`;
   }
 
-  formatCurrency(amount: number | null | undefined): string {
+  formatCurrency(amount: number | null | undefined, currency = 'EUR'): string {
     if (amount === null || amount === undefined) return '-';
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
+    const curr = (currency || 'EUR').trim().toUpperCase();
+    try {
+      return new Intl.NumberFormat(this.i18n.locale(), {
+        style: 'currency',
+        currency: curr,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      }).format(amount);
+    } catch {
+      return `${this.i18n.formatNumber(amount)} ${curr}`;
+    }
   }
 
   formatDate(dateStr: string): string {

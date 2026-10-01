@@ -1,8 +1,11 @@
 package cm.indyli.timeflow.projects.application;
 
+import cm.indyli.timeflow.projects.api.ProjectController.CreateProjectRequest;
+import cm.indyli.timeflow.projects.api.ProjectController.UpdateProjectRequest;
 import cm.indyli.timeflow.projects.infrastructure.AzureProjectsClient;
 import cm.indyli.timeflow.projects.infrastructure.ProjectStore;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,7 +24,53 @@ public class ProjectService {
     }
 
     @PreAuthorize("isAuthenticated()")
-    public List<ProjectStore.ProjectView> list() { return store.list(); }
+    public List<ProjectStore.ProjectView> list() {
+        return store.list();
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    public List<ProjectStore.ProjectView> list(boolean canViewFinancials) {
+        var all = store.list();
+        if (canViewFinancials) {
+            return all;
+        }
+        return all.stream()
+                .map(p -> new ProjectStore.ProjectView(
+                        p.id(), p.name(), p.source(), p.organization(),
+                        p.active(), p.billableDefault(), p.reference(),
+                        null, p.budgetDays(), null, p.currency()
+                ))
+                .toList();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTION')")
+    public ProjectStore.ProjectView create(CreateProjectRequest request) {
+        UUID id = store.create(
+                request.name(),
+                request.active(),
+                request.billableDefault(),
+                request.dailyRate(),
+                request.budgetDays(),
+                request.totalPrice(),
+                request.currency()
+        );
+        return store.findById(id).orElseThrow();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'DIRECTION')")
+    public ProjectStore.ProjectView update(UUID id, UpdateProjectRequest request) {
+        store.update(
+                id,
+                request.name(),
+                request.active(),
+                request.billableDefault(),
+                request.dailyRate(),
+                request.budgetDays(),
+                request.totalPrice(),
+                request.currency()
+        );
+        return store.findById(id).orElseThrow();
+    }
 
     @PreAuthorize("hasRole('ADMIN')")
     public IntegrationView integration() { return new IntegrationView(azure.configured(), store.latestRun()); }

@@ -126,9 +126,9 @@ const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map(option => [option.value,
                     </span>
                   </div>
                   <div class="text-right">
-                    <span class="text-muted block text-[11px] mb-1">{{ 'users.lastLogin' | translate }}</span>
-                    <span class="text-xs text-muted whitespace-nowrap">
-                      {{ user.lastLoginAt ? (i18n.formatDate(user.lastLoginAt)) : ('users.neverLoggedIn' | translate) }}
+                    <span class="text-muted block text-[11px] mb-1">{{ 'users.colDailyRate' | translate }}</span>
+                    <span class="text-xs font-medium text-ink whitespace-nowrap">
+                      {{ user.dailyRate ? (user.dailyRate + ' €/j') : '—' }}
                     </span>
                   </div>
                 </div>
@@ -152,6 +152,7 @@ const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map(option => [option.value,
                   <th scope="col" class="px-4 py-3.5 whitespace-nowrap">{{ 'users.colRole' | translate }}</th>
                   <th scope="col" class="px-4 py-3.5 whitespace-nowrap">{{ 'users.colManager' | translate }}</th>
                   <th scope="col" class="px-4 py-3.5 whitespace-nowrap">{{ 'users.colSchedule' | translate }}</th>
+                  <th scope="col" class="px-4 py-3.5 whitespace-nowrap">{{ 'users.colDailyRate' | translate }}</th>
                   <th scope="col" class="px-4 py-3.5 whitespace-nowrap">{{ 'users.colStatus' | translate }}</th>
                   <th scope="col" class="px-4 py-3.5 whitespace-nowrap">{{ 'common.date' | translate }}</th>
                   <th scope="col" class="px-5 py-3.5 text-right whitespace-nowrap">{{ 'common.actions' | translate }}</th>
@@ -179,6 +180,9 @@ const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map(option => [option.value,
                         <span class="size-1.5 rounded-full bg-brand-500"></span>
                         {{ user.workScheduleProfileName || 'Standard 35h' }}
                       </span>
+                    </td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-ink">
+                      {{ user.dailyRate ? (user.dailyRate + ' €/j') : '—' }}
                     </td>
                     <td class="px-4 py-3.5 whitespace-nowrap">
                       <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium" [class]="statusClass(user)">

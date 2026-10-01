@@ -6,6 +6,30 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Configuration du budget projet (jours globaux, prix/forfait), TJM et devises configurables (€, $, XAF...) (TICKET-0017) :
+  - **Modèle de données & Migration Flyway** :
+    - Migration `V8__project_budget_currency.sql` ajoutant `budget_days NUMERIC(10,2)`, `total_price NUMERIC(12,2)` et `currency VARCHAR(10) NOT NULL DEFAULT 'EUR'` sur la table `project`.
+  - **Administration des projets (API REST & Sécurité RBAC)** :
+    - Endpoints sécurisés `POST /api/v1/admin/projects` et `PUT /api/v1/admin/projects/{id}` protégés par `@PreAuthorize("hasAnyRole('ADMIN', 'DIRECTION')")`.
+    - Support complet de la création et modification des projets : nom, statut actif, facturable par défaut, TJM négocié, budget jours, prix total et devise.
+    - Masquage financier strict côté backend : `dailyRate` et `totalPrice` sont automatiquement masqués (`null`) pour `COLLABORATOR` et `MANAGER` sur `GET /api/v1/projects`.
+  - **TJM de référence collaborateur** :
+    - Exposition de `dailyRate` sur `UserSummary` et `UserProfileChange` dans l'API d'administration des utilisateurs (`UserAdminController`).
+    - Champ TJM de référence collaborateur dans le formulaire `UserFormComponent` et affichage dans la liste des utilisateurs desktop et mobile.
+  - **Import / Export Excel non destructif** :
+    - Support transparent dans `ProjectWorkbook` et `ExcelProject` des classeurs historiques à 4 colonnes ou étendus à 8 colonnes (avec TJM, Jours budget, Budget total, Devise).
+    - `COALESCE` sur les colonnes financières et devise dans `ProjectStore.importExcel` préservant les configurations manuelles lors des réimports.
+  - **Facturation multi-devises et suivi budgétaire** :
+    - `ProjectBillingItem` enrichi de `budgetDays`, `totalPrice`, `currency`.
+    - Remplacement des symboles en dur `€` par la devise réelle du projet (`EUR`, `USD`, `XAF`, `GBP`, `CHF`, `CAD`, etc.) dans les synthèses et exports Excel / CSV.
+    - Suivi de la consommation budgétaire (jours et montants consommés vs budget, pourcentages et alertes de dépassement) dans l'IHM et les rapports.
+  - **Interface utilisateur Angular** :
+    - Nouveau composant `ProjectFormComponent` (`tf-project-form`) avec sélection de devises usuelles ou saisie libre de devises personnalisées, champs budget jours, TJM, prix total et aide au calcul croisé automatique (`jours × taux = total`).
+    - Volet latéral escamotable de création et modification de projet dans `ProjectsPageComponent` avec badges visuels de budget, TJM et devises.
+    - Colonne de suivi budgétaire avec barre de progression proportionnelle et colorée dans `BillingPageComponent`.
+    - Tests automatisés : 140 tests backend réussis (`mvn clean test`), 14 tests frontend réussis (`npm test`), 0 avertissement i18n.
+
+
 - Préparation de la facturation & exports de contrôle Excel/CSV avec cloisonnement financier strict (TICKET-0008) :
   - **Confidentialité financière non-négociable (Backend maître)** :
     - Règle stricte : Seules `DIRECTION` et `ADMIN` ont accès aux données financières (TJM négocié sur le projet, TJM de référence du collaborateur, valorisation et montants totaux HT).

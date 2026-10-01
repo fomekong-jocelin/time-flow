@@ -3,6 +3,7 @@ package cm.indyli.timeflow.users.application;
 import cm.indyli.timeflow.auth.domain.AccountType;
 import cm.indyli.timeflow.auth.domain.UserRole;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -21,8 +22,29 @@ public record UserSummary(
         OffsetDateTime lastLoginAt,
         OffsetDateTime createdAt,
         UUID workScheduleProfileId,
-        String workScheduleProfileName
+        String workScheduleProfileName,
+        BigDecimal dailyRate
 ) {
+    public UserSummary(
+            UUID id,
+            String email,
+            String displayName,
+            UserRole role,
+            AccountType accountType,
+            boolean active,
+            UUID managerId,
+            String managerName,
+            int weeklyTargetMinutes,
+            boolean ssoLinked,
+            boolean locked,
+            OffsetDateTime lastLoginAt,
+            OffsetDateTime createdAt,
+            UUID workScheduleProfileId,
+            String workScheduleProfileName
+    ) {
+        this(id, email, displayName, role, accountType, active, managerId, managerName, weeklyTargetMinutes, ssoLinked, locked, lastLoginAt, createdAt, workScheduleProfileId, workScheduleProfileName, null);
+    }
+
     public UserSummary(
             UUID id,
             String email,
@@ -38,6 +60,6 @@ public record UserSummary(
             OffsetDateTime lastLoginAt,
             OffsetDateTime createdAt
     ) {
-        this(id, email, displayName, role, accountType, active, managerId, managerName, weeklyTargetMinutes, ssoLinked, locked, lastLoginAt, createdAt, null, null);
+        this(id, email, displayName, role, accountType, active, managerId, managerName, weeklyTargetMinutes, ssoLinked, locked, lastLoginAt, createdAt, null, null, null);
     }
 }

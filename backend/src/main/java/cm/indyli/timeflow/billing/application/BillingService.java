@@ -125,8 +125,27 @@ public class BillingService {
                     String name = projView != null ? projView.name() : "Projet inconnu";
                     String ref = projView != null ? projView.reference() : null;
                     String org = projView != null ? projView.organization() : null;
+                    String currency = projView != null && projView.currency() != null ? projView.currency() : "EUR";
                     BigDecimal projectDailyRate = canViewFinancials && projView != null ? projView.dailyRate() : null;
                     BigDecimal projectTotalAmount = canViewFinancials ? p.totalAmount : null;
+                    BigDecimal budgetDays = projView != null ? projView.budgetDays() : null;
+                    BigDecimal totalPrice = canViewFinancials && projView != null ? projView.totalPrice() : null;
+
+                    double days = roundDays(p.billableMinutes);
+                    Double remainingDays = null;
+                    Double progressDaysPercent = null;
+                    if (budgetDays != null && budgetDays.compareTo(BigDecimal.ZERO) > 0) {
+                        remainingDays = Math.round((budgetDays.doubleValue() - days) * 100.0) / 100.0;
+                        progressDaysPercent = Math.round((days / budgetDays.doubleValue()) * 1000.0) / 10.0;
+                    }
+
+                    BigDecimal remainingAmount = null;
+                    Double progressAmountPercent = null;
+                    if (canViewFinancials && totalPrice != null && totalPrice.compareTo(BigDecimal.ZERO) > 0 && projectTotalAmount != null) {
+                        remainingAmount = totalPrice.subtract(projectTotalAmount);
+                        progressAmountPercent = Math.round((projectTotalAmount.doubleValue() / totalPrice.doubleValue()) * 1000.0) / 10.0;
+                    }
+
                     return new ProjectBillingItem(
                             p.projectId,
                             name,
@@ -134,10 +153,17 @@ public class BillingService {
                             org,
                             p.totalMinutes,
                             p.billableMinutes,
-                            roundDays(p.billableMinutes),
+                            days,
                             projectDailyRate,
                             projectTotalAmount,
-                            p.contributors.size()
+                            p.contributors.size(),
+                            currency,
+                            budgetDays,
+                            totalPrice,
+                            remainingDays,
+                            progressDaysPercent,
+                            remainingAmount,
+                            progressAmountPercent
                     );
                 })
                 .sorted(Comparator.comparingInt(ProjectBillingItem::billableMinutes).reversed())
@@ -234,6 +260,8 @@ public class BillingService {
                     }
                 }
 
+                String currency = project != null && project.currency() != null ? project.currency() : "EUR";
+
                 details.add(new BillingDetailItem(
                         date,
                         sheetUserId,
@@ -246,7 +274,8 @@ public class BillingService {
                         roundDays(entry.isBillable() ? entry.getMinutes() : 0),
                         effectiveRate,
                         entryAmount,
-                        entry.getComment()
+                        entry.getComment(),
+                        currency
                 ));
             }
         }

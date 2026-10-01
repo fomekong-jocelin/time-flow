@@ -72,6 +72,15 @@ const MAX_WEEKLY_HOURS = 70;
         </select>
         <p class="mt-1 text-xs text-muted">{{ 'users.scheduleNotice' | translate }}</p>
       </div>
+      <div>
+        <label for="user-daily-rate" class="mb-1 block text-sm font-medium">{{ 'users.colDailyRate' | translate }}</label>
+        <div class="relative">
+          <input id="user-daily-rate" name="dailyRate" type="number" min="0" step="10" [ngModel]="dailyRate()" (ngModelChange)="dailyRate.set($event)"
+            placeholder="ex: 550" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
+          <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted">€ / j</span>
+        </div>
+        <p class="mt-1 text-xs text-muted">{{ 'users.dailyRateNotice' | translate }}</p>
+      </div>
       @if (!user() && accountType() === 'LOCAL') {
         <div>
           <label for="user-password" class="mb-1 block text-sm font-medium">{{ 'users.initialPassword' | translate }}</label>
@@ -113,6 +122,7 @@ export class UserFormComponent implements OnInit {
   readonly hours = signal(35);
   readonly managerId = signal<string | null>(null);
   readonly workScheduleProfileId = signal<string | null>(null);
+  readonly dailyRate = signal<number | null>(null);
   readonly password = signal('');
   readonly touched = signal(false);
 
@@ -137,6 +147,7 @@ export class UserFormComponent implements OnInit {
     this.hours.set(user.weeklyTargetMinutes / 60);
     this.managerId.set(user.managerId);
     this.workScheduleProfileId.set(user.workScheduleProfileId ?? null);
+    this.dailyRate.set(user.dailyRate ?? null);
   }
 
   onScheduleChange(scheduleId: string | null): void {
@@ -163,6 +174,7 @@ export class UserFormComponent implements OnInit {
       managerId: this.managerId(),
       weeklyTargetMinutes: Math.round(Number(this.hours()) * 60),
       workScheduleProfileId: this.workScheduleProfileId(),
+      dailyRate: this.dailyRate() ? Number(this.dailyRate()) : null,
       password: creating && this.accountType() === 'LOCAL' ? this.password() : undefined
     });
   }
