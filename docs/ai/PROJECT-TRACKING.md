@@ -5,7 +5,7 @@
 | Champ | Valeur |
 |---|---|
 | Dernière mise à jour | 2026-10-01 |
-| Phase | Filtrage multi-critères des temps, heures passées & ergonomie mobile (TICKET-0016) |
+| Phase | Préparation de la facturation & exports de contrôle (TICKET-0008) |
 | État | DONE |
 | Cible V1 | Sync projets Azure DevOps + saisie hebdomadaire + validation + reporting de base |
 | Risque actuel | Parcours SSO à valider avec une App Registration Microsoft Entra réelle |
@@ -21,7 +21,7 @@
 | TICKET-0005 | #5 (PR #12) | Validation manager | DONE | P0 |
 | TICKET-0006 | à créer | Formations | TODO | P1 |
 | TICKET-0007 | à créer | Dashboard / reporting (KPI, TACE, OT, Projets, Équipe) | DONE | P1 |
-| TICKET-0008 | à créer | Exports / préparation facturation | TODO | P1 |
+| TICKET-0008 | à créer | Exports / préparation facturation (avec masquage financier TJM/prix) | DONE | P1 |
 | TICKET-0009 | PR #8 | Application de la charte visuelle v0.1 | DONE | P1 |
 | TICKET-0010 | PR #10 | Gestion des utilisateurs SSO + locaux (rôle, manager, temps théorique, activation) | DONE | P0 |
 | TICKET-0011 | à créer | Groupes de configuration du temps de travail & paramètres dynamiques (Work Schedules) | DONE | P0 |
@@ -40,6 +40,7 @@
 - Aucun compte n'est supprimé : désactivation uniquement, sessions révoquées.
 - Charte visuelle v0.1 appliquée au frontend (TimeFlow by INDYLI, palette Indigo/Violet/Teal, Inter, Dark Mode).
 - Configuration dynamique des temps de travail (TICKET-0011) : profils configurables (jours ouvrés, volume hebdo/journalier, plafonds légaux, autorisation week-end), affectation aux collaborateurs et adaptation dynamique de la saisie CRA.
+- Préparation de la facturation & exports de contrôle (TICKET-0008) : conversion heures en jours facturés (base 420 min / 7h), agrégation par projet et par collaborateur, classeur Excel multi-onglets (Apache POI) et export CSV. Cloisonnement strict de la confidentialité financière (Backend maître) : TJM, TH, coûts et montants HT exposés uniquement pour DIRECTION et ADMIN ; strictement masqués et omis pour MANAGER et COLLABORATOR.
 
 ## Décisions produit encore ouvertes
 

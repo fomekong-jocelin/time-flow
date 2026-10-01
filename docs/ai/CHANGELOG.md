@@ -6,6 +6,36 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Préparation de la facturation & exports de contrôle Excel/CSV avec cloisonnement financier strict (TICKET-0008) :
+  - **Confidentialité financière non-négociable (Backend maître)** :
+    - Règle stricte : Seules `DIRECTION` et `ADMIN` ont accès aux données financières (TJM négocié sur le projet, TJM de référence du collaborateur, valorisation et montants totaux HT).
+    - Pour les rôles `MANAGER`, `COLLABORATOR` et `TRAINER`, les taux et montants sont obligatoirement `null` dans l'API REST et **strictement omis** des classeurs Excel et fichiers CSV générés par le serveur.
+    - Bannière d'habilitation explicite dans l'interface informant l'utilisateur du masquage des données financières ou de l'activation du mode financier Direction.
+  - **Modèle de données & Persistance** :
+    - Migration Flyway `V7__billing_rates.sql` ajoutant la colonne `daily_rate NUMERIC(10,2)` sur les tables `project` et `app_user`.
+    - Extension des entités JPA `AppUserEntity` et requêtes `ProjectStore` pour gérer le taux journalier.
+  - **Moteur de calcul de facturation (`BillingService`)** :
+    - Agrégation des feuilles de temps validées (`VALIDATED`) et verrouillées (`LOCKED`) sur la période demandée (Mois, Trimestre, Année, Semaine).
+    - Conversion automatique des heures en **jours facturés** selon le standard de service (420 minutes = 1 jour, arrondi à 2 décimales).
+    - Résolution hiérarchique du TJM effectif (taux négocié sur le projet en priorité, sinon taux de référence du collaborateur).
+    - Synthèses consolidées par projet (`ProjectBillingItem`), par collaborateur (`UserBillingItem`) et détail ligne à ligne des imputations (`BillingDetailItem`).
+  - **Générateur de classeur Excel multi-onglets & CSV (`BillingExportService`)** :
+    - Génération de classeur Excel `.xlsx` via `Apache POI` avec 3 onglets formatés : « Synthèse Projets », « Synthèse Collaborateurs » et « Détail Imputations ».
+    - En-têtes indigo stylisés, volet figé sur la ligne d'en-tête (`freezePane`), filtres automatiques activés et formattage numérique des heures, jours et devises.
+    - Omission conditionnelle des colonnes financières pour les utilisateurs non habilités.
+    - Export CSV encodé en UTF-8 avec BOM (`\uFEFF`) pour une compatibilité immédiate avec Microsoft Excel sur Windows/Mac, délimité par des points-virgules (`;`).
+  - **API REST sécurisée (`BillingController`)** :
+    - `GET /api/v1/billing/overview`, `GET /api/v1/billing/details`, `GET /api/v1/billing/export/excel`, `GET /api/v1/billing/export/csv`.
+    - Protection `@PreAuthorize` et cloisonnement d'équipe managériale deny-by-default.
+  - **Interface utilisateur Angular (`/facturation`)** :
+    - Navigation accessible aux rôles habilités (`MANAGER`, `DIRECTION`, `ADMIN`) via `managerGuard`.
+    - Sélecteur de période dynamique, volet de filtres multi-critères (Projet, Collaborateur).
+    - 5 cartes KPI réactives (Jours facturés, Heures facturables, Projets actifs, Contributeurs, Montant Total HT si autorisé).
+    - Navigation à 3 onglets (« Synthèse par Projet », « Synthèse par Collaborateur », « Détail des Imputations ») avec tableaux desktop lisibles et cartes ergonomiques sur mobile.
+    - Boutons d'export Excel et CSV avec indicateurs de téléchargement.
+    - Nouvelles icônes `receipt` et `download` dans `IconComponent`.
+    - Traduction bilingue FR/EN complète (13/13 tests passants).
+
 - Filtrage multi-critères des feuilles de temps et heures passées (qui, sur quel projet, quand, sommes en temps réel) et optimisation mobile (TICKET-0016) :
   - **Espace Validation & Contrôle (`/validation`)** :
     - Barre de filtres opérationnels combinant Statut (`À valider`, `Validées`, `Rejetées`, `Toutes`), Collaborateur/Subordonné (`userId`), Projet (`projectId`) et Semaine (`weekStart`).

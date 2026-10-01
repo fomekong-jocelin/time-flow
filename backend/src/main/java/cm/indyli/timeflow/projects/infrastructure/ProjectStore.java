@@ -2,6 +2,7 @@ package cm.indyli.timeflow.projects.infrastructure;
 
 import cm.indyli.timeflow.projects.domain.RemoteProject;
 import cm.indyli.timeflow.projects.domain.ExcelProject;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -17,21 +18,21 @@ public class ProjectStore {
 
     public List<ProjectView> list() {
         return jdbc.sql("""
-                SELECT id, name, external_source, organization_key, active, billable_default, external_id
+                SELECT id, name, external_source, organization_key, active, billable_default, external_id, daily_rate
                 FROM project ORDER BY lower(name), id
                 """).query((rs, row) -> new ProjectView(rs.getObject("id", UUID.class), rs.getString("name"),
                 rs.getString("external_source"), rs.getString("organization_key"), rs.getBoolean("active"),
-                rs.getBoolean("billable_default"), rs.getString("external_id"))).list();
+                rs.getBoolean("billable_default"), rs.getString("external_id"), rs.getBigDecimal("daily_rate"))).list();
     }
 
     public java.util.Optional<ProjectView> findById(UUID id) {
         return jdbc.sql("""
-                SELECT id, name, external_source, organization_key, active, billable_default, external_id
+                SELECT id, name, external_source, organization_key, active, billable_default, external_id, daily_rate
                 FROM project WHERE id = :id
                 """).param("id", id)
                 .query((rs, row) -> new ProjectView(rs.getObject("id", UUID.class), rs.getString("name"),
                         rs.getString("external_source"), rs.getString("organization_key"), rs.getBoolean("active"),
-                        rs.getBoolean("billable_default"), rs.getString("external_id"))).optional();
+                        rs.getBoolean("billable_default"), rs.getString("external_id"), rs.getBigDecimal("daily_rate"))).optional();
     }
 
     public UUID startRun() {
@@ -84,7 +85,13 @@ public class ProjectStore {
     }
 
     public record ProjectView(UUID id, String name, String source, String organization,
-                              boolean active, boolean billableDefault, String reference) { }
+                              boolean active, boolean billableDefault, String reference,
+                              BigDecimal dailyRate) {
+        public ProjectView(UUID id, String name, String source, String organization,
+                           boolean active, boolean billableDefault, String reference) {
+            this(id, name, source, organization, active, billableDefault, reference, null);
+        }
+    }
     public record SyncView(String status, Instant startedAt, int importedCount) { }
 
     @Transactional

@@ -4,6 +4,7 @@ import cm.indyli.timeflow.auth.domain.AccountType;
 import cm.indyli.timeflow.auth.domain.UserRole;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.UUID;
@@ -39,6 +40,9 @@ public class AppUserEntity {
 
     @Column(name = "work_schedule_profile_id")
     private UUID workScheduleProfileId;
+
+    @Column(name = "daily_rate")
+    private BigDecimal dailyRate;
 
     @Column(nullable = false)
     private boolean active = true;
@@ -91,6 +95,9 @@ public class AppUserEntity {
 
     public UUID getWorkScheduleProfileId() { return workScheduleProfileId; }
     public void setWorkScheduleProfileId(UUID workScheduleProfileId) { this.workScheduleProfileId = workScheduleProfileId; }
+
+    public BigDecimal getDailyRate() { return dailyRate; }
+    public void setDailyRate(BigDecimal dailyRate) { this.dailyRate = dailyRate; }
 
     public void updateAdministrativeProfile(String displayName, UserRole role, UUID managerId, int weeklyTargetMinutes) {
         updateAdministrativeProfile(displayName, role, managerId, weeklyTargetMinutes, this.workScheduleProfileId);
