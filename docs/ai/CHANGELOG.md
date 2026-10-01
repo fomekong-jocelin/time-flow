@@ -6,6 +6,18 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Configuration dynamique des temps de travail & régimes horaires (TICKET-0011) :
+  - Modèle de données & Migration Flyway `V5__work_schedule_profiles.sql` créant la table `work_schedule_profile` et rattachant `work_schedule_profile_id` à la table `app_user`.
+  - Profils par défaut pré-provisionnés du marché ESN/Conseil : Standard 35h, Cadre & RTT 38h30, Temps partiel 80% (mercredi libéré), Support & Astreinte (week-end autorisé).
+  - Règles de domaine et invariants (`WorkSchedulePolicy`) : unicité de code/nom, cohérence des bornes de temps, au moins un jour ouvré, interdiction de désactiver le profil par défaut.
+  - API REST d'administration `/api/v1/admin/work-schedules` : liste avec décompte des utilisateurs, création, mise à jour, passage en profil par défaut et activation/désactivation, protégée pour `ADMIN` et `DIRECTION` avec CSRF.
+  - Endpoint collaborateur `/api/v1/work-schedules/me` et `/api/v1/users/me/work-schedule` permettant au SPA de récupérer le régime contractuel du collaborateur connecté.
+  - Interface Angular `/admin/configuration-temps` : dashboard avec indicateurs synthétiques, tableau détaillé des régimes avec pilules de jours ouvrés interactives, modale de création/édition, bascule par défaut et activation/désactivation.
+  - Affectation dans l'administration des utilisateurs (`/admin/utilisateurs`) : sélection du régime horaire dans le formulaire de création/édition et affichage du badge de régime dans la liste des utilisateurs.
+  - Adaptation dynamique de « Mes temps » (CRA) : affichage explicite des jours non ouvrés (« Repos »), inputs de saisie stylisés pour les jours chômés, objectif hebdomadaire dynamique issu du profil et seuils d'alerte de conformité légale alignés sur le régime contractuel.
+  - Icônes de navigation : ajout des icônes `sliders` et `calendar` à `IconComponent` et entrée « Configuration temps » dans le shell applicatif.
+  - Tests unitaires et d'intégration : `WorkSchedulePolicyTest`, `WorkScheduleSecurityTest`, `WorkScheduleServiceTest` portant la suite backend à 99 tests automatisés sans régression.
+
 - Conformité légale et plafonds du Code du travail (CRA) : plafonnement journalier strict à 12h max (`ABSOLUTE_MAX_DAILY_MINUTES = 720`), seuil d'alerte quotidienne à 10h (`STATUTORY_MAX_DAILY_MINUTES = 600`), plafond hebdomadaire dérogatoire à 60h (`ABSOLUTE_MAX_WEEKLY_MINUTES = 3600`) et seuil d'alerte hebdomadaire légal à 48h (`STATUTORY_MAX_WEEKLY_MINUTES = 2880`).
 - Séparation des contrôles et principe des 4 yeux : détection automatique de `selfTimesheet`, masquage des boutons d'approbation sur sa propre feuille dans l'espace manager avec badge « Validation tierce requise », et exclusion de ses propres feuilles du compteur de tâches « À valider ».
 - UX avancée Espace Manager : refonte de la colonne Actions en groupe horizontal ergonomique, affichage des initiales en avatar, badges des vrais noms de projets (au lieu du chiffre brut), badges d'alerte de conformité légale si > 48h ou > 10h/jour, modale d'examen avec différenciation des jours de repos (week-end).

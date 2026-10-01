@@ -6,6 +6,8 @@ import cm.indyli.timeflow.auth.persistence.AppUserRepository;
 import cm.indyli.timeflow.auth.persistence.AuthIdentityEntity;
 import cm.indyli.timeflow.auth.persistence.AuthIdentityRepository;
 import cm.indyli.timeflow.users.domain.UserNotFoundException;
+import cm.indyli.timeflow.workschedule.persistence.WorkScheduleProfileEntity;
+import cm.indyli.timeflow.workschedule.persistence.WorkScheduleProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,10 +24,18 @@ public class UserDirectoryService {
 
     private final AppUserRepository userRepository;
     private final AuthIdentityRepository identityRepository;
+    private final WorkScheduleProfileRepository workScheduleRepository;
 
     public UserDirectoryService(AppUserRepository userRepository, AuthIdentityRepository identityRepository) {
+        this(userRepository, identityRepository, null);
+    }
+
+    public UserDirectoryService(AppUserRepository userRepository,
+                                AuthIdentityRepository identityRepository,
+                                WorkScheduleProfileRepository workScheduleRepository) {
         this.userRepository = userRepository;
         this.identityRepository = identityRepository;
+        this.workScheduleRepository = workScheduleRepository;
     }
 
     @Transactional(readOnly = true)
@@ -47,16 +57,23 @@ public class UserDirectoryService {
         Map<UUID, List<AuthIdentityEntity>> identities = identityRepository
                 .findByUser_IdIn(users.stream().map(AppUserEntity::getId).toList()).stream()
                 .collect(Collectors.groupingBy(identity -> identity.getUser().getId()));
+        Map<UUID, String> scheduleNames = workScheduleRepository == null ? Map.of()
+                : workScheduleRepository.findAll().stream()
+                .collect(Collectors.toMap(WorkScheduleProfileEntity::getId, WorkScheduleProfileEntity::getName));
         var now = OffsetDateTime.now();
         return users.stream()
-                .map(user -> toSummary(user, identities.getOrDefault(user.getId(), List.of()), names::get, now))
+                .map(user -> toSummary(user, identities.getOrDefault(user.getId(), List.of()), names::get, scheduleNames::get, now))
                 .toList();
     }
 
     private UserSummary toSummary(AppUserEntity user, List<AuthIdentityEntity> identities,
-                                  Function<UUID, String> managerName, OffsetDateTime now) {
+                                  Function<UUID, String> managerName,
+                                  Function<UUID, String> scheduleName,
+                                  OffsetDateTime now) {
         var lastLogin = identities.stream().map(AuthIdentityEntity::getLastLoginAt)
                 .filter(Objects::nonNull).max(OffsetDateTime::compareTo).orElse(null);
+        UUID profileId = user.getWorkScheduleProfileId();
+        String profileName = profileId != null ? scheduleName.apply(profileId) : null;
         return new UserSummary(
                 user.getId(), user.getEmail(), user.getDisplayName(), user.getRole(), user.getAccountType(),
                 user.isActive(), user.getManagerId(),
@@ -64,7 +81,9 @@ public class UserDirectoryService {
                 user.getWeeklyTargetMinutes(),
                 identities.stream().anyMatch(identity -> identity.getProvider() == AuthProvider.ENTRA),
                 identities.stream().anyMatch(identity -> identity.isLockedAt(now)),
-                lastLogin, user.getCreatedAt()
+                lastLogin, user.getCreatedAt(),
+                profileId,
+                profileName
         );
     }
 }

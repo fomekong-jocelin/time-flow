@@ -7,6 +7,8 @@ export interface WeekDay {
   date: string; // "05/10"
   isoDate: string; // "2026-10-05"
   isToday: boolean;
+  dayKey: string;
+  isWorkingDay: boolean;
 }
 
 export interface CalendarWeek {
@@ -17,23 +19,32 @@ export interface CalendarWeek {
   days: WeekDay[];
 }
 
-const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'];
-const WORKING_DAYS = DAY_LABELS.length;
+const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const DAY_KEYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
-export function calendarWeek(target: Date = new Date(), today: Date = new Date()): CalendarWeek {
+export function calendarWeek(
+  target: Date = new Date(),
+  today: Date = new Date(),
+  workingDays: string[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
+  includeWeekend: boolean = false
+): CalendarWeek {
   const monday = startOfDay(target);
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
   const sunday = addDays(monday, 6);
   const shortDate = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' });
   const longDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 
-  const days = Array.from({ length: WORKING_DAYS }, (_, index) => {
+  const totalDays = includeWeekend ? 7 : 5;
+  const days: WeekDay[] = Array.from({ length: totalDays }, (_, index) => {
     const date = addDays(monday, index);
+    const dayKey = DAY_KEYS[index];
     return {
       label: DAY_LABELS[index],
       date: shortDate.format(date),
       isoDate: toIsoDateString(date),
-      isToday: date.getTime() === startOfDay(today).getTime()
+      isToday: date.getTime() === startOfDay(today).getTime(),
+      dayKey,
+      isWorkingDay: workingDays.includes(dayKey)
     };
   });
 

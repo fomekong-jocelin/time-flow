@@ -20,6 +20,8 @@ export interface ManagedUser {
   locked: boolean;
   lastLoginAt: string | null;
   createdAt: string;
+  workScheduleProfileId?: string | null;
+  workScheduleProfileName?: string | null;
 }
 
 export interface UserProfile {
@@ -27,6 +29,7 @@ export interface UserProfile {
   role: UserRole;
   managerId: string | null;
   weeklyTargetMinutes: number;
+  workScheduleProfileId?: string | null;
 }
 
 export interface NewUser extends UserProfile {

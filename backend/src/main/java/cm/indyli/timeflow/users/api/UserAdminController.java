@@ -96,10 +96,11 @@ public class UserAdminController {
             @NotNull UserRole role,
             @NotBlank @Size(min = 12, max = 128) String password,
             UUID managerId,
-            @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes
+            @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes,
+            UUID workScheduleProfileId
     ) {
         UserProfileChange profile() {
-            return new UserProfileChange(displayName, role, managerId, targetOrDefault(weeklyTargetMinutes));
+            return new UserProfileChange(displayName, role, managerId, targetOrDefault(weeklyTargetMinutes), workScheduleProfileId);
         }
     }
 
@@ -108,10 +109,11 @@ public class UserAdminController {
             @NotBlank @Size(max = 200) String displayName,
             @NotNull UserRole role,
             UUID managerId,
-            @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes
+            @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes,
+            UUID workScheduleProfileId
     ) {
         UserProfileChange profile() {
-            return new UserProfileChange(displayName, role, managerId, targetOrDefault(weeklyTargetMinutes));
+            return new UserProfileChange(displayName, role, managerId, targetOrDefault(weeklyTargetMinutes), workScheduleProfileId);
         }
     }
 
@@ -119,10 +121,11 @@ public class UserAdminController {
             @NotBlank @Size(max = 200) String displayName,
             @NotNull UserRole role,
             UUID managerId,
-            @NotNull @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes
+            @NotNull @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes,
+            UUID workScheduleProfileId
     ) {
         UserProfileChange profile() {
-            return new UserProfileChange(displayName, role, managerId, weeklyTargetMinutes);
+            return new UserProfileChange(displayName, role, managerId, weeklyTargetMinutes, workScheduleProfileId);
         }
     }
 

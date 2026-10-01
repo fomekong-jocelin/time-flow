@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/api/v1/auth/csrf", "/api/v1/auth/config", "/api/v1/auth/login").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/api/v1/admin/work-schedules", "/api/v1/admin/work-schedules/**").hasAnyRole("ADMIN", "DIRECTION")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/manager/**").hasAnyRole("MANAGER", "DIRECTION", "ADMIN")
                         .requestMatchers("/api/v1/**").authenticated()

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from './core/auth/admin.guard';
+import { adminGuard, adminOrDirectionGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
 import { managerGuard } from './core/auth/manager.guard';
 import { AppShellComponent } from './core/layout/app-shell.component';
@@ -16,6 +16,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'mes-temps' },
       { path: 'mes-temps', component: TimesheetPageComponent, title: 'Mes temps · TimeFlow' },
       { path: 'validation', canActivate: [managerGuard], loadComponent: () => import('./features/validation/validation-page.component').then(m => m.ValidationPageComponent), title: 'Validation · TimeFlow' },
+      { path: 'admin/configuration-temps', canActivate: [adminOrDirectionGuard], loadComponent: () => import('./features/work-schedules/work-schedules-page.component').then(m => m.WorkSchedulesPageComponent), title: 'Configuration temps · TimeFlow' },
       { path: 'admin/utilisateurs', canActivate: [adminGuard], loadComponent: () => import('./features/users/users-page.component').then(m => m.UsersPageComponent), title: 'Utilisateurs · TimeFlow' },
       { path: 'projets', loadComponent: () => import('./features/projects/projects-page.component').then(m => m.ProjectsPageComponent), title: 'Projets · TimeFlow' }
     ]

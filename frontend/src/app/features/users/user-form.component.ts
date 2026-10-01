@@ -62,6 +62,16 @@ const MAX_WEEKLY_HOURS = 70;
           @for (manager of managerOptions(); track manager.id) { <option [ngValue]="manager.id">{{ manager.displayName }}</option> }
         </select>
       </div>
+      <div>
+        <label for="user-work-schedule" class="mb-1 block text-sm font-medium">Régime de temps de travail</label>
+        <select id="user-work-schedule" name="workScheduleProfileId" [ngModel]="workScheduleProfileId()" (ngModelChange)="onScheduleChange($event)" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm">
+          <option [ngValue]="null">Régime par défaut</option>
+          @for (schedule of workSchedules(); track schedule.id) {
+            <option [ngValue]="schedule.id">{{ schedule.name }} ({{ schedule.weeklyTargetMinutes / 60 }}h)</option>
+          }
+        </select>
+        <p class="mt-1 text-xs text-muted">Définit les jours ouvrés, objectifs et plafonds légaux.</p>
+      </div>
       @if (!user() && accountType() === 'LOCAL') {
         <div>
           <label for="user-password" class="mb-1 block text-sm font-medium">Mot de passe initial</label>
@@ -83,6 +93,7 @@ const MAX_WEEKLY_HOURS = 70;
 export class UserFormComponent implements OnInit {
   readonly user = input<ManagedUser | null>(null);
   readonly users = input<ManagedUser[]>([]);
+  readonly workSchedules = input<import('../work-schedules/work-schedule.models').WorkScheduleProfile[]>([]);
   readonly busy = input(false);
   readonly saved = output<NewUser>();
   readonly cancelled = output<void>();
@@ -100,6 +111,7 @@ export class UserFormComponent implements OnInit {
   readonly role = signal<UserRole>('COLLABORATOR');
   readonly hours = signal(35);
   readonly managerId = signal<string | null>(null);
+  readonly workScheduleProfileId = signal<string | null>(null);
   readonly password = signal('');
   readonly touched = signal(false);
 
@@ -123,6 +135,17 @@ export class UserFormComponent implements OnInit {
     this.role.set(user.role);
     this.hours.set(user.weeklyTargetMinutes / 60);
     this.managerId.set(user.managerId);
+    this.workScheduleProfileId.set(user.workScheduleProfileId ?? null);
+  }
+
+  onScheduleChange(scheduleId: string | null): void {
+    this.workScheduleProfileId.set(scheduleId);
+    if (scheduleId) {
+      const schedule = this.workSchedules().find(p => p.id === scheduleId);
+      if (schedule) {
+        this.hours.set(schedule.weeklyTargetMinutes / 60);
+      }
+    }
   }
 
   submit(): void {
@@ -138,6 +161,7 @@ export class UserFormComponent implements OnInit {
       role: this.role(),
       managerId: this.managerId(),
       weeklyTargetMinutes: Math.round(Number(this.hours()) * 60),
+      workScheduleProfileId: this.workScheduleProfileId(),
       password: creating && this.accountType() === 'LOCAL' ? this.password() : undefined
     });
   }
