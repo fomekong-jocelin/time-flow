@@ -36,3 +36,10 @@ Les sessions sont persistées en PostgreSQL via Spring Session JDBC afin de perm
 - Les intervenants externes n'ont pas besoin d'un tenant Microsoft.
 - Aucun jeton OAuth n'est exposé au JavaScript applicatif.
 - Une fonctionnalité d'invitation / réinitialisation de mot de passe devra compléter la V1 avant un déploiement externe à grande échelle.
+
+## Complément 2026-10-01 — gestion des utilisateurs (TICKET-0010)
+
+- Chaque compte a un type exclusif `SSO` ou `LOCAL` (`app_user.account_type`).
+- Un ADMIN peut pré-provisionner un compte SSO (email, rôle, manager) avant la première connexion. Cette liaison par email est l'unique exception à la règle « pas de liaison par email » et n'est autorisée que si : le compte est de type `SSO`, il n'a pas encore d'identité Entra, et le claim `tid` du jeton est égal à `ENTRA_TENANT_ID` (jamais avec `common`, `organizations` ou `consumers`).
+- Un compte local n'est jamais lié à une identité SSO.
+- Les comptes ne sont jamais supprimés : désactivation, puis révocation des sessions Spring Session (index par email pour le local, par `sub` pour Entra).

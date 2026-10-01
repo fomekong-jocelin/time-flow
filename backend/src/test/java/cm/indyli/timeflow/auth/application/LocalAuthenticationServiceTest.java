@@ -36,7 +36,7 @@ class LocalAuthenticationServiceTest {
 
     @Test
     void shouldAuthenticateActiveLocalUser() {
-        var user = AppUserEntity.create("trainer@example.com", "Trainer", UserRole.TRAINER);
+        var user = AppUserEntity.local("trainer@example.com", "Trainer", UserRole.TRAINER);
         var identity = AuthIdentityEntity.local(user, "trainer@example.com", encoder.encode("correct-password-123"));
         when(repository.findByProviderAndSubject(AuthProvider.LOCAL, "trainer@example.com")).thenReturn(Optional.of(identity));
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -50,7 +50,7 @@ class LocalAuthenticationServiceTest {
 
     @Test
     void shouldRejectBadPasswordWithoutLeakingDetails() {
-        var user = AppUserEntity.create("trainer@example.com", "Trainer", UserRole.TRAINER);
+        var user = AppUserEntity.local("trainer@example.com", "Trainer", UserRole.TRAINER);
         var identity = AuthIdentityEntity.local(user, "trainer@example.com", encoder.encode("correct-password-123"));
         when(repository.findByProviderAndSubject(AuthProvider.LOCAL, "trainer@example.com")).thenReturn(Optional.of(identity));
 

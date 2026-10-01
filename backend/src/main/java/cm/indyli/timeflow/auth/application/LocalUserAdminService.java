@@ -35,7 +35,7 @@ public class LocalUserAdminService {
             throw new DuplicateUserException("A user with this email already exists");
         }
 
-        var user = userRepository.save(AppUserEntity.create(normalizedEmail, displayName, role));
+        var user = userRepository.save(AppUserEntity.local(normalizedEmail, displayName, role));
         identityRepository.save(AuthIdentityEntity.local(user, normalizedEmail, passwordEncoder.encode(password)));
         return user;
     }
