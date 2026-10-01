@@ -21,7 +21,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Validation', icon: 'check', path: '/validation', roles: ['MANAGER', 'DIRECTION', 'ADMIN'] },
   { label: 'Projets', icon: 'folder', path: '/projets' },
   { label: 'Formations', icon: 'graduation' },
-  { label: 'Analyses', icon: 'analytics' },
+  { label: 'Analyses', icon: 'analytics', path: '/analyses' },
   { label: 'Configuration temps', icon: 'sliders', path: '/admin/configuration-temps', roles: ['ADMIN', 'DIRECTION'] },
   { label: 'Utilisateurs', icon: 'users', path: '/admin/utilisateurs', role: 'ADMIN' }
 ];

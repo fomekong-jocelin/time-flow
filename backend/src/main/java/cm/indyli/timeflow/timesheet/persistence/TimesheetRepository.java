@@ -26,4 +26,30 @@ public interface TimesheetRepository extends JpaRepository<TimesheetEntity, UUID
 
     @Query("SELECT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries WHERE (:status IS NULL OR t.status = :status) ORDER BY t.submittedAt DESC, t.weekStart DESC")
     List<TimesheetEntity> findAllByStatusWithEntries(@Param("status") TimesheetStatus status);
+
+    @Query("""
+        SELECT DISTINCT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries
+        WHERE t.weekStart >= :startWeek AND t.weekStart <= :endWeek
+          AND t.status IN :statuses
+        ORDER BY t.weekStart ASC
+    """)
+    List<TimesheetEntity> findByWeekRangeAndStatusesWithEntries(
+            @Param("startWeek") LocalDate startWeek,
+            @Param("endWeek") LocalDate endWeek,
+            @Param("statuses") java.util.Collection<TimesheetStatus> statuses
+    );
+
+    @Query("""
+        SELECT DISTINCT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries
+        WHERE t.userId IN :userIds
+          AND t.weekStart >= :startWeek AND t.weekStart <= :endWeek
+          AND t.status IN :statuses
+        ORDER BY t.weekStart ASC
+    """)
+    List<TimesheetEntity> findByUserIdsAndWeekRangeAndStatusesWithEntries(
+            @Param("userIds") java.util.Collection<UUID> userIds,
+            @Param("startWeek") LocalDate startWeek,
+            @Param("endWeek") LocalDate endWeek,
+            @Param("statuses") java.util.Collection<TimesheetStatus> statuses
+    );
 }
