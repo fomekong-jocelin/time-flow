@@ -24,6 +24,16 @@ public class ProjectStore {
                 rs.getBoolean("billable_default"), rs.getString("external_id"))).list();
     }
 
+    public java.util.Optional<ProjectView> findById(UUID id) {
+        return jdbc.sql("""
+                SELECT id, name, external_source, organization_key, active, billable_default, external_id
+                FROM project WHERE id = :id
+                """).param("id", id)
+                .query((rs, row) -> new ProjectView(rs.getObject("id", UUID.class), rs.getString("name"),
+                        rs.getString("external_source"), rs.getString("organization_key"), rs.getBoolean("active"),
+                        rs.getBoolean("billable_default"), rs.getString("external_id"))).optional();
+    }
+
     public UUID startRun() {
         return startRun("AZURE_DEVOPS");
     }

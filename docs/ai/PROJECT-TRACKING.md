@@ -5,7 +5,7 @@
 | Champ | Valeur |
 |---|---|
 | Dernière mise à jour | 2026-10-01 |
-| Phase | Gestion des utilisateurs SSO/locaux, préalable aux feuilles de temps |
+| Phase | Feuilles de temps / CRA (API & IHM) |
 | État | IN_PROGRESS |
 | Cible V1 | Sync projets Azure DevOps + saisie hebdomadaire + validation + reporting de base |
 | Risque actuel | Parcours SSO à valider avec une App Registration Microsoft Entra réelle |
@@ -14,16 +14,16 @@
 
 | ID | GitHub | Sujet | Statut | Priorité |
 |---|---:|---|---|---|
-| TICKET-0001 | PR #6 | Bootstrap architecture + gouvernance | REVIEW | P0 |
-| TICKET-0002 | #1 | Authentification hybride et rôles | IN_PROGRESS | P0 |
-| TICKET-0003 | #2 | Catalogue projets + Azure DevOps + import/export Excel (26 tests OK ; validation réelle et PR restantes) | IN_PROGRESS | P0 |
-| TICKET-0004 | #3 + #4 | Feuille de temps / CRA API + UI | TODO | P0 |
+| TICKET-0001 | PR #6 | Bootstrap architecture + gouvernance | DONE | P0 |
+| TICKET-0002 | #1 (PR #8) | Authentification hybride et rôles | DONE | P0 |
+| TICKET-0003 | #2 (PR #9) | Catalogue projets + Azure DevOps + import/export Excel | DONE | P0 |
+| TICKET-0004 | #3 + #4 | Feuille de temps / CRA API + UI (64 tests backend OK, build Angular OK) | REVIEW | P0 |
 | TICKET-0005 | #5 | Validation manager | TODO | P0 |
 | TICKET-0006 | à créer | Formations | TODO | P1 |
 | TICKET-0007 | à créer | Dashboard / reporting | TODO | P1 |
 | TICKET-0008 | à créer | Exports / préparation facturation | TODO | P1 |
-| TICKET-0009 | à créer | Application de la charte visuelle v0.1 | REVIEW | P1 |
-| TICKET-0010 | à créer | Gestion des utilisateurs SSO + locaux (rôle, manager, temps théorique, activation) — 48 tests OK, migration V4 validée sur PostgreSQL local | REVIEW | P0 |
+| TICKET-0009 | PR #8 | Application de la charte visuelle v0.1 | DONE | P1 |
+| TICKET-0010 | PR #10 | Gestion des utilisateurs SSO + locaux (rôle, manager, temps théorique, activation) | DONE | P0 |
 
 ## Décisions actées
 

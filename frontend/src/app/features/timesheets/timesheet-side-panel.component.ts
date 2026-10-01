@@ -1,17 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-
-interface Step {
-  title: string;
-  detail: string;
-  done: boolean;
-}
-
-const STEPS: readonly Step[] = [
-  { title: 'Compte connecté', detail: 'Ta session TimeFlow est active.', done: true },
-  { title: 'Projets synchronisés', detail: 'Import depuis Azure DevOps par un administrateur.', done: false },
-  { title: 'Saisie des temps', detail: 'Heures par jour, projet et activité.', done: false },
-  { title: 'Soumission', detail: 'Envoi de la semaine pour validation.', done: false }
-];
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 /** Code couleur métier — charte v0.1, §6. Le libellé accompagne toujours la couleur. */
 const ACTIVITY_TYPES = [
@@ -30,13 +17,13 @@ const ACTIVITY_TYPES = [
     <article class="rounded-ui border border-border bg-surface p-5">
       <div class="flex items-center justify-between">
         <h2 class="font-semibold">Pour démarrer</h2>
-        <span class="text-xs tabular-nums text-muted">{{ doneCount }}/{{ steps.length }}</span>
+        <span class="text-xs tabular-nums text-muted">{{ doneCount() }}/{{ steps().length }}</span>
       </div>
-      <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-app" role="progressbar" [attr.aria-valuenow]="doneCount" aria-valuemin="0" [attr.aria-valuemax]="steps.length" aria-label="Progression de la mise en route">
-        <div class="h-full rounded-full bg-brand-600" [style.width.%]="(doneCount / steps.length) * 100"></div>
+      <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-app" role="progressbar" [attr.aria-valuenow]="doneCount()" aria-valuemin="0" [attr.aria-valuemax]="steps().length" aria-label="Progression de la mise en route">
+        <div class="h-full rounded-full bg-brand-600 transition-all duration-300" [style.width.%]="(doneCount() / steps().length) * 100"></div>
       </div>
       <ol class="mt-4 space-y-3.5">
-        @for (step of steps; track step.title; let i = $index) {
+        @for (step of steps(); track step.title; let i = $index) {
           <li class="flex gap-3">
             @if (step.done) {
               <span class="grid size-6 shrink-0 place-items-center rounded-full bg-success-50 text-success-700">
@@ -47,7 +34,7 @@ const ACTIVITY_TYPES = [
               <span class="grid size-6 shrink-0 place-items-center rounded-full border border-border text-xs font-medium text-muted">{{ i + 1 }}</span>
             }
             <div class="min-w-0">
-              <p class="text-sm font-medium" [class.text-muted]="!step.done && i > firstPending">{{ step.title }}</p>
+              <p class="text-sm font-medium" [class.text-muted]="!step.done && i > firstPending()">{{ step.title }}</p>
               <p class="text-xs leading-5 text-muted">{{ step.detail }}</p>
             </div>
           </li>
@@ -70,8 +57,19 @@ const ACTIVITY_TYPES = [
   `
 })
 export class TimesheetSidePanelComponent {
-  protected readonly steps = STEPS;
+  readonly hasProjects = input<boolean>(false);
+  readonly hasEntries = input<boolean>(false);
+  readonly isSubmitted = input<boolean>(false);
+
   protected readonly activityTypes = ACTIVITY_TYPES;
-  protected readonly doneCount = STEPS.filter(step => step.done).length;
-  protected readonly firstPending = STEPS.findIndex(step => !step.done);
+
+  protected readonly steps = computed(() => [
+    { title: 'Compte connecté', detail: 'Ta session TimeFlow est active.', done: true },
+    { title: 'Projets synchronisés', detail: 'Import Azure DevOps ou Excel.', done: this.hasProjects() },
+    { title: 'Saisie des temps', detail: 'Heures par jour, projet et activité.', done: this.hasEntries() },
+    { title: 'Soumission', detail: 'Envoi de la semaine pour validation.', done: this.isSubmitted() }
+  ]);
+
+  protected readonly doneCount = computed(() => this.steps().filter(s => s.done).length);
+  protected readonly firstPending = computed(() => this.steps().findIndex(s => !s.done));
 }
