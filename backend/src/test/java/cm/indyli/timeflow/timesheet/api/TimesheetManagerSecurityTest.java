@@ -87,7 +87,7 @@ class TimesheetManagerSecurityTest {
                 TimesheetStatus.SUBMITTED, OffsetDateTime.now(), 2100, 2100, 2,
                 false, List.of("TimeFlow"), 2100, false
         );
-        when(validationService.listPending(eq(managerPrincipal), eq(TimesheetStatus.SUBMITTED), any()))
+        when(validationService.listPending(eq(managerPrincipal), eq(TimesheetStatus.SUBMITTED), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(summary));
 
         mvc.perform(get("/api/v1/manager/timesheets")
@@ -95,6 +95,40 @@ class TimesheetManagerSecurityTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].userDisplayName").value("Jean Dupont"))
                 .andExpect(jsonPath("$[0].status").value("SUBMITTED"));
+    }
+
+    @Test
+    void managerCanListSubordinates() throws Exception {
+        when(currentUserService.resolve(any())).thenReturn(managerPrincipal);
+        var sub = new cm.indyli.timeflow.timesheet.application.SubordinateSummary(
+                UUID.randomUUID(), "Alice Martin", "alice@indyli.com", "COLLABORATOR"
+        );
+        when(validationService.getManagedUsers(managerPrincipal)).thenReturn(List.of(sub));
+
+        mvc.perform(get("/api/v1/manager/timesheets/subordinates")
+                        .with(user("manager@indyli.com").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].displayName").value("Alice Martin"))
+                .andExpect(jsonPath("$[0].email").value("alice@indyli.com"));
+    }
+
+    @Test
+    void managerCanFilterWithUserIdAndProjectId() throws Exception {
+        when(currentUserService.resolve(any())).thenReturn(managerPrincipal);
+        UUID targetUserId = UUID.randomUUID();
+        UUID targetProjectId = UUID.randomUUID();
+
+        when(validationService.listPending(eq(managerPrincipal), eq(TimesheetStatus.VALIDATED), any(), eq(targetUserId), eq(targetProjectId), any(), any()))
+                .thenReturn(List.of());
+
+        mvc.perform(get("/api/v1/manager/timesheets")
+                        .param("status", "VALIDATED")
+                        .param("userId", targetUserId.toString())
+                        .param("projectId", targetProjectId.toString())
+                        .with(user("manager@indyli.com").roles("MANAGER")))
+                .andExpect(status().isOk());
+
+        verify(validationService).listPending(eq(managerPrincipal), eq(TimesheetStatus.VALIDATED), any(), eq(targetUserId), eq(targetProjectId), any(), any());
     }
 
     @Test

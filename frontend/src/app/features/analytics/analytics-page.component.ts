@@ -11,6 +11,9 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { AnalyticsOverview } from './analytics.models';
 import { AnalyticsService } from './analytics.service';
+import { ValidationService } from '../validation/validation.service';
+import { SubordinateSummary } from '../validation/validation.models';
+import { ProjectService, Project } from '../projects/project.service';
 
 interface PeriodPreset {
   key: string;
@@ -61,15 +64,80 @@ interface ChartBarData {
           </p>
         </div>
 
-        <button
-          type="button"
-          (click)="load()"
-          [disabled]="loading()"
-          class="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-xs font-semibold text-ink shadow-2xs transition hover:bg-app disabled:opacity-50 whitespace-nowrap self-start sm:self-auto cursor-pointer">
-          <tf-icon name="filter" [size]="14" />
-          <span>{{ loading() ? ('common.loading' | translate) : ('common.filter' | translate) }}</span>
-        </button>
+        <div class="flex items-center gap-2 self-start sm:self-auto">
+          @if (hasActiveFilters()) {
+            <button
+              type="button"
+              (click)="resetFilters()"
+              class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer">
+              {{ 'analytics.resetFilters' | translate }}
+            </button>
+          }
+          <button
+            type="button"
+            (click)="toggleFilterPanel()"
+            class="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 text-xs font-semibold text-ink shadow-2xs transition hover:bg-app whitespace-nowrap cursor-pointer"
+            [class.border-brand-500]="showFilterPanel() || hasActiveFilters()"
+            [class.bg-brand-50]="showFilterPanel()"
+            [class.dark:bg-brand-950/40]="showFilterPanel()">
+            <tf-icon name="filter" [size]="14" />
+            <span>{{ 'common.filter' | translate }}</span>
+            @if (activeFilterCount() > 0) {
+              <span class="rounded-full bg-brand-600 text-white px-1.5 py-0.2 text-[10px] font-bold">{{ activeFilterCount() }}</span>
+            }
+          </button>
+        </div>
       </header>
+
+      <!-- Panneau de filtres multi-critères dépliable (Collaborateur, Projet) -->
+      @if (showFilterPanel()) {
+        <div class="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <tf-icon name="sliders" [size]="16" class="text-brand-600 dark:text-brand-400" />
+              <span class="text-xs font-semibold uppercase tracking-wider text-ink">{{ 'analytics.filterPanelTitle' | translate }}</span>
+            </div>
+            @if (hasActiveFilters()) {
+              <button
+                type="button"
+                (click)="resetFilters()"
+                class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer">
+                {{ 'analytics.resetFilters' | translate }}
+              </button>
+            }
+          </div>
+
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2 border-t border-border/60">
+            @if (canViewTeam()) {
+              <div>
+                <label class="block text-[11px] font-medium text-muted mb-1">{{ 'analytics.filterWho' | translate }}</label>
+                <select
+                  [ngModel]="selectedUserId()"
+                  (ngModelChange)="selectedUserId.set($event); onFilterChange()"
+                  class="w-full rounded-xl border border-border bg-app px-3 py-2 text-xs font-medium text-ink focus:border-brand-500 focus:outline-none">
+                  <option value="">{{ 'analytics.allCollaborators' | translate }}</option>
+                  @for (sub of subordinates(); track sub.id) {
+                    <option [value]="sub.id">{{ sub.displayName }} ({{ sub.email }})</option>
+                  }
+                </select>
+              </div>
+            }
+
+            <div>
+              <label class="block text-[11px] font-medium text-muted mb-1">{{ 'analytics.filterProject' | translate }}</label>
+              <select
+                [ngModel]="selectedProjectId()"
+                (ngModelChange)="selectedProjectId.set($event); onFilterChange()"
+                class="w-full rounded-xl border border-border bg-app px-3 py-2 text-xs font-medium text-ink focus:border-brand-500 focus:outline-none">
+                <option value="">{{ 'analytics.allProjects' | translate }}</option>
+                @for (proj of projects(); track proj.id) {
+                  <option [value]="proj.id">{{ proj.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- Sélecteur de période fluide -->
       <div class="flex items-center gap-2 border-b border-border pb-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -339,11 +407,11 @@ interface ChartBarData {
         <!-- 3. Section basse : Navigation & Découpage Projets & Équipe (« Moins chargé ») -->
         <div class="space-y-4">
           @if (canViewTeam()) {
-            <div class="flex gap-2 border-b border-border pb-1">
+            <div class="flex items-center gap-2 border-b border-border pb-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               <button
                 type="button"
                 (click)="activeTab.set('projects')"
-                class="flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap cursor-pointer"
+                class="flex shrink-0 items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap cursor-pointer"
                 [class.border-brand-600]="activeTab() === 'projects'"
                 [class.text-brand-600]="activeTab() === 'projects'"
                 [class.font-semibold]="activeTab() === 'projects'"
@@ -356,7 +424,7 @@ interface ChartBarData {
               <button
                 type="button"
                 (click)="activeTab.set('team')"
-                class="flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap cursor-pointer"
+                class="flex shrink-0 items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap cursor-pointer"
                 [class.border-brand-600]="activeTab() === 'team'"
                 [class.text-brand-600]="activeTab() === 'team'"
                 [class.font-semibold]="activeTab() === 'team'"
@@ -482,21 +550,21 @@ interface ChartBarData {
                 <div class="space-y-3 p-4 md:hidden">
                   @for (u of data.usersBreakdown; track u.userId) {
                     <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3">
-                      <div class="flex items-start justify-between gap-2">
-                        <tf-avatar [name]="u.displayName" [subtext]="u.email" size="md" />
-                        <tf-status-badge [variant]="taceBadgeVariant(u.activityRate)">
-                          {{ i18n.formatNumber(u.activityRate) }} % {{ 'analytics.rateShort' | translate }}
+                      <div class="flex items-center justify-between gap-2.5">
+                        <tf-avatar [name]="u.displayName" [subtext]="u.email" size="md" class="min-w-0 flex-1" />
+                        <tf-status-badge [variant]="taceBadgeVariant(u.activityRate)" class="shrink-0">
+                          {{ i18n.formatNumber(u.activityRate) }} %
                         </tf-status-badge>
                       </div>
 
-                      <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
-                        <div>
+                      <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-border/50">
+                        <div class="min-w-0">
                           <span class="text-muted block text-[11px]">{{ 'users.colSchedule' | translate }}</span>
-                          <span class="font-medium text-ink mt-0.5 block truncate">{{ u.workScheduleName }}</span>
+                          <span class="font-medium text-ink mt-0.5 block truncate" [title]="u.workScheduleName">{{ u.workScheduleName }}</span>
                         </div>
-                        <div>
+                        <div class="min-w-0 text-right">
                           <span class="text-muted block text-[11px]">{{ 'analytics.overtimeOt' | translate }}</span>
-                          <span class="font-semibold text-amber-600 dark:text-amber-400 mt-0.5 block">{{ formatHours(u.overtimeMinutes) }}</span>
+                          <span class="font-semibold text-amber-600 dark:text-amber-400 mt-0.5 block truncate">{{ formatHours(u.overtimeMinutes) }}</span>
                         </div>
                       </div>
 
@@ -567,8 +635,19 @@ export class AnalyticsPageComponent implements OnInit {
   private readonly api = inject(AnalyticsService);
   private readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly validationService = inject(ValidationService);
+  private readonly projectService = inject(ProjectService);
 
   readonly i18n = inject(I18nService);
+
+  readonly showFilterPanel = signal(false);
+  readonly selectedUserId = signal<string>('');
+  readonly selectedProjectId = signal<string>('');
+  readonly subordinates = signal<SubordinateSummary[]>([]);
+  readonly projects = signal<Project[]>([]);
+
+  readonly activeFilterCount = computed(() => (this.selectedUserId() ? 1 : 0) + (this.selectedProjectId() ? 1 : 0));
+  readonly hasActiveFilters = computed(() => this.activeFilterCount() > 0);
 
   readonly periodPresets = computed<PeriodPreset[]>(() => {
     const monthLabel = (month: number) => new Intl.DateTimeFormat(this.i18n.locale(), { month: 'long', year: 'numeric' }).format(new Date(2026, month, 1));
@@ -733,6 +812,34 @@ export class AnalyticsPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadFilterOptions();
+    this.load();
+  }
+
+  loadFilterOptions(): void {
+    if (this.canViewTeam()) {
+      this.validationService.getSubordinates().subscribe({
+        next: subs => this.subordinates.set(subs),
+        error: () => {}
+      });
+    }
+    this.projectService.list().subscribe({
+      next: projs => this.projects.set(projs),
+      error: () => {}
+    });
+  }
+
+  toggleFilterPanel(): void {
+    this.showFilterPanel.update(v => !v);
+  }
+
+  onFilterChange(): void {
+    this.load();
+  }
+
+  resetFilters(): void {
+    this.selectedUserId.set('');
+    this.selectedProjectId.set('');
     this.load();
   }
 
@@ -744,7 +851,11 @@ export class AnalyticsPageComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set(false);
-    this.api.getOverview(this.selectedPeriod())
+    this.api.getOverview(
+      this.selectedPeriod(),
+      this.selectedUserId() || undefined,
+      this.selectedProjectId() || undefined
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: data => {

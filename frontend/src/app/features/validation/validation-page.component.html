@@ -24,42 +24,136 @@
         </div>
       </div>
 
-      <!-- Filtres par statut -->
-      <div class="flex flex-wrap items-center gap-2 border-b border-border pb-3">
-        <button
-          type="button"
-          (click)="setStatusFilter('SUBMITTED')"
-          class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition"
-          [class]="selectedStatus() === 'SUBMITTED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-surface text-muted hover:text-foreground border border-border'">
-          <span>{{ 'validation.pendingTab' | translate }}</span>
-          @if (pendingCount() > 0) {
-            <span class="rounded-full bg-white/20 px-2 py-0.2 text-[11px] font-bold">{{ pendingCount() }}</span>
+      <!-- 4 Cartes de synthèse en temps réel (Sommes et indicateurs de la sélection) -->
+      <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <tf-kpi-card
+          icon="clock"
+          iconColor="brand"
+          [label]="'validation.kpiTotalHours' | translate"
+          [value]="formatHours(totalMinutesSum())"
+          variant="brand"
+          [description]="'validation.kpiTotalHoursSub' | translate" />
+
+        <tf-kpi-card
+          icon="file"
+          iconColor="blue"
+          [label]="'validation.kpiBillableHours' | translate"
+          [value]="formatHours(billableMinutesSum())"
+          variant="success"
+          [description]="'validation.kpiBillableHoursSub' | translate" />
+
+        <tf-kpi-card
+          icon="percent"
+          iconColor="purple"
+          [label]="'validation.kpiTaceRate' | translate"
+          [value]="averageTace() + ' %'"
+          [variant]="averageTace() >= 80 ? 'success' : (averageTace() >= 60 ? 'brand' : 'default')"
+          [description]="'validation.kpiTaceRateSub' | translate" />
+
+        <tf-kpi-card
+          icon="users"
+          iconColor="default"
+          [label]="'validation.kpiSheetsCount' | translate"
+          [value]="timesheets().length"
+          variant="default"
+          [description]="'validation.kpiSheetsCountSub' | translate" />
+      </section>
+
+      <!-- Barre de filtres multi-critères (Qui, Sur quel projet, Quand, Statut) -->
+      <div class="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-2">
+            <tf-icon name="sliders" [size]="16" class="text-brand-600 dark:text-brand-400" />
+            <span class="text-xs font-semibold uppercase tracking-wider text-ink">{{ 'validation.filtersTitle' | translate }}</span>
+          </div>
+          @if (hasActiveFilters()) {
+            <button
+              type="button"
+              (click)="resetFilters()"
+              class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer self-start sm:self-auto">
+              {{ 'validation.resetFilters' | translate }}
+            </button>
           }
-        </button>
+        </div>
 
-        <button
-          type="button"
-          (click)="setStatusFilter('VALIDATED')"
-          class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition"
-          [class]="selectedStatus() === 'VALIDATED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-surface text-muted hover:text-foreground border border-border'">
-          {{ 'validation.validatedTab' | translate }}
-        </button>
+        <!-- Filtres par statut -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            (click)="setStatusFilter('SUBMITTED')"
+            class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer"
+            [class]="selectedStatus() === 'SUBMITTED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-ink border border-border'">
+            <span>{{ 'validation.pendingTab' | translate }}</span>
+            @if (pendingCount() > 0) {
+              <span class="rounded-full bg-white/20 px-2 py-0.2 text-[11px] font-bold">{{ pendingCount() }}</span>
+            }
+          </button>
 
-        <button
-          type="button"
-          (click)="setStatusFilter('REJECTED')"
-          class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition"
-          [class]="selectedStatus() === 'REJECTED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-surface text-muted hover:text-foreground border border-border'">
-          {{ 'validation.rejectedTab' | translate }}
-        </button>
+          <button
+            type="button"
+            (click)="setStatusFilter('VALIDATED')"
+            class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer"
+            [class]="selectedStatus() === 'VALIDATED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-ink border border-border'">
+            {{ 'validation.validatedTab' | translate }}
+          </button>
 
-        <button
-          type="button"
-          (click)="setStatusFilter('ALL')"
-          class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition"
-          [class]="selectedStatus() === 'ALL' ? 'bg-brand-600 text-white shadow-xs' : 'bg-surface text-muted hover:text-foreground border border-border'">
-          {{ 'validation.allTab' | translate }}
-        </button>
+          <button
+            type="button"
+            (click)="setStatusFilter('REJECTED')"
+            class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer"
+            [class]="selectedStatus() === 'REJECTED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-ink border border-border'">
+            {{ 'validation.rejectedTab' | translate }}
+          </button>
+
+          <button
+            type="button"
+            (click)="setStatusFilter('ALL')"
+            class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition cursor-pointer"
+            [class]="selectedStatus() === 'ALL' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-ink border border-border'">
+            {{ 'validation.allTab' | translate }}
+          </button>
+        </div>
+
+        <!-- Filtres Qui (Collaborateur), Sur quel projet, Quand (Semaine) -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 pt-2 border-t border-border/60">
+          <!-- Filtre Qui (Collaborateur / Subordonné) -->
+          <div>
+            <label class="block text-[11px] font-medium text-muted mb-1">{{ 'validation.filterWho' | translate }}</label>
+            <select
+              [ngModel]="selectedUserId()"
+              (ngModelChange)="selectedUserId.set($event); onFilterChange()"
+              class="w-full rounded-xl border border-border bg-app px-3 py-2 text-xs font-medium text-ink focus:border-brand-500 focus:outline-none">
+              <option value="">{{ 'validation.allCollaborators' | translate }}</option>
+              @for (sub of subordinates(); track sub.id) {
+                <option [value]="sub.id">{{ sub.displayName }} ({{ sub.email }})</option>
+              }
+            </select>
+          </div>
+
+          <!-- Filtre Sur quel projet -->
+          <div>
+            <label class="block text-[11px] font-medium text-muted mb-1">{{ 'validation.filterProject' | translate }}</label>
+            <select
+              [ngModel]="selectedProjectId()"
+              (ngModelChange)="selectedProjectId.set($event); onFilterChange()"
+              class="w-full rounded-xl border border-border bg-app px-3 py-2 text-xs font-medium text-ink focus:border-brand-500 focus:outline-none">
+              <option value="">{{ 'validation.allProjects' | translate }}</option>
+              @for (proj of projects(); track proj.id) {
+                <option [value]="proj.id">{{ proj.name }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Filtre Quand (Semaine / Date) -->
+          <div>
+            <label class="block text-[11px] font-medium text-muted mb-1">{{ 'validation.filterWhen' | translate }}</label>
+            <input
+              type="date"
+              [(ngModel)]="selectedWeek"
+              (change)="onFilterChange()"
+              class="w-full rounded-xl border border-border bg-app px-3 py-2 text-xs font-medium text-ink focus:border-brand-500 focus:outline-none" />
+          </div>
+        </div>
       </div>
 
       <!-- Règle des 4 yeux / Info auto-validation -->
@@ -110,7 +204,7 @@
             @for (item of timesheets(); track item.id) {
               <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3">
                 <div class="flex items-start justify-between gap-2">
-                  <tf-avatar [name]="item.userDisplayName" [subtext]="item.userEmail" [badge]="item.selfTimesheet ? ('common.you' | translate) : ''" size="md" />
+                  <tf-avatar [name]="item.userDisplayName" [subtext]="item.userEmail" [badge]="item.selfTimesheet ? ('common.you' | translate) : ''" size="md" class="min-w-0 flex-1" />
 
                   <!-- Statut -->
                   @switch (item.status) {

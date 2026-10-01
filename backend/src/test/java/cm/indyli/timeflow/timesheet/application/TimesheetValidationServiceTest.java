@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -146,5 +147,71 @@ class TimesheetValidationServiceTest {
 
         assertThat(sheet.getStatus()).isEqualTo(TimesheetStatus.REJECTED);
         verify(validationRepository).save(any(TimesheetValidationEntity.class));
+    }
+
+    @Test
+    void listPending_withTargetUserId_forManagedUser_succeeds() {
+        var collab = AppUserEntity.local("collab@indyli.com", "Collab User", UserRole.COLLABORATOR);
+        collab.updateAdministrativeProfile("Collab User", UserRole.COLLABORATOR, managerId, 2100);
+
+        when(userRepository.findByManagerId(managerId)).thenReturn(List.of(collab));
+
+        var sheet = TimesheetEntity.draft(collab.getId(), monday);
+        sheet.submit();
+        when(timesheetRepository.findByUserIdsAndStatusWithEntries(eq(Set.of(collab.getId())), eq(TimesheetStatus.SUBMITTED)))
+                .thenReturn(List.of(sheet));
+        when(userRepository.findAll()).thenReturn(List.of(collab));
+
+        var result = service.listPending(managerPrincipal, TimesheetStatus.SUBMITTED, null, collab.getId(), null, null, null);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().userId()).isEqualTo(collab.getId());
+    }
+
+    @Test
+    void listPending_withTargetUserId_forUnmanagedUser_throwsAccessDenied() {
+        UUID strangerId = UUID.randomUUID();
+        when(userRepository.findByManagerId(managerId)).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.listPending(managerPrincipal, TimesheetStatus.SUBMITTED, null, strangerId, null, null, null))
+                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class)
+                .hasMessageContaining("responsabilité managériale");
+    }
+
+    @Test
+    void listPending_withTargetProjectId_filtersSheetsContainingProject() {
+        var collab = AppUserEntity.local("collab@indyli.com", "Collab User", UserRole.COLLABORATOR);
+        collab.updateAdministrativeProfile("Collab User", UserRole.COLLABORATOR, managerId, 2100);
+
+        when(userRepository.findByManagerId(managerId)).thenReturn(List.of(collab));
+
+        UUID proj1 = UUID.randomUUID();
+        UUID proj2 = UUID.randomUUID();
+
+        var sheet1 = TimesheetEntity.draft(collab.getId(), monday);
+        sheet1.getEntries().add(TimeEntryEntity.create(proj1, "PROJECT", monday, 420, true, null));
+
+        var sheet2 = TimesheetEntity.draft(collab.getId(), monday.plusWeeks(1));
+        sheet2.getEntries().add(TimeEntryEntity.create(proj2, "PROJECT", monday.plusWeeks(1), 420, true, null));
+
+        when(timesheetRepository.findByUserIdsAndStatusWithEntries(any(), eq(TimesheetStatus.SUBMITTED)))
+                .thenReturn(List.of(sheet1, sheet2));
+        when(userRepository.findAll()).thenReturn(List.of(collab));
+
+        var result = service.listPending(managerPrincipal, TimesheetStatus.SUBMITTED, null, null, proj1, null, null);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().id()).isEqualTo(sheet1.getId());
+    }
+
+    @Test
+    void getManagedUsers_returnsSubordinatesForManager() {
+        var collab = AppUserEntity.local("collab@indyli.com", "Collab User", UserRole.COLLABORATOR);
+        when(userRepository.findByManagerId(managerId)).thenReturn(List.of(collab));
+
+        var subordinates = service.getManagedUsers(managerPrincipal);
+
+        assertThat(subordinates).hasSize(1);
+        assertThat(subordinates.getFirst().displayName()).isEqualTo("Collab User");
     }
 }

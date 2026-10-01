@@ -10,6 +10,9 @@ export type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral'
   selector: 'tf-status-badge',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'inline-flex shrink-0'
+  },
   template: `
     <span
       class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap border shadow-2xs"

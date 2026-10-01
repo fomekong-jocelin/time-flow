@@ -34,3 +34,11 @@ export interface ManagerTimesheetDetail {
   overview: TimesheetOverview;
   history: ValidationHistoryItem[];
 }
+
+export interface SubordinateSummary {
+  id: string;
+  displayName: string;
+  email: string;
+  role: string;
+}
+

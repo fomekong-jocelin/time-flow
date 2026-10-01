@@ -6,6 +6,24 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Filtrage multi-critères des feuilles de temps et heures passées (qui, sur quel projet, quand, sommes en temps réel) et optimisation mobile (TICKET-0016) :
+  - **Espace Validation & Contrôle (`/validation`)** :
+    - Barre de filtres opérationnels combinant Statut (`À valider`, `Validées`, `Rejetées`, `Toutes`), Collaborateur/Subordonné (`userId`), Projet (`projectId`) et Semaine (`weekStart`).
+    - 4 Cartes KPI réactives affichant en temps réel les sommes consolidées de la sélection active : Somme Heures Totales, Somme Facturable, TACE Moyen (%) et Nombre de feuilles filtrées.
+    - Réinitialisation instantanée des filtres avec réactivité complète des Signals.
+  - **Module Analytics & Reporting (`/analyses`)** :
+    - Volet de filtres avancés (Collaborateur, Projet) interactif et escamotable via le bouton « Filtrer », avec badge dynamique du nombre de filtres actifs et bouton de réinitialisation.
+    - Actualisation en temps réel de tous les indicateurs (KPIs, Donut SVG de distribution, Histogramme SVG de tendance, découpages Projets et Équipe) selon le périmètre sélectionné.
+  - **Sécurité et cloisonnement hiérarchique strict (Backend master)** :
+    - Exposition de `GET /api/v1/manager/timesheets/subordinates` : un Manager n'obtient que ses collaborateurs directs (`manager_id = manager.id`) et lui-même, tandis qu'Admin et Direction ont la visibilité complète.
+    - Contrôle d'habilitation deny-by-default : toute tentative de requêter un collaborateur hors de son équipe directe renvoie une exception `AccessDeniedException` (403 Forbidden).
+    - Filtrage des feuilles par projet (`targetProjectId`) basé sur la présence d'imputations sur le projet concerné.
+  - **Ergonomie et robustesse mobile** :
+    - Correction des débordements et coupures de badges sur smartphone : mise à niveau de `AvatarComponent` et `StatusBadgeComponent` avec contraintes flexibles (`block min-w-0`, `flex-1`, `truncate` et `shrink-0`).
+    - Navigation d'onglets Projets / Équipe avec défilement tactile fluide horizontal (`overflow-x-auto`) sans coupure de texte.
+  - **Internationalisation FR/EN** :
+    - Nouveaux libellés pour les filtres et indicateurs de sommes traduits et testés (11/11 tests passants).
+
 - Refonte du rendu Analytics & Reporting (Donut SVG, Tendance des heures, KPI visuels, mise en page épurée sans redondance) (TICKET-0015) :
   - Restitution visuelle moderne et épurée inspirée du design dashboard sombre (Linear/modern BI style) sans les doublons de graphiques.
   - Cartes KPI enrichies avec icônes distinctives en conteneurs arrondis (`%` pour le TACE, Document pour le facturable, Chapeau universitaire pour l'interne/formation, Horloge pour les OT) et sous-titres contextuels détaillés.

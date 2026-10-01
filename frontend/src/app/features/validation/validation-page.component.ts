@@ -1,24 +1,27 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { AvatarComponent } from '../../shared/ui/avatar.component';
+import { KpiCardComponent } from '../../shared/ui/kpi-card.component';
 import { ActivityType, TimesheetOverview, TimesheetStatus } from '../timesheets/timesheet.models';
-import { ManagerTimesheetDetail, PendingTimesheetSummary } from './validation.models';
+import { ManagerTimesheetDetail, PendingTimesheetSummary, SubordinateSummary } from './validation.models';
 import { ValidationService } from './validation.service';
-
-import { StatusBadgeComponent } from '../../shared/ui/status-badge.component';
+import { ProjectService, Project } from '../projects/project.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 
 @Component({
   selector: 'tf-validation-page',
-  imports: [FormsModule, IconComponent, AvatarComponent, TranslatePipe],
+  standalone: true,
+  imports: [CommonModule, FormsModule, IconComponent, AvatarComponent, KpiCardComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './validation-page.component.html'
 })
 export class ValidationPageComponent implements OnInit {
   private readonly validationService = inject(ValidationService);
+  private readonly projectService = inject(ProjectService);
   private readonly auth = inject(AuthService);
   readonly i18n = inject(I18nService);
 
@@ -28,9 +31,16 @@ export class ValidationPageComponent implements OnInit {
   readonly errorMessage = this.i18n.messageSignal(null);
   readonly successMessage = this.i18n.messageSignal(null);
 
+  // Filtres
   readonly selectedStatus = signal<string>('SUBMITTED');
-  readonly selectedDetail = signal<ManagerTimesheetDetail | null>(null);
+  readonly selectedUserId = signal<string>('');
+  readonly selectedProjectId = signal<string>('');
+  selectedWeek = '';
 
+  readonly subordinates = signal<SubordinateSummary[]>([]);
+  readonly projects = signal<Project[]>([]);
+
+  readonly selectedDetail = signal<ManagerTimesheetDetail | null>(null);
   readonly rejectModalOpen = signal<boolean>(false);
   targetTimesheetId: string | null = null;
   rejectComment = '';
@@ -43,8 +53,33 @@ export class ValidationPageComponent implements OnInit {
 
   readonly pendingCount = signal<number>(0);
 
+  // Sommes et métriques calculées en temps réel sur la sélection filtrée
+  readonly totalMinutesSum = computed(() => this.timesheets().reduce((acc, t) => acc + t.totalMinutes, 0));
+  readonly billableMinutesSum = computed(() => this.timesheets().reduce((acc, t) => acc + t.billableMinutes, 0));
+  readonly averageTace = computed(() => {
+    const total = this.totalMinutesSum();
+    const billable = this.billableMinutesSum();
+    return total > 0 ? Math.round((billable * 1000) / total) / 10 : 0;
+  });
+
+  readonly hasActiveFilters = computed(() =>
+    !!this.selectedUserId() || !!this.selectedProjectId() || !!this.selectedWeek || this.selectedStatus() !== 'SUBMITTED'
+  );
+
   ngOnInit(): void {
+    this.loadFilterOptions();
     this.loadTimesheets();
+  }
+
+  loadFilterOptions(): void {
+    this.validationService.getSubordinates().subscribe({
+      next: subs => this.subordinates.set(subs),
+      error: () => {}
+    });
+    this.projectService.list().subscribe({
+      next: projs => this.projects.set(projs),
+      error: () => {}
+    });
   }
 
   setStatusFilter(status: string): void {
@@ -52,10 +87,27 @@ export class ValidationPageComponent implements OnInit {
     this.loadTimesheets();
   }
 
+  onFilterChange(): void {
+    this.loadTimesheets();
+  }
+
+  resetFilters(): void {
+    this.selectedStatus.set('SUBMITTED');
+    this.selectedUserId.set('');
+    this.selectedProjectId.set('');
+    this.selectedWeek = '';
+    this.loadTimesheets();
+  }
+
   loadTimesheets(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
-    this.validationService.listPending(this.selectedStatus()).subscribe({
+    this.validationService.listPending(
+      this.selectedStatus(),
+      this.selectedWeek || undefined,
+      this.selectedUserId() || undefined,
+      this.selectedProjectId() || undefined
+    ).subscribe({
       next: list => {
         this.timesheets.set(list);
         const actionableCount = list.filter(item => item.status === 'SUBMITTED' && !item.selfTimesheet).length;
@@ -152,9 +204,9 @@ export class ValidationPageComponent implements OnInit {
   }
 
   formatHours(minutes: number): string {
-    const h = minutes / 60;
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'fr-FR';
-    return h.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' h';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h} h ${m.toString().padStart(2, '0')}`;
   }
 
   formatDate(dateStr: string): string {
@@ -193,10 +245,10 @@ export class ValidationPageComponent implements OnInit {
 
   activityBadgeClass(type: ActivityType): string {
     switch (type) {
-      case 'PROJECT': return 'bg-brand-50 text-brand-700 border-brand-200';
-      case 'TRAINING': return 'bg-violet-50 text-violet-700 border-violet-200';
-      case 'SUPPORT': return 'bg-teal-50 text-teal-700 border-teal-200';
-      case 'INTERNAL': return 'bg-slate/10 text-slate border-slate/20';
+      case 'PROJECT': return 'bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800/60';
+      case 'TRAINING': return 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/60 dark:text-violet-300 dark:border-violet-800/60';
+      case 'SUPPORT': return 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800/60';
+      case 'INTERNAL': return 'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700';
     }
   }
 }
