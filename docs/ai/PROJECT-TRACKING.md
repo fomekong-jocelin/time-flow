@@ -20,7 +20,7 @@
 | TICKET-0004 | #3 + #4 (PR #11) | Feuille de temps / CRA API + UI | DONE | P0 |
 | TICKET-0005 | #5 (PR #12) | Validation manager | DONE | P0 |
 | TICKET-0006 | à créer | Formations | TODO | P1 |
-| TICKET-0007 | à créer | Dashboard / reporting | TODO | P1 |
+| TICKET-0007 | à créer | Dashboard / reporting (KPI, TACE, OT, Projets, Équipe) | DONE | P1 |
 | TICKET-0008 | à créer | Exports / préparation facturation | TODO | P1 |
 | TICKET-0009 | PR #8 | Application de la charte visuelle v0.1 | DONE | P1 |
 | TICKET-0010 | PR #10 | Gestion des utilisateurs SSO + locaux (rôle, manager, temps théorique, activation) | DONE | P0 |

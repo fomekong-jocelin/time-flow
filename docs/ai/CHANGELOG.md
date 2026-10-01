@@ -6,6 +6,13 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Tableau de bord d'Analyses & Reporting (KPI, TACE, OT, Projets, Équipe) (TICKET-0007) :
+  - Métriques de rentabilité et performance opérationnelle : calcul du TACE (Taux d'Activité Congés Exclus / Taux de Facturabilité), heures facturables, heures internes/support et suivi consolidé des heures supplémentaires (OT).
+  - Répartition dynamique par projet avec part relative (%) et par collaborateur (temps total, facturable, OT et TACE individuel).
+  - Contrôle d'accès et cloisonnement strict (DDD / Sécurité deny-by-default) : Collaborateur restreint à ses statistiques personnelles, Manager restreint à son équipe directe (`manager_id`) et à lui-même, Direction et Administrateurs avec vision globale multi-critères.
+  - API REST `/api/v1/analytics/overview` supportant le filtrage par période (mois, trimestre, année), utilisateur et projet.
+  - Interface Angular `/analyses` Mobile-First : intégration des composants partagés (`tf-kpi-card`, `tf-avatar`, `tf-status-badge`), sélecteur de période dynamique, barres d'activité proportionnelles, tables desktop sans coupure et cartes tactiles pour smartphones.
+
 - Composants UI réutilisables & Expérience Mobile-First unifiée (TICKET-0013) :
   - Création de composants partagés dans `frontend/src/app/shared/ui/` : `AvatarComponent` (`tf-avatar`) avec génération automatique d'initiales et badge, `StatusBadgeComponent` (`tf-status-badge`) avec dot indicator et palette sémantique, et `KpiCardComponent` (`tf-kpi-card`) pour les métriques de synthèse.
   - Ajout de l'icône `x` (fermeture) dans `IconComponent`.
