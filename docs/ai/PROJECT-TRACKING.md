@@ -5,7 +5,7 @@
 | Champ | Valeur |
 |---|---|
 | Dernière mise à jour | 2026-10-01 |
-| Phase | Sprint 0 / Authentification |
+| Phase | Authentification / Catalogue projets et intégration Azure DevOps |
 | État | IN_PROGRESS |
 | Cible V1 | Sync projets Azure DevOps + saisie hebdomadaire + validation + reporting de base |
 | Risque actuel | Parcours SSO à valider avec une App Registration Microsoft Entra réelle |
@@ -16,7 +16,7 @@
 |---|---:|---|---|---|
 | TICKET-0001 | PR #6 | Bootstrap architecture + gouvernance | REVIEW | P0 |
 | TICKET-0002 | #1 | Authentification hybride et rôles | IN_PROGRESS | P0 |
-| TICKET-0003 | #2 | Synchronisation projets Azure DevOps | TODO | P0 |
+| TICKET-0003 | #2 | Catalogue projets + Azure DevOps + import/export Excel (26 tests OK ; validation réelle et PR restantes) | IN_PROGRESS | P0 |
 | TICKET-0004 | #3 + #4 | Feuille de temps / CRA API + UI | TODO | P0 |
 | TICKET-0005 | #5 | Validation manager | TODO | P0 |
 | TICKET-0006 | à créer | Formations | TODO | P1 |

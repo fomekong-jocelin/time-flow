@@ -12,7 +12,8 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'mes-temps' },
-      { path: 'mes-temps', component: TimesheetPageComponent, title: 'Mes temps · TimeFlow' }
+      { path: 'mes-temps', component: TimesheetPageComponent, title: 'Mes temps · TimeFlow' },
+      { path: 'projets', loadComponent: () => import('./features/projects/projects-page.component').then(m => m.ProjectsPageComponent), title: 'Projets · TimeFlow' }
     ]
   },
   { path: '**', redirectTo: 'mes-temps' }

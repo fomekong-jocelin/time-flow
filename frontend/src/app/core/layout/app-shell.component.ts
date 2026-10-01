@@ -14,7 +14,7 @@ interface NavItem {
 
 const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Mes temps', icon: 'clock', path: '/mes-temps' },
-  { label: 'Projets', icon: 'folder' },
+  { label: 'Projets', icon: 'folder', path: '/projets' },
   { label: 'Formations', icon: 'graduation' },
   { label: 'Analyses', icon: 'analytics' }
 ];
@@ -88,6 +88,14 @@ const ROLE_LABELS: Record<CurrentUser['role'], string> = {
           }
         </header>
 
+        <nav aria-label="Navigation mobile" class="flex gap-2 border-b border-border bg-surface px-4 py-2 lg:hidden">
+          @for (item of navItems; track item.label) {
+            @if (item.path) {
+              <a [routerLink]="item.path" routerLinkActive="bg-brand-50 text-brand-800" ariaCurrentWhenActive="page"
+                class="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm"><tf-icon [name]="item.icon" [size]="18" />{{ item.label }}</a>
+            }
+          }
+        </nav>
         <main class="mx-auto w-full max-w-[100rem] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <router-outlet />
         </main>
