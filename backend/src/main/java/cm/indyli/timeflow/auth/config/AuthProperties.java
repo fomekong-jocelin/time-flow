@@ -12,6 +12,8 @@ public class AuthProperties {
 
     private String frontendUrl = "http://localhost:4200";
     private boolean ssoEnabled;
+    /** Entra tenant allowed to claim pre-provisioned SSO accounts; blank disables linking. */
+    private String entraTenantId = "";
     private int maxFailedAttempts = 5;
     private long lockDurationMinutes = 15;
     private List<String> bootstrapAdminEmails = new ArrayList<>();
@@ -33,6 +35,14 @@ public class AuthProperties {
 
     public void setSsoEnabled(boolean ssoEnabled) {
         this.ssoEnabled = ssoEnabled;
+    }
+
+    public String getEntraTenantId() {
+        return entraTenantId;
+    }
+
+    public void setEntraTenantId(String entraTenantId) {
+        this.entraTenantId = entraTenantId == null ? "" : entraTenantId.trim();
     }
 
     public int getMaxFailedAttempts() {

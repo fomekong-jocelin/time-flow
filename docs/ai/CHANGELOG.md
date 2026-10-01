@@ -6,6 +6,9 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Gestion des utilisateurs (ADMIN) : liste SSO/locaux, création de compte local, pré-provisioning SSO, rôle, manager, temps hebdomadaire théorique, activation/désactivation, réinitialisation de mot de passe et déverrouillage des comptes locaux.
+- Écran Angular `/admin/utilisateurs` réservé aux administrateurs.
+- Migration V4 : type de compte, manager, contrainte de temps hebdomadaire, audit des actions d'administration.
 - Catalogue Projets : recherche, filtre de disponibilité, états de chargement/erreur/vide et navigation mobile.
 - API authentifiée du catalogue et synchronisation Azure DevOps réservée ADMIN avec CSRF.
 - Import paginé par identifiant externe, conservation des paramètres de facturation et des historiques, audit des succès/échecs.
@@ -28,6 +31,10 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 - Charte visuelle v0.1 : logo SVG TimeFlow by INDYLI (symbole, icône app, favicon), design tokens, Dark Mode, police Inter auto-hébergée, icônes outline.
 - Shell applicatif avec navigation latérale, utilisateur connecté et déconnexion.
 
+### Changed
+
+- `POST /api/v1/admin/users/local` : champs optionnels `managerId` et `weeklyTargetMinutes`, réponse enrichie (`accountType`, `managerId`, `weeklyTargetMinutes`) ; contrat existant conservé.
+
 ### Fixed
 
 - Connexion : le bouton restait désactivé sans message quand l'email était incomplet (ex. `admin` pré-rempli par le navigateur) ; erreurs désormais affichées sous chaque champ.
@@ -36,6 +43,9 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Security
 
+- Révocation des sessions serveur d'un utilisateur désactivé, changé de rôle ou dont le mot de passe est réinitialisé.
+- Liaison d'un compte SSO pré-provisionné limitée au tenant Entra configuré ; jamais de liaison d'un compte local.
+- Règles de garde : pas d'auto-désactivation/rétrogradation, au moins un ADMIN actif, hiérarchie sans cycle.
 - Politique backend deny-by-default au bootstrap ; seule la sonde de santé est publique.
 - Session serveur HttpOnly : aucun access token OAuth n'est stocké dans le navigateur.
 - CSRF activé, Argon2id pour les mots de passe locaux et verrouillage temporaire après échecs répétés.

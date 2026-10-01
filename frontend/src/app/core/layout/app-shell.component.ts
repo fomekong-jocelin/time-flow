@@ -10,13 +10,16 @@ interface NavItem {
   icon: IconName;
   /** Route disponible ; absent = écran pas encore livré. */
   path?: string;
+  /** Rôle requis pour afficher l'entrée (l'autorisation reste appliquée par le backend). */
+  role?: CurrentUser['role'];
 }
 
 const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Mes temps', icon: 'clock', path: '/mes-temps' },
   { label: 'Projets', icon: 'folder', path: '/projets' },
   { label: 'Formations', icon: 'graduation' },
-  { label: 'Analyses', icon: 'analytics' }
+  { label: 'Analyses', icon: 'analytics' },
+  { label: 'Utilisateurs', icon: 'users', path: '/admin/utilisateurs', role: 'ADMIN' }
 ];
 
 const ROLE_LABELS: Record<CurrentUser['role'], string> = {
@@ -39,7 +42,7 @@ const ROLE_LABELS: Record<CurrentUser['role'], string> = {
         </a>
 
         <nav aria-label="Navigation principale" class="flex-1 space-y-1 overflow-y-auto px-3">
-          @for (item of navItems; track item.label) {
+          @for (item of navItems(); track item.label) {
             @if (item.path) {
               <a
                 [routerLink]="item.path"
@@ -89,7 +92,7 @@ const ROLE_LABELS: Record<CurrentUser['role'], string> = {
         </header>
 
         <nav aria-label="Navigation mobile" class="flex gap-2 border-b border-border bg-surface px-4 py-2 lg:hidden">
-          @for (item of navItems; track item.label) {
+          @for (item of navItems(); track item.label) {
             @if (item.path) {
               <a [routerLink]="item.path" routerLinkActive="bg-brand-50 text-brand-800" ariaCurrentWhenActive="page"
                 class="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm"><tf-icon [name]="item.icon" [size]="18" />{{ item.label }}</a>
@@ -107,8 +110,9 @@ export class AppShellComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly navItems = NAV_ITEMS;
   readonly user = this.auth.currentUser;
+  protected readonly navItems = computed(() =>
+    NAV_ITEMS.filter(item => !item.role || item.role === this.user()?.role));
   readonly loggingOut = signal(false);
   readonly roleLabel = computed(() => {
     const user = this.user();

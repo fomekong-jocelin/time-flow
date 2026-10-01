@@ -51,6 +51,7 @@ timeflow:
   auth:
     frontend-url: ${FRONTEND_URL:http://localhost:4200}
     sso-enabled: ${ENTRA_SSO_ENABLED:false}
+    entra-tenant-id: ${ENTRA_TENANT_ID:}
     max-failed-attempts: ${AUTH_MAX_FAILED_ATTEMPTS:5}
     lock-duration-minutes: ${AUTH_LOCK_DURATION_MINUTES:15}
     bootstrap-admin-emails: ${BOOTSTRAP_ADMIN_EMAILS:}

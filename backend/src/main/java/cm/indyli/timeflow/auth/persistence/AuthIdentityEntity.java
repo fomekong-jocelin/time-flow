@@ -76,6 +76,7 @@ public class AuthIdentityEntity {
     public boolean isEnabled() { return enabled; }
     public int getFailedAttempts() { return failedAttempts; }
     public OffsetDateTime getLockedUntil() { return lockedUntil; }
+    public OffsetDateTime getLastLoginAt() { return lastLoginAt; }
 
     public boolean isLockedAt(OffsetDateTime now) {
         return lockedUntil != null && lockedUntil.isAfter(now);
@@ -87,6 +88,17 @@ public class AuthIdentityEntity {
             lockedUntil = OffsetDateTime.now().plusMinutes(lockMinutes);
             failedAttempts = 0;
         }
+        updatedAt = OffsetDateTime.now();
+    }
+
+    public void resetPassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        unlock();
+    }
+
+    public void unlock() {
+        failedAttempts = 0;
+        lockedUntil = null;
         updatedAt = OffsetDateTime.now();
     }
 

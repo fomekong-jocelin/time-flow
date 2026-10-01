@@ -1,6 +1,7 @@
 package cm.indyli.timeflow.auth.application;
 
 import cm.indyli.timeflow.auth.config.AuthProperties;
+import cm.indyli.timeflow.auth.domain.AccountType;
 import cm.indyli.timeflow.auth.domain.AuthProvider;
 import cm.indyli.timeflow.auth.domain.UserRole;
 import cm.indyli.timeflow.auth.persistence.AppUserEntity;
@@ -22,9 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 
 @Service
 public class EntraOidcUserService {
+
+    private static final Set<String> SHARED_TENANTS = Set.of("", "common", "organizations", "consumers");
 
     private final OidcUserService delegate = new OidcUserService();
     private final AppUserRepository userRepository;
@@ -48,8 +52,7 @@ public class EntraOidcUserService {
                 ? email
                 : oidcUser.getFullName();
 
-        var identity = identityRepository.findByProviderAndSubject(AuthProvider.ENTRA, subject)
-                .orElseGet(() -> provision(subject, email, displayName));
+        var identity = resolveIdentity(subject, email, displayName, oidcUser.getClaimAsString("tid"));
 
         if (!identity.isEnabled() || !identity.getUser().isActive()) {
             throw new DisabledException("Account disabled");
@@ -65,17 +68,43 @@ public class EntraOidcUserService {
         return new DefaultOidcUser(authorities, oidcUser.getIdToken(), oidcUser.getUserInfo());
     }
 
-    private AuthIdentityEntity provision(String subject, String email, String displayName) {
-        if (userRepository.existsByEmailIgnoreCase(email)) {
+    AuthIdentityEntity resolveIdentity(String subject, String email, String displayName, String tenantId) {
+        return identityRepository.findByProviderAndSubject(AuthProvider.ENTRA, subject)
+                .orElseGet(() -> provision(subject, email, displayName, tenantId));
+    }
+
+    private AuthIdentityEntity provision(String subject, String email, String displayName, String tenantId) {
+        var existing = userRepository.findByEmailIgnoreCase(email);
+        if (existing.isPresent()) {
+            return linkPreProvisioned(existing.get(), subject, tenantId);
+        }
+
+        var role = isBootstrapAdmin(email) ? UserRole.ADMIN : UserRole.COLLABORATOR;
+        var user = userRepository.save(AppUserEntity.sso(email, displayName, role));
+        return identityRepository.save(AuthIdentityEntity.entra(user, subject));
+    }
+
+    /**
+     * Links the first Entra sign-in to an account an administrator created as SSO.
+     * Local accounts are never linked, and the token must come from the configured tenant.
+     */
+    private AuthIdentityEntity linkPreProvisioned(AppUserEntity user, String subject, String tenantId) {
+        if (user.getAccountType() != AccountType.SSO
+                || !isConfiguredTenant(tenantId)
+                || identityRepository.existsByUser_IdAndProvider(user.getId(), AuthProvider.ENTRA)) {
             throw new OAuth2AuthenticationException(
                     new OAuth2Error("identity_link_required"),
                     "An account with this email already exists and must be linked by an administrator"
             );
         }
-
-        var role = isBootstrapAdmin(email) ? UserRole.ADMIN : UserRole.COLLABORATOR;
-        var user = userRepository.save(AppUserEntity.create(email, displayName, role));
         return identityRepository.save(AuthIdentityEntity.entra(user, subject));
+    }
+
+    private boolean isConfiguredTenant(String tenantId) {
+        var configured = properties.getEntraTenantId().toLowerCase(Locale.ROOT);
+        return !SHARED_TENANTS.contains(configured)
+                && tenantId != null
+                && configured.equals(tenantId.trim().toLowerCase(Locale.ROOT));
     }
 
     private String resolveEmail(OidcUser user) {

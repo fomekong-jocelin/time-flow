@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from './core/auth/admin.guard';
 import { authGuard } from './core/auth/auth.guard';
 import { AppShellComponent } from './core/layout/app-shell.component';
 import { LoginPageComponent } from './features/auth/login-page.component';
@@ -13,6 +14,7 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'mes-temps' },
       { path: 'mes-temps', component: TimesheetPageComponent, title: 'Mes temps · TimeFlow' },
+      { path: 'admin/utilisateurs', canActivate: [adminGuard], loadComponent: () => import('./features/users/users-page.component').then(m => m.UsersPageComponent), title: 'Utilisateurs · TimeFlow' },
       { path: 'projets', loadComponent: () => import('./features/projects/projects-page.component').then(m => m.ProjectsPageComponent), title: 'Projets · TimeFlow' }
     ]
   },
