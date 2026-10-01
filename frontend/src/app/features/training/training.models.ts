@@ -59,3 +59,10 @@ export interface TrainingFormData {
   durationHours: number;
   maxParticipants: number;
 }
+
+export interface TrainingUser {
+  id: string;
+  displayName: string;
+  email: string;
+  role: string;
+}

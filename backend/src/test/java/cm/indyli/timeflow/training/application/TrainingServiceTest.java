@@ -208,4 +208,17 @@ class TrainingServiceTest {
         assertThat(kpi.totalPlannedHours()).isEqualByComparingTo(BigDecimal.valueOf(21.0));
         assertThat(kpi.totalRegistrations()).isEqualTo(8);
     }
+
+    @Test
+    @DisplayName("Liste des utilisateurs actifs disponibles pour les formations")
+    void getAvailableUsers() {
+        when(userRepository.findAllByOrderByDisplayNameAsc()).thenReturn(List.of(trainer, user1));
+
+        var users = service.getAvailableUsers();
+
+        assertThat(users).hasSize(2);
+        assertThat(users.get(0).displayName()).isEqualTo("Formateur Expert");
+        assertThat(users.get(0).role()).isEqualTo(UserRole.TRAINER);
+        assertThat(users.get(1).displayName()).isEqualTo("Collaborateur Apprenant");
+    }
 }

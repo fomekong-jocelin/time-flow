@@ -197,4 +197,12 @@ class TrainingSecurityTest {
                 .content("{}"))
                 .andExpect(status().isCreated());
     }
+
+    @Test
+    @DisplayName("Tout utilisateur authentifié peut obtenir la liste des utilisateurs pour les formations")
+    void authenticatedUserCanListAvailableUsers() throws Exception {
+        mvc.perform(get(TRAININGS_ENDPOINT + "/users")
+                .with(user("collab").roles("COLLABORATOR")))
+                .andExpect(status().isOk());
+    }
 }

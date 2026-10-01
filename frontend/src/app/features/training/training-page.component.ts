@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TrainingService } from './training.service';
-import { DeliveryMode, ParticipantStatus, TrainingCategory, TrainingFormData, TrainingKpi, TrainingSession, TrainingStatus } from './training.models';
+import { DeliveryMode, ParticipantStatus, TrainingCategory, TrainingFormData, TrainingKpi, TrainingSession, TrainingStatus, TrainingUser } from './training.models';
 import { AuthService } from '../../core/auth/auth.service';
-import { ManagedUser, UserAdminService } from '../users/user-admin.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { IconComponent } from '../../shared/ui/icon.component';
@@ -413,11 +412,10 @@ export class TrainingPageComponent implements OnInit {
   protected readonly i18n = inject(I18nService);
   private readonly trainingService = inject(TrainingService);
   private readonly authService = inject(AuthService);
-  private readonly userAdminService = inject(UserAdminService);
 
   readonly sessions = signal<TrainingSession[]>([]);
   readonly kpis = signal<TrainingKpi | null>(null);
-  readonly availableUsers = signal<ManagedUser[]>([]);
+  readonly availableUsers = signal<TrainingUser[]>([]);
   readonly loading = signal(false);
   readonly actionBusy = signal(false);
   readonly formBusy = signal(false);
@@ -479,9 +477,7 @@ export class TrainingPageComponent implements OnInit {
 
   ngOnInit() {
     this.reload();
-    if (this.canManage()) {
-      this.loadUsers();
-    }
+    this.loadUsers();
   }
 
   reload() {
@@ -504,7 +500,7 @@ export class TrainingPageComponent implements OnInit {
   }
 
   loadUsers() {
-    this.userAdminService.list().subscribe({
+    this.trainingService.getUsers().subscribe({
       next: (users) => this.availableUsers.set(users),
       error: () => {}
     });
@@ -546,11 +542,13 @@ export class TrainingPageComponent implements OnInit {
   }
 
   openCreateModal() {
+    this.loadUsers();
     this.editingSession.set(null);
     this.showFormModal.set(true);
   }
 
   openEditModal(s: TrainingSession) {
+    this.loadUsers();
     this.editingSession.set(s);
     this.showFormModal.set(true);
   }
@@ -561,6 +559,7 @@ export class TrainingPageComponent implements OnInit {
   }
 
   openParticipantsModal(s: TrainingSession) {
+    this.loadUsers();
     this.trainingService.get(s.id).subscribe({
       next: (full) => this.activeParticipantsSession.set(full),
       error: () => this.activeParticipantsSession.set(s)

@@ -7,6 +7,7 @@ import cm.indyli.timeflow.training.application.SaveTrainingCommand;
 import cm.indyli.timeflow.training.application.TrainingKpiDto;
 import cm.indyli.timeflow.training.application.TrainingService;
 import cm.indyli.timeflow.training.application.TrainingSessionDto;
+import cm.indyli.timeflow.training.application.TrainingUserDto;
 import cm.indyli.timeflow.training.domain.ParticipantStatus;
 import cm.indyli.timeflow.training.domain.TrainingCategory;
 import cm.indyli.timeflow.training.domain.TrainingStatus;
@@ -50,6 +51,12 @@ public class TrainingController {
     @PreAuthorize("isAuthenticated()")
     public TrainingKpiDto getKpis() {
         return trainingService.getKpis();
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("isAuthenticated()")
+    public List<TrainingUserDto> getAvailableUsers() {
+        return trainingService.getAvailableUsers();
     }
 
     @GetMapping("/{id}")

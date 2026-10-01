@@ -631,6 +631,7 @@ export const FR = {
     "viewParticipants": "Participants",
     "manageParticipants": "Gérer les participants",
     "addParticipant": "Inscrire un collaborateur",
+    "addParticipantBtn": "Inscrire",
     "selectParticipant": "Sélectionner un collaborateur",
     "markAttended": "Présent",
     "markCancelled": "Annuler présence",

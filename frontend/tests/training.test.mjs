@@ -58,13 +58,17 @@ test('TrainingService performs CRUD, search, registration and attendance managem
   assert.equal(calls[0].options?.params?.get('category'), 'INTERNAL');
   assert.equal(calls[0].options?.params?.get('onlyMine'), 'true');
 
-  // 2. KPIs
+  // 2. KPIs & Users
   service.getKpis().subscribe(kpi => {
     assert.equal(kpi.totalSessions, 5);
     assert.equal(kpi.totalPlannedHours, 35);
   });
   assert.equal(calls[1].method, 'GET');
   assert.equal(calls[1].url, '/api/v1/trainings/kpi');
+
+  service.getUsers().subscribe();
+  assert.equal(calls[2].method, 'GET');
+  assert.equal(calls[2].url, '/api/v1/trainings/users');
 
   // 3. Create session with CSRF
   const newSessionData = {
@@ -87,45 +91,45 @@ test('TrainingService performs CRUD, search, registration and attendance managem
     assert.equal(res.reference, 'FORM-2026-001');
   });
 
-  assert.equal(calls[2].method, 'GET');
-  assert.equal(calls[2].url, '/api/v1/auth/csrf');
-  assert.equal(calls[3].method, 'POST');
-  assert.equal(calls[3].url, '/api/v1/trainings');
-  assert.deepEqual(calls[3].body, newSessionData);
+  assert.equal(calls[3].method, 'GET');
+  assert.equal(calls[3].url, '/api/v1/auth/csrf');
+  assert.equal(calls[4].method, 'POST');
+  assert.equal(calls[4].url, '/api/v1/trainings');
+  assert.deepEqual(calls[4].body, newSessionData);
 
   // 4. Update session
   service.update('session-1', { ...newSessionData, status: 'IN_PROGRESS' }).subscribe();
-  assert.equal(calls[4].method, 'GET');
-  assert.equal(calls[4].url, '/api/v1/auth/csrf');
-  assert.equal(calls[5].method, 'PUT');
-  assert.equal(calls[5].url, '/api/v1/trainings/session-1');
+  assert.equal(calls[5].method, 'GET');
+  assert.equal(calls[5].url, '/api/v1/auth/csrf');
+  assert.equal(calls[6].method, 'PUT');
+  assert.equal(calls[6].url, '/api/v1/trainings/session-1');
 
   // 5. Delete session
   service.delete('session-1').subscribe();
-  assert.equal(calls[6].method, 'GET');
-  assert.equal(calls[6].url, '/api/v1/auth/csrf');
-  assert.equal(calls[7].method, 'DELETE');
-  assert.equal(calls[7].url, '/api/v1/trainings/session-1');
+  assert.equal(calls[7].method, 'GET');
+  assert.equal(calls[7].url, '/api/v1/auth/csrf');
+  assert.equal(calls[8].method, 'DELETE');
+  assert.equal(calls[8].url, '/api/v1/trainings/session-1');
 
   // 6. Register & Unregister participant
   service.register('session-1', 'user-42').subscribe();
-  assert.equal(calls[8].method, 'GET');
-  assert.equal(calls[8].url, '/api/v1/auth/csrf');
-  assert.equal(calls[9].method, 'POST');
-  assert.equal(calls[9].url, '/api/v1/trainings/session-1/participants');
-  assert.deepEqual(calls[9].body, { userId: 'user-42' });
+  assert.equal(calls[9].method, 'GET');
+  assert.equal(calls[9].url, '/api/v1/auth/csrf');
+  assert.equal(calls[10].method, 'POST');
+  assert.equal(calls[10].url, '/api/v1/trainings/session-1/participants');
+  assert.deepEqual(calls[10].body, { userId: 'user-42' });
 
   service.unregister('session-1', 'user-42').subscribe();
-  assert.equal(calls[10].method, 'GET');
-  assert.equal(calls[10].url, '/api/v1/auth/csrf');
-  assert.equal(calls[11].method, 'DELETE');
-  assert.equal(calls[11].url, '/api/v1/trainings/session-1/participants/user-42');
+  assert.equal(calls[11].method, 'GET');
+  assert.equal(calls[11].url, '/api/v1/auth/csrf');
+  assert.equal(calls[12].method, 'DELETE');
+  assert.equal(calls[12].url, '/api/v1/trainings/session-1/participants/user-42');
 
   // 7. Update participant status
   service.updateParticipantStatus('session-1', 'user-42', 'ATTENDED').subscribe();
-  assert.equal(calls[12].method, 'GET');
-  assert.equal(calls[12].url, '/api/v1/auth/csrf');
-  assert.equal(calls[13].method, 'PATCH');
-  assert.equal(calls[13].url, '/api/v1/trainings/session-1/participants/user-42/status');
-  assert.deepEqual(calls[13].body, { status: 'ATTENDED' });
+  assert.equal(calls[13].method, 'GET');
+  assert.equal(calls[13].url, '/api/v1/auth/csrf');
+  assert.equal(calls[14].method, 'PATCH');
+  assert.equal(calls[14].url, '/api/v1/trainings/session-1/participants/user-42/status');
+  assert.deepEqual(calls[14].body, { status: 'ATTENDED' });
 });

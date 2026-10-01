@@ -301,4 +301,12 @@ public class TrainingService {
                 session.getUpdatedAt()
         );
     }
+
+    @Transactional(readOnly = true)
+    public List<TrainingUserDto> getAvailableUsers() {
+        return userRepository.findAllByOrderByDisplayNameAsc().stream()
+                .filter(AppUserEntity::isActive)
+                .map(u -> new TrainingUserDto(u.getId(), u.getDisplayName(), u.getEmail(), u.getRole()))
+                .toList();
+    }
 }

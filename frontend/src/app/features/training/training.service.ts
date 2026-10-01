@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { switchMap } from 'rxjs';
-import { ParticipantStatus, TrainingFormData, TrainingKpi, TrainingSession } from './training.models';
+import { ParticipantStatus, TrainingFormData, TrainingKpi, TrainingSession, TrainingUser } from './training.models';
 
 @Injectable({ providedIn: 'root' })
 export class TrainingService {
@@ -21,6 +21,10 @@ export class TrainingService {
 
   getKpis() {
     return this.http.get<TrainingKpi>(`${this.baseUrl}/kpi`);
+  }
+
+  getUsers() {
+    return this.http.get<TrainingUser[]>(`${this.baseUrl}/users`);
   }
 
   get(id: string) {

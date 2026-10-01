@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DeliveryMode, TrainingCategory, TrainingFormData, TrainingSession, TrainingStatus } from './training.models';
-import { ManagedUser } from '../users/user-admin.service';
+import { DeliveryMode, TrainingCategory, TrainingFormData, TrainingSession, TrainingStatus, TrainingUser } from './training.models';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { I18nService } from '../../core/i18n/i18n.service';
 
@@ -116,9 +115,9 @@ import { I18nService } from '../../core/i18n/i18n.service';
             id="training-trainer"
             name="trainerId"
             [ngModel]="trainerId()"
-            (ngModelChange)="trainerId.set($event)"
+            (ngModelChange)="trainerId.set($event || null)"
             class="min-h-10 w-full rounded-xl border border-border bg-app px-3 text-xs font-medium focus:border-brand-500 focus:outline-none">
-            <option [ngValue]="null">{{ 'training.noTrainer' | translate }}</option>
+            <option value="">{{ 'training.noTrainer' | translate }}</option>
             @for (u of users(); track u.id) {
               <option [value]="u.id">{{ u.displayName }} ({{ u.role }})</option>
             }
@@ -223,7 +222,7 @@ export class TrainingFormComponent implements OnInit {
   protected readonly i18n = inject(I18nService);
 
   readonly session = input<TrainingSession | null>(null);
-  readonly users = input<ManagedUser[]>([]);
+  readonly users = input<TrainingUser[]>([]);
   readonly busy = input(false);
 
   readonly saved = output<TrainingFormData>();

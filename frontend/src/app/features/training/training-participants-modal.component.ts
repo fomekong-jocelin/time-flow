@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ParticipantStatus, TrainingParticipant, TrainingSession } from './training.models';
-import { ManagedUser } from '../users/user-admin.service';
+import { ParticipantStatus, TrainingParticipant, TrainingSession, TrainingUser } from './training.models';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -52,7 +51,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
                   [ngModel]="selectedUserId()"
                   (ngModelChange)="selectedUserId.set($event)"
                   class="min-h-10 flex-1 rounded-xl border border-border bg-surface px-3 text-xs font-medium focus:border-brand-500 focus:outline-none">
-                  <option [ngValue]="null">{{ 'training.selectParticipant' | translate }}</option>
+                  <option value="">{{ 'training.selectParticipant' | translate }}</option>
                   @for (u of availableUsers(); track u.id) {
                     <option [value]="u.id">{{ u.displayName }} ({{ u.email }})</option>
                   }
@@ -61,9 +60,9 @@ import { I18nService } from '../../core/i18n/i18n.service';
                   type="button"
                   [disabled]="!selectedUserId() || busy()"
                   (click)="handleAdd()"
-                  class="min-h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50 cursor-pointer">
+                  class="min-h-10 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 text-xs font-semibold text-white transition hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap shrink-0 cursor-pointer">
                   <tf-icon name="plus" [size]="14" />
-                  <span>{{ 'training.addParticipant' | translate }}</span>
+                  <span>{{ 'training.addParticipantBtn' | translate }}</span>
                 </button>
               </div>
             </div>
@@ -183,7 +182,7 @@ export class TrainingParticipantsModalComponent {
   protected readonly i18n = inject(I18nService);
 
   readonly session = input.required<TrainingSession>();
-  readonly users = input<ManagedUser[]>([]);
+  readonly users = input<TrainingUser[]>([]);
   readonly canManage = input(false);
   readonly canUpdateStatus = input(false);
   readonly busy = input(false);
@@ -193,7 +192,7 @@ export class TrainingParticipantsModalComponent {
   readonly removeParticipant = output<string>();
   readonly updateStatus = output<{ userId: string; status: ParticipantStatus }>();
 
-  readonly selectedUserId = signal<string | null>(null);
+  readonly selectedUserId = signal('');
 
   readonly participants = computed(() => this.session().participants ?? []);
 
@@ -217,7 +216,7 @@ export class TrainingParticipantsModalComponent {
     const uid = this.selectedUserId();
     if (uid) {
       this.addParticipant.emit(uid);
-      this.selectedUserId.set(null);
+      this.selectedUserId.set('');
     }
   }
 
