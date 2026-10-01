@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 40" role="img" aria-label="TimeFlow">
+  <defs>
+    <linearGradient id="g" gradientUnits="userSpaceOnUse" x1="1" y1="20" x2="45" y2="20">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset=".55" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <g stroke="url(#g)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 12.5h11M1.5 20h11M6.5 27.5h9" stroke-width="3.6"/>
+    <circle cx="29" cy="20" r="14" stroke-width="4.6"/>
+    <path d="M29 12.5V20l5 3.5" stroke-width="3.6"/>
+  </g>
+</svg>
