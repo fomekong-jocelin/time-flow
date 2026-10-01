@@ -70,4 +70,4 @@ Permettre aux managers, directeurs et administrateurs de consulter, examiner en 
 
 ## 5. Statut
 
-Status: REVIEW
+Status: DONE (PR #12)

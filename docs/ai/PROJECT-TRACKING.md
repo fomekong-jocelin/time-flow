@@ -18,7 +18,7 @@
 | TICKET-0002 | #1 (PR #8) | Authentification hybride et rôles | DONE | P0 |
 | TICKET-0003 | #2 (PR #9) | Catalogue projets + Azure DevOps + import/export Excel | DONE | P0 |
 | TICKET-0004 | #3 + #4 (PR #11) | Feuille de temps / CRA API + UI | DONE | P0 |
-| TICKET-0005 | #5 | Validation manager | REVIEW | P0 |
+| TICKET-0005 | #5 (PR #12) | Validation manager | DONE | P0 |
 | TICKET-0006 | à créer | Formations | TODO | P1 |
 | TICKET-0007 | à créer | Dashboard / reporting | TODO | P1 |
 | TICKET-0008 | à créer | Exports / préparation facturation | TODO | P1 |
