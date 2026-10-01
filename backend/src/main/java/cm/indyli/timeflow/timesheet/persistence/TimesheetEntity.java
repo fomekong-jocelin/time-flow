@@ -118,4 +118,15 @@ public class TimesheetEntity {
         this.submittedAt = OffsetDateTime.now();
         this.updatedAt = OffsetDateTime.now();
     }
+
+    public void validate() {
+        this.status = TimesheetStatus.VALIDATED;
+        this.validatedAt = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
+    }
+
+    public void reject() {
+        this.status = TimesheetStatus.REJECTED;
+        this.updatedAt = OffsetDateTime.now();
+    }
 }

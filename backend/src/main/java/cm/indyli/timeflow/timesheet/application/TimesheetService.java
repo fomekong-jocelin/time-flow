@@ -163,7 +163,7 @@ public class TimesheetService {
         );
     }
 
-    private TimesheetOverview mapToOverview(TimesheetEntity timesheet, int weeklyTargetMinutes, String rejectionComment) {
+    public TimesheetOverview mapToOverview(TimesheetEntity timesheet, int weeklyTargetMinutes, String rejectionComment) {
         LocalDate weekStart = timesheet.getWeekStart();
         Map<String, Integer> dailyTotals = new LinkedHashMap<>();
         for (int i = 0; i < 7; i++) {

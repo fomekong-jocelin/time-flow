@@ -7,7 +7,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes = TimesheetController.class)
+@RestControllerAdvice(assignableTypes = {TimesheetController.class, TimesheetManagerController.class})
 public class TimesheetExceptionHandler {
 
     @ExceptionHandler(TimesheetValidationException.class)
