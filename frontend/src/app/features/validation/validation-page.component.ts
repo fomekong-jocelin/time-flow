@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { IconComponent } from '../../shared/ui/icon.component';
+import { AvatarComponent } from '../../shared/ui/avatar.component';
 import { ActivityType, TimesheetOverview, TimesheetStatus } from '../timesheets/timesheet.models';
 import { ManagerTimesheetDetail, PendingTimesheetSummary } from './validation.models';
 import { problemMessage, ValidationService } from './validation.service';
 
 @Component({
   selector: 'tf-validation-page',
-  imports: [FormsModule, IconComponent],
+  imports: [FormsModule, IconComponent, AvatarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="space-y-6">
@@ -117,17 +118,139 @@ import { problemMessage, ValidationService } from './validation.service';
             <p class="mt-1 text-xs">Toutes les soumissions sous votre responsabilité sont à jour.</p>
           </div>
         } @else {
-          <div class="overflow-x-auto">
-            <table class="w-full min-w-[58rem] text-sm">
+          <!-- Vue mobile (< md) : cartes d'application tactiles modernes -->
+          <div class="space-y-3 p-4 md:hidden">
+            @for (item of timesheets(); track item.id) {
+              <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3">
+                <div class="flex items-start justify-between gap-2">
+                  <tf-avatar [name]="item.userDisplayName" [subtext]="item.userEmail" [badge]="item.selfTimesheet ? 'Vous' : ''" size="md" />
+
+                  <!-- Statut -->
+                  @switch (item.status) {
+                    @case ('SUBMITTED') {
+                      <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600 border border-brand-200 whitespace-nowrap">
+                        En attente
+                      </span>
+                    }
+                    @case ('VALIDATED') {
+                      <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-semibold text-success-700 border border-success-200 whitespace-nowrap">
+                        Validée
+                      </span>
+                    }
+                    @case ('REJECTED') {
+                      <span class="inline-flex shrink-0 items-center gap-1 rounded-full bg-danger-50 px-2.5 py-0.5 text-xs font-semibold text-danger-700 border border-danger-200 whitespace-nowrap">
+                        Rejetée
+                      </span>
+                    }
+                    @default {
+                      <span class="inline-flex shrink-0 items-center rounded-full bg-app px-2.5 py-0.5 text-xs text-muted border border-border whitespace-nowrap">
+                        {{ item.status }}
+                      </span>
+                    }
+                  }
+                </div>
+
+                <!-- Semaine & Dates -->
+                <div class="flex items-center justify-between gap-2 pt-1 border-t border-border/50 text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="rounded bg-app px-1.5 py-0.5 text-[11px] font-bold text-muted border border-border">S{{ getWeekNumber(item.weekStart) }}</span>
+                    <span class="font-medium text-ink">Du {{ formatDate(item.weekStart) }} au {{ formatDate(item.weekEnd) }}</span>
+                  </div>
+                  @if (item.submittedAt) {
+                    <span class="text-muted text-[11px] whitespace-nowrap">Le {{ formatDate(item.submittedAt) }}</span>
+                  }
+                </div>
+
+                <!-- Métriques heures (Total saisi, Facturable, Alerte légale) -->
+                <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
+                  <div class="rounded-lg bg-app/50 p-2.5 border border-border">
+                    <span class="text-muted block text-[11px]">Total saisi</span>
+                    <div class="flex items-baseline gap-1 mt-0.5">
+                      <span class="font-bold text-ink text-base">{{ formatHours(item.totalMinutes) }}</span>
+                      <span class="text-[11px] text-muted">/ {{ formatHours(item.weeklyTargetMinutes) }}</span>
+                    </div>
+                    @if (item.complianceAlert) {
+                      <span class="mt-1 inline-flex items-center gap-1 rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+                        <tf-icon name="alert" [size]="10" /> Alerte légale
+                      </span>
+                    }
+                  </div>
+                  <div class="rounded-lg bg-app/50 p-2.5 border border-border">
+                    <span class="text-muted block text-[11px]">Facturable</span>
+                    <div class="flex items-baseline gap-1 mt-0.5">
+                      <span class="font-bold text-success-700 text-base">{{ formatHours(item.billableMinutes) }}</span>
+                      <span class="text-[11px] text-muted">({{ getBillableRate(item) }})</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Projets -->
+                @if (item.projectNames.length > 0) {
+                  <div class="pt-1 border-t border-border/50">
+                    <span class="text-muted block text-[11px] mb-1">Projets</span>
+                    <div class="flex flex-wrap gap-1">
+                      @for (proj of item.projectNames; track proj) {
+                        <span class="rounded-md bg-brand-50/70 border border-brand-200/60 px-2 py-0.5 text-[11px] font-medium text-brand-700">
+                          {{ proj }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Actions tactiles -->
+                <div class="pt-2 border-t border-border flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    (click)="openDetail(item.id)"
+                    class="flex-1 min-w-[5rem] inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-foreground hover:bg-app transition shadow-xs text-center">
+                    <tf-icon name="eye" [size]="14" />
+                    <span>Détail</span>
+                  </button>
+
+                  @if (item.status === 'SUBMITTED' && !item.selfTimesheet) {
+                    <button
+                      type="button"
+                      (click)="quickValidate(item)"
+                      [disabled]="actionPending()"
+                      class="flex-1 min-w-[5rem] inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500 transition shadow-xs disabled:opacity-50 text-center">
+                      <tf-icon name="check" [size]="14" />
+                      <span>Valider</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      (click)="openRejectModal(item)"
+                      [disabled]="actionPending()"
+                      class="flex-1 min-w-[5rem] inline-flex items-center justify-center gap-1.5 rounded-lg border border-danger-500/40 bg-surface px-3 py-2 text-xs font-semibold text-danger-600 hover:bg-danger-500/10 transition disabled:opacity-50 text-center">
+                      <tf-icon name="alert" [size]="14" />
+                      <span>Rejeter</span>
+                    </button>
+                  }
+
+                  @if (item.selfTimesheet) {
+                    <span class="w-full inline-flex items-center justify-center gap-1 rounded-lg bg-app px-2.5 py-1.5 text-xs font-medium text-muted border border-border">
+                      <tf-icon name="lock" [size]="12" />
+                      <span>Validation tierce requise (principe des 4 yeux)</span>
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Vue desktop (hidden md:block) : vrai tableau sans coupure -->
+          <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-sm">
               <thead class="border-b border-border bg-app/50 text-xs text-muted">
                 <tr>
-                  <th scope="col" class="px-5 py-3 text-left font-medium">Collaborateur</th>
-                  <th scope="col" class="px-4 py-3 text-left font-medium">Semaine</th>
-                  <th scope="col" class="px-4 py-3 text-right font-medium">Total saisi</th>
-                  <th scope="col" class="px-4 py-3 text-right font-medium">Facturable</th>
-                  <th scope="col" class="px-4 py-3 text-left font-medium">Projets</th>
-                  <th scope="col" class="px-3 py-3 text-center font-medium">Statut</th>
-                  <th scope="col" class="px-4 py-3 text-left font-medium">Soumise le</th>
+                  <th scope="col" class="px-5 py-3 text-left font-medium whitespace-nowrap">Collaborateur</th>
+                  <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap">Semaine</th>
+                  <th scope="col" class="px-4 py-3 text-right font-medium whitespace-nowrap">Total saisi</th>
+                  <th scope="col" class="px-4 py-3 text-right font-medium whitespace-nowrap">Facturable</th>
+                  <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap">Projets</th>
+                  <th scope="col" class="px-3 py-3 text-center font-medium whitespace-nowrap">Statut</th>
+                  <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap">Soumise le</th>
                   <th scope="col" class="px-5 py-3 text-right font-medium whitespace-nowrap min-w-[15rem]">Actions</th>
                 </tr>
               </thead>
@@ -136,20 +259,7 @@ import { problemMessage, ValidationService } from './validation.service';
                   <tr class="transition hover:bg-app/40">
                     <!-- Collaborateur -->
                     <td class="px-5 py-3">
-                      <div class="flex items-center gap-3">
-                        <span class="grid size-9 shrink-0 place-items-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800 border border-brand-200" aria-hidden="true">
-                          {{ getInitials(item.userDisplayName) }}
-                        </span>
-                        <div class="min-w-0">
-                          <div class="flex items-center gap-1.5">
-                            <p class="font-semibold text-foreground truncate">{{ item.userDisplayName }}</p>
-                            @if (item.selfTimesheet) {
-                              <span class="rounded-full bg-brand-50 px-2 py-0.2 text-[10px] font-semibold text-brand-600 border border-brand-200">Vous</span>
-                            }
-                          </div>
-                          <p class="text-xs text-muted truncate">{{ item.userEmail }}</p>
-                        </div>
-                      </div>
+                      <tf-avatar [name]="item.userDisplayName" [subtext]="item.userEmail" [badge]="item.selfTimesheet ? 'Vous' : ''" />
                     </td>
 
                     <!-- Semaine -->
@@ -284,22 +394,15 @@ import { problemMessage, ValidationService } from './validation.service';
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" role="dialog" aria-modal="true" aria-labelledby="detail-title">
           <div class="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-ui border border-border bg-surface p-6 shadow-2xl space-y-6">
             <div class="flex items-start justify-between border-b border-border pb-4">
-              <div class="flex items-center gap-3">
-                <span class="grid size-11 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800 border border-brand-200" aria-hidden="true">
-                  {{ getInitials(selectedDetail()?.userDisplayName || '') }}
-                </span>
-                <div>
-                  <div class="flex items-center gap-2">
-                    <h3 id="detail-title" class="text-xl font-bold text-foreground">{{ selectedDetail()?.userDisplayName }}</h3>
-                    @if (isSelectedDetailSelf()) {
-                      <span class="rounded-full bg-brand-50 px-2 py-0.2 text-xs font-semibold text-brand-600 border border-brand-200">Votre feuille</span>
-                    }
-                  </div>
-                  <p class="text-xs text-muted">{{ selectedDetail()?.userEmail }} — Semaine du {{ formatDate(selectedDetail()?.overview?.weekStart!) }} au {{ formatDate(selectedDetail()?.overview?.weekEnd!) }}</p>
-                </div>
-              </div>
+              <tf-avatar
+                [name]="selectedDetail()?.userDisplayName || ''"
+                [subtext]="(selectedDetail()?.userEmail || '') + ' — Semaine du ' + formatDate(selectedDetail()?.overview?.weekStart!) + ' au ' + formatDate(selectedDetail()?.overview?.weekEnd!)"
+                [badge]="isSelectedDetailSelf() ? 'Votre feuille' : ''"
+                size="lg" />
 
-              <button type="button" (click)="selectedDetail.set(null)" class="text-muted hover:text-foreground text-2xl leading-none">×</button>
+              <button type="button" (click)="selectedDetail.set(null)" class="text-muted hover:text-foreground p-1 rounded-lg hover:bg-app transition" aria-label="Fermer">
+                <tf-icon name="x" [size]="20" />
+              </button>
             </div>
 
             <!-- Avertissement conformité légale si > 48h -->
@@ -316,7 +419,7 @@ import { problemMessage, ValidationService } from './validation.service';
             }
 
             <!-- KPIs de la feuille examinée -->
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div class="rounded-ui border border-border bg-app/40 p-3">
                 <p class="text-xs text-muted">Total des heures</p>
                 <p class="text-xl font-bold tabular-nums text-foreground">{{ formatHours(selectedDetail()?.overview?.totalMinutes || 0) }}</p>

@@ -76,15 +76,17 @@ import { ProjectExcelComponent } from './project-excel.component';
       } @else {
         <ul class="divide-y divide-border">
           @for (project of visibleProjects(); track project.id) {
-            <li class="flex flex-wrap items-center gap-4 p-5">
+            <li class="flex flex-wrap items-center justify-between sm:justify-start gap-3 p-4 sm:gap-4 sm:p-5">
               <span class="hidden rounded-xl bg-brand-50 p-3 text-brand-800 sm:block"><tf-icon name="folder" /></span>
               <div class="min-w-0 flex-1 basis-40">
                 <h2 class="break-words font-semibold">{{ project.name }}</h2>
                 <p class="mt-1 text-sm text-muted">{{ project.source === 'EXCEL' ? project.reference : (project.organization || 'Projet interne') }}</p>
               </div>
-              <span class="rounded-md border border-border px-2 py-1 text-xs text-muted">{{ project.source === 'AZURE_DEVOPS' ? 'ADO' : project.source === 'EXCEL' ? 'Excel' : 'Interne' }}</span>
-              <span class="rounded-full px-3 py-1 text-xs font-medium" [class]="project.active ? 'bg-success-50 text-success-700' : 'bg-app text-muted'">{{ project.active ? 'Actif' : 'Indisponible' }}</span>
-              <span class="w-32 text-sm text-muted">{{ project.billableDefault ? 'Facturable par défaut' : 'Non facturable' }}</span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="rounded-md border border-border px-2 py-1 text-xs text-muted">{{ project.source === 'AZURE_DEVOPS' ? 'ADO' : project.source === 'EXCEL' ? 'Excel' : 'Interne' }}</span>
+                <span class="rounded-full px-3 py-1 text-xs font-medium" [class]="project.active ? 'bg-success-50 text-success-700' : 'bg-app text-muted'">{{ project.active ? 'Actif' : 'Indisponible' }}</span>
+                <span class="text-xs text-muted whitespace-nowrap sm:w-36 sm:text-sm">{{ project.billableDefault ? 'Facturable par défaut' : 'Non facturable' }}</span>
+              </div>
             </li>
           }
         </ul>
