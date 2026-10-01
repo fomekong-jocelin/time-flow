@@ -13,6 +13,7 @@ import cm.indyli.timeflow.users.domain.UserAdministrationException;
 import cm.indyli.timeflow.users.infrastructure.UserAdminAuditEntity;
 import cm.indyli.timeflow.users.infrastructure.UserAdminAuditRepository;
 import cm.indyli.timeflow.users.infrastructure.UserSessionRevoker;
+import cm.indyli.timeflow.workschedule.persistence.WorkScheduleProfileRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,6 +37,7 @@ class UserAdministrationServiceTest {
     private UserAdminAuditRepository audit;
     private UserSessionRevoker revoker;
     private PasswordEncoder encoder;
+    private WorkScheduleProfileRepository schedules;
     private UserAdministrationService service;
 
     @BeforeEach
@@ -45,9 +47,10 @@ class UserAdministrationServiceTest {
         audit = mock(UserAdminAuditRepository.class);
         revoker = mock(UserSessionRevoker.class);
         encoder = mock(PasswordEncoder.class);
+        schedules = mock(WorkScheduleProfileRepository.class);
         when(users.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(identities.findByUser_IdAndProvider(any(), any())).thenReturn(Optional.empty());
-        service = new UserAdministrationService(users, identities, mock(LocalUserAdminService.class), encoder, audit, revoker);
+        service = new UserAdministrationService(users, identities, mock(LocalUserAdminService.class), encoder, audit, revoker, schedules);
     }
 
     @Test
