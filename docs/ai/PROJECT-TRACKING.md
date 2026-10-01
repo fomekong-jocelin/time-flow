@@ -26,6 +26,7 @@
 | TICKET-0010 | PR #10 | Gestion des utilisateurs SSO + locaux (rôle, manager, temps théorique, activation) | DONE | P0 |
 | TICKET-0011 | à créer | Groupes de configuration du temps de travail & paramètres dynamiques (Work Schedules) | DONE | P0 |
 | TICKET-0012 | à créer | Refonte mobile responsive, zéro coupure texte, Jours Fériés et OT/ET (Overtime & Extra Time) | DONE | P0 |
+| TICKET-0013 | à créer | Composants UI réutilisables, optimisation de l'espace et refonte mobile des tableaux | DONE | P0 |
 
 ## Décisions actées
 

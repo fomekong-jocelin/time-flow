@@ -6,6 +6,20 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Composants UI réutilisables & Expérience Mobile-First unifiée (TICKET-0013) :
+  - Création de composants partagés dans `frontend/src/app/shared/ui/` : `AvatarComponent` (`tf-avatar`) avec génération automatique d'initiales et badge, `StatusBadgeComponent` (`tf-status-badge`) avec dot indicator et palette sémantique, et `KpiCardComponent` (`tf-kpi-card`) pour les métriques de synthèse.
+  - Ajout de l'icône `x` (fermeture) dans `IconComponent`.
+- Optimisation de l'espace et refonte du tableau Utilisateurs (TICKET-0013) :
+  - Suppression de l'espace vide à droite : grille conditionnelle n'appliquant la colonne latérale que si le panneau d'édition est ouvert (`panel() !== null`), le tableau occupant 100% de la largeur disponible par défaut.
+  - Vrai tableau HTML desktop (`hidden md:block`) sans troncature abusive : `whitespace-nowrap`, padding généreux, affichage intégral des noms de managers et des profils horaires (`Temps plein standard (35 h)`).
+  - Vue mobile tactile native (`md:hidden`) avec cartes modernes Linear-style intégrant l'avatar, les statuts, les rôles, les régimes horaires et les boutons d'action au doigt.
+  - Intégration de 3 cartes synthétiques KPI en en-tête et bouton « X » de fermeture du volet latéral.
+- Refonte mobile de la Validation des temps / Espace Manager (TICKET-0013) :
+  - Remplacement du tableau horizontal rigide (`min-w-[58rem]`) sur mobile par des cartes tactiles interactives adaptées aux smartphones (`md:hidden`).
+  - Affichage direct sur mobile du collaborateur, de la semaine de soumission, des heures et de l'objectif, des alertes de conformité légale et des boutons d'approbation rapide (« Valider » / « Rejeter ») ou badge « Validation tierce ».
+  - Adaptation responsive de la modale d'examen détaillé (`grid-cols-1 sm:grid-cols-3` pour les KPI et boutons enveloppés pour les écrans étroits).
+- Amélioration de la liste des projets (`/projets`) sur mobile (TICKET-0013) : wrapping fluide des badges et éléments de métadonnées.
+
 - Refonte Responsive Mobile & Expérience Mobile-App (TICKET-0012) :
   - Unification de l'en-tête mobile sticky et de la barre de navigation dans `AppShellComponent` avec défilement tactile fluide sans coupure de contenu ni masquage de titres.
   - Remplacement du tableau horizontal tronqué sur mobile par des cartes d'application modernes (Linear/Pilot App style) pour chaque régime horaire, intégrant nom, statut, jours ouvrés en pilules tactiles, indicateurs de cibles/plafonds et actions complètes.
