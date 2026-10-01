@@ -26,10 +26,6 @@ public class UserDirectoryService {
     private final AuthIdentityRepository identityRepository;
     private final WorkScheduleProfileRepository workScheduleRepository;
 
-    public UserDirectoryService(AppUserRepository userRepository, AuthIdentityRepository identityRepository) {
-        this(userRepository, identityRepository, null);
-    }
-
     public UserDirectoryService(AppUserRepository userRepository,
                                 AuthIdentityRepository identityRepository,
                                 WorkScheduleProfileRepository workScheduleRepository) {

@@ -63,6 +63,7 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Fixed
 
+- Injection Spring : suppression des constructeurs multiples sur `UserDirectoryService` et `UserAdministrationService` éliminant l'erreur `No default constructor found` au démarrage de l'application.
 - Connexion : le bouton restait désactivé sans message quand l'email était incomplet (ex. `admin` pré-rempli par le navigateur) ; erreurs désormais affichées sous chaque champ.
 - UI connexion / Mes temps : contraste de l'avertissement SSO, états désactivés, état vide, fond bleu de l'autocomplétion Chrome.
 - Alignement Angular 22.2 / TypeScript 6.0 pour corriger l'erreur npm `ERESOLVE`.

@@ -44,15 +44,6 @@ public class UserAdministrationService {
                                      LocalUserAdminService localUserAdminService,
                                      PasswordEncoder passwordEncoder,
                                      UserAdminAuditRepository auditRepository,
-                                     UserSessionRevoker sessionRevoker) {
-        this(userRepository, identityRepository, localUserAdminService, passwordEncoder, auditRepository, sessionRevoker, null);
-    }
-
-    public UserAdministrationService(AppUserRepository userRepository,
-                                     AuthIdentityRepository identityRepository,
-                                     LocalUserAdminService localUserAdminService,
-                                     PasswordEncoder passwordEncoder,
-                                     UserAdminAuditRepository auditRepository,
                                      UserSessionRevoker sessionRevoker,
                                      WorkScheduleProfileRepository workScheduleRepository) {
         this.userRepository = userRepository;
