@@ -290,6 +290,8 @@ export const EN: TranslationShape<typeof FR> = {
     "totalConsolidated": "Total: {total}",
     "projectsTab": "Breakdown by Project ({count})",
     "teamTab": "Team Summary ({count})",
+    "tabProjectsShort": "Projects ({count})",
+    "tabTeamShort": "Team ({count})",
     "projectsBreakdown": "Consumption by Project",
     "projectsBreakdownSub": "Breakdown of logged hours and billability rate per mission.",
     "teamBreakdown": "Team Performance",

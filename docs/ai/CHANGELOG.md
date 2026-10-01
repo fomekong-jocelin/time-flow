@@ -18,11 +18,13 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
     - Exposition de `GET /api/v1/manager/timesheets/subordinates` : un Manager n'obtient que ses collaborateurs directs (`manager_id = manager.id`) et lui-même, tandis qu'Admin et Direction ont la visibilité complète.
     - Contrôle d'habilitation deny-by-default : toute tentative de requêter un collaborateur hors de son équipe directe renvoie une exception `AccessDeniedException` (403 Forbidden).
     - Filtrage des feuilles par projet (`targetProjectId`) basé sur la présence d'imputations sur le projet concerné.
-  - **Ergonomie et robustesse mobile** :
-    - Correction des débordements et coupures de badges sur smartphone : mise à niveau de `AvatarComponent` et `StatusBadgeComponent` avec contraintes flexibles (`block min-w-0`, `flex-1`, `truncate` et `shrink-0`).
-    - Navigation d'onglets Projets / Équipe avec défilement tactile fluide horizontal (`overflow-x-auto`) sans coupure de texte.
+  - **Ergonomie et robustesse mobile (« pro »)** :
+    - Remplacement de la barre d'onglets Projets / Équipe sur mobile par un segmented control équilibré (`grid grid-cols-2`) avec libellés courts (`Projets (1)` / `Équipe (1)`), supprimant les débordements et coupures d'onglets.
+    - Élimination des pilules de comptage écrasées sur deux lignes sur smartphone (`1 project(s) displayed`, `1 collab.`) en les masquant sur mobile (`hidden sm:inline-flex`) au profit du compteur déjà présent dans l'onglet.
+    - Refonte aérée des cartes mobile pour chaque collaborateur et projet : nom complet enveloppé sans coupure (`break-words`), régime horaire en sous-titre clair, badge TACE préservé et bloc de métriques unifié à 3 colonnes (`Total`, `Facturable`, `OT`) lisible et sans empilements disgracieux.
+    - Sécurisation des composants partagés `AvatarComponent` et `StatusBadgeComponent` contre le rognage.
   - **Internationalisation FR/EN** :
-    - Nouveaux libellés pour les filtres et indicateurs de sommes traduits et testés (11/11 tests passants).
+    - Nouveaux libellés pour les filtres, onglets courts et indicateurs de sommes traduits et testés (11/11 tests passants).
 
 - Refonte du rendu Analytics & Reporting (Donut SVG, Tendance des heures, KPI visuels, mise en page épurée sans redondance) (TICKET-0015) :
   - Restitution visuelle moderne et épurée inspirée du design dashboard sombre (Linear/modern BI style) sans les doublons de graphiques.

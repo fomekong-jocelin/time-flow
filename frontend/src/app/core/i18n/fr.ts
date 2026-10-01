@@ -287,6 +287,8 @@ export const FR = {
     "totalConsolidated": "Total : {total}",
     "projectsTab": "Répartition par Projet ({count})",
     "teamTab": "Bilan par Collaborateur ({count})",
+    "tabProjectsShort": "Projets ({count})",
+    "tabTeamShort": "Équipe ({count})",
     "projectsBreakdown": "Consommation par projet",
     "projectsBreakdownSub": "Ventilation des heures saisies et taux de facturation par mission.",
     "teamBreakdown": "Performance de l’équipe",

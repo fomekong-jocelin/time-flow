@@ -51,10 +51,11 @@ Ce besoin se matérialise à la fois :
 2. **Module Analytics (`/analyses`)** :
    - Bouton « Filtrer » interactif pour basculer le panneau de filtres (Collaborateur, Projet) avec badge du nombre de filtres actifs et lien « Réinitialiser ».
    - Rechargement instantané des KPIs, du Donut, de l'Histogramme et des ventilations projets/équipe selon les critères choisis.
-3. **Composants partagés & Robustesse mobile** :
-   - `AvatarComponent` : déclaration hôte `block min-w-0`, libellé et email protégés avec `truncate` et infobulle `title`.
-   - `StatusBadgeComponent` : déclaration hôte `inline-flex shrink-0` pour empêcher le rognage sur petit écran.
-   - Onglets Projet / Équipe avec défilement tactile horizontal sans débordement.
+3. **Composants partagés & Robustesse mobile (« pro »)** :
+   - Segmented control tactile sur mobile (`grid grid-cols-2`) avec libellés courts (`Projets (1)` / `Équipe (1)`), éliminant tout débordement d'onglets.
+   - Suppression des pilules redondantes sur deux lignes en en-tête de section sur smartphone (`hidden sm:inline-flex`), réservées au desktop sans retour à la ligne.
+   - Refonte des cartes collaborateur et projet sur mobile : nom sans coupure (`break-words`), avatar propre, régime en sous-titre, et bloc de statistiques compact et aéré à 3 colonnes (`bg-app/60`) pour une lisibilité parfaite.
+   - `AvatarComponent` et `StatusBadgeComponent` durcis contre les coupures d'éléments.
 4. **Traductions i18n FR/EN** :
    - Dictionnaires complets pour tous les nouveaux libellés de filtres et de métriques de somme (11/11 tests i18n passants).
 

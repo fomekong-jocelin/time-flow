@@ -407,31 +407,30 @@ interface ChartBarData {
         <!-- 3. Section basse : Navigation & Découpage Projets & Équipe (« Moins chargé ») -->
         <div class="space-y-4">
           @if (canViewTeam()) {
-            <div class="flex items-center gap-2 border-b border-border pb-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <!-- Navigation par onglets : segmented control élégant sur mobile, tabs classiques sur desktop -->
+            <div class="grid grid-cols-2 gap-1.5 rounded-2xl bg-surface p-1.5 border border-border shadow-2xs sm:flex sm:w-auto sm:border-0 sm:bg-transparent sm:p-0 sm:gap-2 sm:border-b sm:rounded-none sm:shadow-none">
               <button
                 type="button"
                 (click)="activeTab.set('projects')"
-                class="flex shrink-0 items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap cursor-pointer"
-                [class.border-brand-600]="activeTab() === 'projects'"
-                [class.text-brand-600]="activeTab() === 'projects'"
-                [class.font-semibold]="activeTab() === 'projects'"
-                [class.border-transparent]="activeTab() !== 'projects'"
-                [class.text-muted]="activeTab() !== 'projects'">
+                class="flex items-center justify-center gap-2 rounded-xl sm:rounded-none py-2.5 px-3 text-xs sm:text-sm font-semibold transition cursor-pointer"
+                [class]="activeTab() === 'projects'
+                  ? 'bg-brand-600 text-white shadow-xs sm:bg-transparent sm:text-brand-600 sm:border-b-2 sm:border-brand-600 sm:shadow-none'
+                  : 'text-muted hover:text-ink hover:bg-app sm:hover:bg-transparent sm:border-b-2 sm:border-transparent'">
                 <tf-icon name="folder" [size]="16" />
-                <span>{{ 'analytics.projectsTab' | translate:{ count: data.projectsBreakdown.length } }}</span>
+                <span class="sm:hidden">{{ 'analytics.tabProjectsShort' | translate:{ count: data.projectsBreakdown.length } }}</span>
+                <span class="hidden sm:inline">{{ 'analytics.projectsTab' | translate:{ count: data.projectsBreakdown.length } }}</span>
               </button>
 
               <button
                 type="button"
                 (click)="activeTab.set('team')"
-                class="flex shrink-0 items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap cursor-pointer"
-                [class.border-brand-600]="activeTab() === 'team'"
-                [class.text-brand-600]="activeTab() === 'team'"
-                [class.font-semibold]="activeTab() === 'team'"
-                [class.border-transparent]="activeTab() !== 'team'"
-                [class.text-muted]="activeTab() !== 'team'">
+                class="flex items-center justify-center gap-2 rounded-xl sm:rounded-none py-2.5 px-3 text-xs sm:text-sm font-semibold transition cursor-pointer"
+                [class]="activeTab() === 'team'
+                  ? 'bg-brand-600 text-white shadow-xs sm:bg-transparent sm:text-brand-600 sm:border-b-2 sm:border-brand-600 sm:shadow-none'
+                  : 'text-muted hover:text-ink hover:bg-app sm:hover:bg-transparent sm:border-b-2 sm:border-transparent'">
                 <tf-icon name="users" [size]="16" />
-                <span>{{ 'analytics.teamTab' | translate:{ count: data.usersBreakdown.length } }}</span>
+                <span class="sm:hidden">{{ 'analytics.tabTeamShort' | translate:{ count: data.usersBreakdown.length } }}</span>
+                <span class="hidden sm:inline">{{ 'analytics.teamTab' | translate:{ count: data.usersBreakdown.length } }}</span>
               </button>
             </div>
           }
@@ -439,12 +438,12 @@ interface ChartBarData {
           <!-- Vue Onglet 1 : Ventilation par Projet -->
           @if (activeTab() === 'projects') {
             <section class="rounded-2xl border border-border bg-surface shadow-2xs overflow-hidden">
-              <div class="flex items-center justify-between border-b border-border p-4 sm:p-5">
-                <div>
+              <div class="flex items-start sm:items-center justify-between gap-3 border-b border-border p-4 sm:p-5">
+                <div class="min-w-0 flex-1">
                   <h2 class="text-base font-semibold text-ink">{{ 'analytics.projectsBreakdown' | translate }}</h2>
                   <p class="text-xs text-muted mt-0.5">{{ 'analytics.projectsBreakdownSub' | translate }}</p>
                 </div>
-                <span class="rounded-full bg-app px-2.5 py-1 text-xs font-medium text-muted border border-border">
+                <span class="hidden sm:inline-flex shrink-0 whitespace-nowrap rounded-full bg-app px-2.5 py-1 text-xs font-medium text-muted border border-border">
                   {{ 'projects.projectsDisplayed' | translate:{ count: data.projectsBreakdown.length } }}
                 </span>
               </div>
@@ -452,34 +451,34 @@ interface ChartBarData {
               @if (data.projectsBreakdown.length === 0) {
                 <p class="p-8 text-center text-sm text-muted">{{ 'analytics.noData' | translate }}</p>
               } @else {
-                <!-- Mobile view (< md) : cartes tactiles -->
-                <div class="space-y-3 p-4 md:hidden">
+                <!-- Mobile view (< md) : cartes tactiles professionnelles -->
+                <div class="space-y-3 p-3.5 sm:p-4 md:hidden">
                   @for (p of data.projectsBreakdown; track p.projectId) {
-                    <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-2.5">
-                      <div class="flex items-start justify-between gap-2">
+                    <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3">
+                      <div class="flex items-start justify-between gap-2.5">
                         <div class="min-w-0 flex-1">
-                          <span class="block font-semibold text-ink truncate">{{ p.projectName }}</span>
+                          <span class="block font-semibold text-ink text-sm leading-snug break-words">{{ p.projectName }}</span>
                           @if (p.projectReference) {
-                            <span class="font-mono text-xs text-muted">{{ p.projectReference }}</span>
+                            <span class="inline-block font-mono text-[11px] text-muted mt-0.5">{{ p.projectReference }}</span>
                           }
                         </div>
-                        <span class="rounded-full bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 text-xs font-semibold text-brand-700 dark:text-brand-300 whitespace-nowrap">
+                        <span class="shrink-0 rounded-full bg-brand-50 dark:bg-brand-950/60 px-2.5 py-0.5 text-xs font-semibold text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-800/60 whitespace-nowrap">
                           {{ p.sharePercentage }} %
                         </span>
                       </div>
 
-                      <div class="h-2 w-full overflow-hidden rounded-full bg-app">
-                        <div class="h-full bg-brand-600 rounded-full" [style.width.%]="p.sharePercentage"></div>
+                      <div class="h-2 w-full overflow-hidden rounded-full bg-app border border-border/40">
+                        <div class="h-full bg-brand-600 rounded-full transition-all duration-500" [style.width.%]="p.sharePercentage"></div>
                       </div>
 
-                      <div class="flex items-center justify-between text-xs pt-1 border-t border-border/50">
-                        <div>
-                          <span class="text-muted block text-[11px]">{{ 'analytics.totalSaisi' | translate }}</span>
-                          <span class="font-semibold text-ink">{{ formatHours(p.totalMinutes) }}</span>
+                      <div class="grid grid-cols-2 gap-2 rounded-xl bg-app/60 p-2.5 border border-border/60">
+                        <div class="min-w-0">
+                          <span class="text-muted block text-[10px] uppercase font-semibold tracking-wider truncate">{{ 'analytics.totalSaisi' | translate }}</span>
+                          <span class="font-bold text-ink text-xs sm:text-sm mt-0.5 block truncate">{{ formatHours(p.totalMinutes) }}</span>
                         </div>
-                        <div class="text-right">
-                          <span class="text-muted block text-[11px]">{{ 'timesheets.sidePanel.billableBadge' | translate }}</span>
-                          <span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ formatHours(p.billableMinutes) }}</span>
+                        <div class="min-w-0 text-right">
+                          <span class="text-muted block text-[10px] uppercase font-semibold tracking-wider truncate">{{ 'timesheets.sidePanel.billableBadge' | translate }}</span>
+                          <span class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm mt-0.5 block truncate">{{ formatHours(p.billableMinutes) }}</span>
                         </div>
                       </div>
                     </div>
@@ -533,12 +532,12 @@ interface ChartBarData {
           <!-- Vue Onglet 2 : Bilan par Collaborateur (si manager / admin) -->
           @if (activeTab() === 'team' && canViewTeam()) {
             <section class="rounded-2xl border border-border bg-surface shadow-2xs overflow-hidden">
-              <div class="flex items-center justify-between border-b border-border p-4 sm:p-5">
-                <div>
+              <div class="flex items-start sm:items-center justify-between gap-3 border-b border-border p-4 sm:p-5">
+                <div class="min-w-0 flex-1">
                   <h2 class="text-base font-semibold text-ink">{{ 'analytics.teamBreakdownTitle' | translate }}</h2>
                   <p class="text-xs text-muted mt-0.5">{{ 'analytics.teamBreakdownSub' | translate }}</p>
                 </div>
-                <span class="rounded-full bg-app px-2.5 py-1 text-xs font-medium text-muted border border-border">
+                <span class="hidden sm:inline-flex shrink-0 whitespace-nowrap rounded-full bg-app px-2.5 py-1 text-xs font-medium text-muted border border-border">
                   {{ 'workSchedules.collabCount' | translate:{ count: data.usersBreakdown.length } }}
                 </span>
               </div>
@@ -546,36 +545,40 @@ interface ChartBarData {
               @if (data.usersBreakdown.length === 0) {
                 <p class="p-8 text-center text-sm text-muted">{{ 'analytics.noTeamData' | translate }}</p>
               } @else {
-                <!-- Mobile view (< md) : cartes tactiles -->
-                <div class="space-y-3 p-4 md:hidden">
+                <!-- Mobile view (< md) : cartes tactiles professionnelles -->
+                <div class="space-y-3 p-3.5 sm:p-4 md:hidden">
                   @for (u of data.usersBreakdown; track u.userId) {
                     <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3">
-                      <div class="flex items-center justify-between gap-2.5">
-                        <tf-avatar [name]="u.displayName" [subtext]="u.email" size="md" class="min-w-0 flex-1" />
-                        <tf-status-badge [variant]="taceBadgeVariant(u.activityRate)" class="shrink-0">
+                      <!-- En-tête : Avatar + Nom complet + Régime + TACE Badge -->
+                      <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                          <span class="grid size-10 shrink-0 place-items-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800 border border-brand-200 shadow-2xs dark:bg-brand-950/60 dark:text-brand-200 dark:border-brand-800" aria-hidden="true">
+                            {{ getInitials(u.displayName) }}
+                          </span>
+                          <div class="min-w-0 flex-1">
+                            <span class="block font-semibold text-ink text-sm leading-snug break-words" [title]="u.displayName">{{ u.displayName }}</span>
+                            <span class="block text-xs text-muted truncate mt-0.5" [title]="u.workScheduleName">{{ u.workScheduleName }}</span>
+                          </div>
+                        </div>
+
+                        <tf-status-badge [variant]="taceBadgeVariant(u.activityRate)" class="shrink-0 mt-0.5">
                           {{ i18n.formatNumber(u.activityRate) }} %
                         </tf-status-badge>
                       </div>
 
-                      <div class="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-border/50">
+                      <!-- Bloc de métriques unifié & aéré (3 colonnes) -->
+                      <div class="grid grid-cols-3 gap-2 rounded-xl bg-app/60 p-2.5 border border-border/60 text-center">
                         <div class="min-w-0">
-                          <span class="text-muted block text-[11px]">{{ 'users.colSchedule' | translate }}</span>
-                          <span class="font-medium text-ink mt-0.5 block truncate" [title]="u.workScheduleName">{{ u.workScheduleName }}</span>
+                          <span class="text-muted block text-[10px] uppercase font-semibold tracking-wider truncate">{{ 'analytics.totalSaisi' | translate }}</span>
+                          <span class="font-bold text-ink text-xs sm:text-sm mt-0.5 block truncate">{{ formatHours(u.totalMinutes) }}</span>
                         </div>
-                        <div class="min-w-0 text-right">
-                          <span class="text-muted block text-[11px]">{{ 'analytics.overtimeOt' | translate }}</span>
-                          <span class="font-semibold text-amber-600 dark:text-amber-400 mt-0.5 block truncate">{{ formatHours(u.overtimeMinutes) }}</span>
+                        <div class="min-w-0 border-x border-border/60 px-1">
+                          <span class="text-muted block text-[10px] uppercase font-semibold tracking-wider truncate">{{ 'timesheets.sidePanel.billableBadge' | translate }}</span>
+                          <span class="font-bold text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm mt-0.5 block truncate">{{ formatHours(u.billableMinutes) }}</span>
                         </div>
-                      </div>
-
-                      <div class="flex items-center justify-between text-xs pt-1 border-t border-border/50">
-                        <div>
-                          <span class="text-muted block text-[11px]">{{ 'analytics.totalSaisi' | translate }}</span>
-                          <span class="font-bold text-ink">{{ formatHours(u.totalMinutes) }}</span>
-                        </div>
-                        <div class="text-right">
-                          <span class="text-muted block text-[11px]">{{ 'analytics.billableClient' | translate }}</span>
-                          <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ formatHours(u.billableMinutes) }}</span>
+                        <div class="min-w-0">
+                          <span class="text-muted block text-[10px] uppercase font-semibold tracking-wider truncate">{{ 'analytics.overtimeOt' | translate }}</span>
+                          <span class="font-semibold text-amber-600 dark:text-amber-400 text-xs sm:text-sm mt-0.5 block truncate">{{ formatHours(u.overtimeMinutes) }}</span>
                         </div>
                       </div>
                     </div>
@@ -897,5 +900,10 @@ export class AnalyticsPageComponent implements OnInit {
     if (upper === 'SUPPORT') return '#f59e0b';
     if (upper === 'CONGE' || upper === 'LEAVE') return '#06b6d4';
     return '#a1a1aa';
+  }
+
+  getInitials(name: string): string {
+    const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+    return parts.slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
   }
 }
