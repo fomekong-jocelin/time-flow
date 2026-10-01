@@ -6,6 +6,13 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Catalogue Projets : recherche, filtre de disponibilité, états de chargement/erreur/vide et navigation mobile.
+- API authentifiée du catalogue et synchronisation Azure DevOps réservée ADMIN avec CSRF.
+- Import paginé par identifiant externe, conservation des paramètres de facturation et des historiques, audit des succès/échecs.
+- Tests du client Azure, de l'orchestration d'import et des accès HTTP au catalogue/synchronisation.
+- Import/export Excel des projets indépendant d'Azure : modèle de test, réimport par référence stable et export des sources externes dans un onglet de consultation.
+- Validation des classeurs avant import transactionnel, audit Excel, limites de taille et refus des formules/macros/liens externes.
+
 - Gouvernance IA TimeFlow.
 - Architecture monorepo backend/frontend.
 - Socle Spring Boot, PostgreSQL et Flyway.
