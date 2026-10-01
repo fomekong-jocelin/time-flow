@@ -6,6 +6,23 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ### Added
 
+- Refonte Responsive Mobile & Expérience Mobile-App (TICKET-0012) :
+  - Unification de l'en-tête mobile sticky et de la barre de navigation dans `AppShellComponent` avec défilement tactile fluide sans coupure de contenu ni masquage de titres.
+  - Remplacement du tableau horizontal tronqué sur mobile par des cartes d'application modernes (Linear/Pilot App style) pour chaque régime horaire, intégrant nom, statut, jours ouvrés en pilules tactiles, indicateurs de cibles/plafonds et actions complètes.
+  - Élimination des retours à la ligne intempestifs sur desktop (`whitespace-nowrap` sur l'ensemble des `<th>`, `<td>` et boutons d'action « Modifier », « Par défaut », « Activer/Désactiver »).
+  - Navigation par sous-onglets dans `/admin/configuration-temps` : « Régimes horaires », « Politiques OT & ET », « Jours fériés ».
+- Gestion des Jours Fériés légaux et d'entreprise (TICKET-0012) :
+  - Modèle de données & Migration Flyway `V6__holidays_and_overtime_extratime.sql` créant la table `public_holiday` et pré-remplissant les 11 jours fériés légaux français pour 2026 et 2027.
+  - API REST `/api/v1/holidays` avec endpoints de consultation par année et de gestion (création, modification, suppression, bascule Chômé/Travaillé) sécurisée pour `ADMIN` et `DIRECTION`.
+  - Panneau d'administration dédié `PublicHolidaysPanelComponent` avec sélecteur d'année, compteurs de jours chômés/travaillés, tableau desktop et cartes mobiles.
+  - Reflet automatique dans « Mes temps » (CRA) : badge violet « Férié » avec nom du jour férié en infobulle dans l'en-tête de colonne et surlignage des cellules de saisie.
+- Configuration des OT (Overtime / Heures supplémentaires) et ET (Extra Time / Heures complémentaires) (TICKET-0012) :
+  - Extension de `work_schedule_profile` pour héberger les règles OT (seuil de déclenchement hebdo, taux majoration tranche 1 à 25%, tranche 2 à 50%, dimanche/férié à 100%, mode de compensation Paiement/RTT/Hybride).
+  - Extension pour les règles ET (autorisation, plafond hebdomadaire, majoration standard à 10%, mode de compensation).
+  - Panneau dédié `OvertimePoliciesPanelComponent` avec vue comparative des règles OT/ET entre les régimes, et intégration dans la modale d'édition.
+  - Détection automatique et affichage du badge « +X h OT » dans la synthèse KPI du CRA.
+  - Suite de tests de sécurité et unitaires `PublicHolidaySecurityTest`, `PublicHolidayServiceTest`, et passage de la suite de tests backend à 110 tests 100% au vert.
+
 - Configuration dynamique des temps de travail & régimes horaires (TICKET-0011) :
   - Modèle de données & Migration Flyway `V5__work_schedule_profiles.sql` créant la table `work_schedule_profile` et rattachant `work_schedule_profile_id` à la table `app_user`.
   - Profils par défaut pré-provisionnés du marché ESN/Conseil : Standard 35h, Cadre & RTT 38h30, Temps partiel 80% (mercredi libéré), Support & Astreinte (week-end autorisé).

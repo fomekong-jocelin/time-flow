@@ -9,6 +9,7 @@ export interface WeekDay {
   isToday: boolean;
   dayKey: string;
   isWorkingDay: boolean;
+  holiday?: { name: string; isWorked: boolean } | null;
 }
 
 export interface CalendarWeek {
@@ -26,7 +27,8 @@ export function calendarWeek(
   target: Date = new Date(),
   today: Date = new Date(),
   workingDays: string[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
-  includeWeekend: boolean = false
+  includeWeekend: boolean = false,
+  holidays: { date: string; name: string; isWorked: boolean }[] = []
 ): CalendarWeek {
   const monday = startOfDay(target);
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
@@ -38,13 +40,16 @@ export function calendarWeek(
   const days: WeekDay[] = Array.from({ length: totalDays }, (_, index) => {
     const date = addDays(monday, index);
     const dayKey = DAY_KEYS[index];
+    const isoDate = toIsoDateString(date);
+    const holidayMatch = holidays.find(h => h.date === isoDate);
     return {
       label: DAY_LABELS[index],
       date: shortDate.format(date),
-      isoDate: toIsoDateString(date),
+      isoDate,
       isToday: date.getTime() === startOfDay(today).getTime(),
       dayKey,
-      isWorkingDay: workingDays.includes(dayKey)
+      isWorkingDay: workingDays.includes(dayKey),
+      holiday: holidayMatch ? { name: holidayMatch.name, isWorked: holidayMatch.isWorked } : null
     };
   });
 

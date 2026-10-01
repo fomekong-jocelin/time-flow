@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -69,6 +70,22 @@ public class WorkScheduleService {
             throw new WorkScheduleValidationException("Un profil avec le code " + cmd.code() + " existe déjà.");
         }
 
+        int otThreshold = (cmd.overtimeThresholdMinutes() != null && cmd.overtimeThresholdMinutes() > 0)
+                ? cmd.overtimeThresholdMinutes() : cmd.weeklyTargetMinutes();
+        BigDecimal otTier1 = cmd.overtimeRateTier1() != null ? cmd.overtimeRateTier1() : BigDecimal.valueOf(1.25);
+        BigDecimal otTier2 = cmd.overtimeRateTier2() != null ? cmd.overtimeRateTier2() : BigDecimal.valueOf(1.50);
+        BigDecimal otHol = cmd.overtimeRateHoliday() != null ? cmd.overtimeRateHoliday() : BigDecimal.valueOf(2.00);
+        String otComp = (cmd.overtimeCompensationMode() != null && !cmd.overtimeCompensationMode().isBlank())
+                ? cmd.overtimeCompensationMode().trim().toUpperCase() : "PAY";
+
+        boolean etAllowed = cmd.extraTimeAllowed() != null ? cmd.extraTimeAllowed() : true;
+        int etMax = cmd.extraTimeMaxWeeklyMinutes() != null ? cmd.extraTimeMaxWeeklyMinutes() : 420;
+        BigDecimal etRate = cmd.extraTimeRate() != null ? cmd.extraTimeRate() : BigDecimal.valueOf(1.10);
+        String etComp = (cmd.extraTimeCompensationMode() != null && !cmd.extraTimeCompensationMode().isBlank())
+                ? cmd.extraTimeCompensationMode().trim().toUpperCase() : "PAY";
+
+        WorkSchedulePolicy.validateOtEt(otThreshold, otTier1, otTier2, otHol, otComp, etMax, etRate, etComp);
+
         var entity = WorkScheduleProfileEntity.create(
                 cmd.code().trim().toUpperCase(),
                 cmd.name().trim(),
@@ -79,7 +96,16 @@ public class WorkScheduleService {
                 cmd.maxWeeklyMinutes(),
                 workingDaysStr,
                 cmd.allowWeekendEntry(),
-                cmd.isDefault()
+                cmd.isDefault(),
+                otThreshold,
+                otTier1,
+                otTier2,
+                otHol,
+                otComp,
+                etAllowed,
+                etMax,
+                etRate,
+                etComp
         );
 
         entity = profileRepository.save(entity);
@@ -101,6 +127,22 @@ public class WorkScheduleService {
                 cmd.maxDailyMinutes(), cmd.maxWeeklyMinutes(), workingDaysStr
         );
 
+        int otThreshold = (cmd.overtimeThresholdMinutes() != null && cmd.overtimeThresholdMinutes() > 0)
+                ? cmd.overtimeThresholdMinutes() : entity.getOvertimeThresholdMinutes();
+        BigDecimal otTier1 = cmd.overtimeRateTier1() != null ? cmd.overtimeRateTier1() : entity.getOvertimeRateTier1();
+        BigDecimal otTier2 = cmd.overtimeRateTier2() != null ? cmd.overtimeRateTier2() : entity.getOvertimeRateTier2();
+        BigDecimal otHol = cmd.overtimeRateHoliday() != null ? cmd.overtimeRateHoliday() : entity.getOvertimeRateHoliday();
+        String otComp = (cmd.overtimeCompensationMode() != null && !cmd.overtimeCompensationMode().isBlank())
+                ? cmd.overtimeCompensationMode().trim().toUpperCase() : entity.getOvertimeCompensationMode();
+
+        boolean etAllowed = cmd.extraTimeAllowed() != null ? cmd.extraTimeAllowed() : entity.isExtraTimeAllowed();
+        int etMax = cmd.extraTimeMaxWeeklyMinutes() != null ? cmd.extraTimeMaxWeeklyMinutes() : entity.getExtraTimeMaxWeeklyMinutes();
+        BigDecimal etRate = cmd.extraTimeRate() != null ? cmd.extraTimeRate() : entity.getExtraTimeRate();
+        String etComp = (cmd.extraTimeCompensationMode() != null && !cmd.extraTimeCompensationMode().isBlank())
+                ? cmd.extraTimeCompensationMode().trim().toUpperCase() : entity.getExtraTimeCompensationMode();
+
+        WorkSchedulePolicy.validateOtEt(otThreshold, otTier1, otTier2, otHol, otComp, etMax, etRate, etComp);
+
         entity.update(
                 cmd.name().trim(),
                 cmd.description() != null ? cmd.description().trim() : null,
@@ -109,7 +151,16 @@ public class WorkScheduleService {
                 cmd.maxDailyMinutes(),
                 cmd.maxWeeklyMinutes(),
                 workingDaysStr,
-                cmd.allowWeekendEntry()
+                cmd.allowWeekendEntry(),
+                otThreshold,
+                otTier1,
+                otTier2,
+                otHol,
+                otComp,
+                etAllowed,
+                etMax,
+                etRate,
+                etComp
         );
 
         entity = profileRepository.save(entity);
@@ -178,6 +229,15 @@ public class WorkScheduleService {
                 entity.isDefault(),
                 entity.isActive(),
                 assigned,
+                entity.getOvertimeThresholdMinutes(),
+                entity.getOvertimeRateTier1(),
+                entity.getOvertimeRateTier2(),
+                entity.getOvertimeRateHoliday(),
+                entity.getOvertimeCompensationMode(),
+                entity.isExtraTimeAllowed(),
+                entity.getExtraTimeMaxWeeklyMinutes(),
+                entity.getExtraTimeRate(),
+                entity.getExtraTimeCompensationMode(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );

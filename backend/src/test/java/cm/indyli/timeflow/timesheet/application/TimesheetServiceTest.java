@@ -39,6 +39,8 @@ class TimesheetServiceTest {
     private ProjectStore projectStore;
     @Mock
     private JdbcClient jdbc;
+    @Mock
+    private cm.indyli.timeflow.holidays.persistence.PublicHolidayRepository publicHolidayRepository;
 
     private TimesheetService timesheetService;
 
@@ -48,7 +50,7 @@ class TimesheetServiceTest {
 
     @BeforeEach
     void setUp() {
-        timesheetService = new TimesheetService(timesheetRepository, userRepository, projectStore, jdbc);
+        timesheetService = new TimesheetService(timesheetRepository, userRepository, projectStore, jdbc, publicHolidayRepository);
     }
 
     @Test
