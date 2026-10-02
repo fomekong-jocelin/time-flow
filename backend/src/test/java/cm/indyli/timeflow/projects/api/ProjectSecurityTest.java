@@ -75,4 +75,75 @@ class ProjectSecurityTest {
                 .andExpect(header().string("Content-Disposition", "attachment; filename=\"modele-projets-timeflow.xlsx\""))
                 .andExpect(header().string("Cache-Control", "no-store"));
     }
+
+    @Test
+    void collaboratorCannotCreateOrUpdateProject() throws Exception {
+        String body = """
+                {
+                    "name": "Nouveau Projet",
+                    "active": true,
+                    "billableDefault": true,
+                    "dailyRate": 650.00,
+                    "budgetDays": 50.0,
+                    "totalPrice": 32500.00,
+                    "currency": "XAF"
+                }
+                """;
+        mvc.perform(post("/api/v1/admin/projects")
+                        .contentType("application/json")
+                        .content(body)
+                        .with(user("collaborator").roles("COLLABORATOR"))
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mvc.perform(put("/api/v1/admin/projects/" + java.util.UUID.randomUUID())
+                        .contentType("application/json")
+                        .content(body)
+                        .with(user("collaborator").roles("COLLABORATOR"))
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminAndDirectionCanCreateProjectWithCsrf() throws Exception {
+        String body = """
+                {
+                    "name": "Projet Forfait",
+                    "active": true,
+                    "billableDefault": true,
+                    "dailyRate": 700.00,
+                    "budgetDays": 40.0,
+                    "totalPrice": 28000.00,
+                    "currency": "USD"
+                }
+                """;
+        // Direction
+        mvc.perform(post("/api/v1/admin/projects")
+                        .contentType("application/json")
+                        .content(body)
+                        .with(user("direction").roles("DIRECTION"))
+                        .with(csrf()))
+                .andExpect(status().isCreated());
+        verify(service).create(any());
+
+        // Admin
+        mvc.perform(post("/api/v1/admin/projects")
+                        .contentType("application/json")
+                        .content(body)
+                        .with(user("admin").roles("ADMIN"))
+                        .with(csrf()))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void listMasksFinancialsForCollaborator() throws Exception {
+        mvc.perform(get("/api/v1/projects").with(user("collab").roles("COLLABORATOR"))).andExpect(status().isOk());
+        verify(service).list(false);
+
+        mvc.perform(get("/api/v1/projects").with(user("dir").roles("DIRECTION"))).andExpect(status().isOk());
+        verify(service).list(true);
+
+        mvc.perform(get("/api/v1/projects").with(user("adm").roles("ADMIN"))).andExpect(status().isOk());
+        verify(service, times(2)).list(true);
+    }
 }

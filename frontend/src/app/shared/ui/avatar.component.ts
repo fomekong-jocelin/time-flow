@@ -9,26 +9,29 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   selector: 'tf-avatar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block min-w-0'
+  },
   template: `
     <div class="flex items-center gap-3 min-w-0">
       <span
         [class]="sizeClass()"
-        class="grid shrink-0 place-items-center rounded-full bg-brand-50 font-semibold text-brand-800 border border-brand-200 shadow-2xs"
+        class="grid shrink-0 place-items-center rounded-full bg-brand-50 font-semibold text-brand-800 border border-brand-200 shadow-2xs dark:bg-brand-950/60 dark:text-brand-200 dark:border-brand-800"
         aria-hidden="true">
         {{ initials() }}
       </span>
       @if (name()) {
-        <div class="min-w-0">
+        <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="block font-semibold text-ink leading-tight truncate">{{ name() }}</span>
+            <span class="block font-semibold text-ink leading-tight truncate" [title]="name()">{{ name() }}</span>
             @if (badge()) {
-              <span class="rounded-full bg-brand-50 px-2 py-0.2 text-[10px] font-semibold text-brand-600 border border-brand-200 whitespace-nowrap">
+              <span class="rounded-full bg-brand-50 px-2 py-0.2 text-[10px] font-semibold text-brand-600 border border-brand-200 whitespace-nowrap dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800">
                 {{ badge() }}
               </span>
             }
           </div>
           @if (subtext()) {
-            <span class="block text-xs text-muted truncate mt-0.5">{{ subtext() }}</span>
+            <span class="block text-xs text-muted truncate mt-0.5" [title]="subtext()">{{ subtext() }}</span>
           }
         </div>
       }

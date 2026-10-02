@@ -97,10 +97,11 @@ public class UserAdminController {
             @NotBlank @Size(min = 12, max = 128) String password,
             UUID managerId,
             @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes,
-            UUID workScheduleProfileId
+            UUID workScheduleProfileId,
+            @PositiveOrZero java.math.BigDecimal dailyRate
     ) {
         UserProfileChange profile() {
-            return new UserProfileChange(displayName, role, managerId, targetOrDefault(weeklyTargetMinutes), workScheduleProfileId);
+            return new UserProfileChange(displayName, role, managerId, targetOrDefault(weeklyTargetMinutes), workScheduleProfileId, dailyRate);
         }
     }
 
@@ -110,10 +111,11 @@ public class UserAdminController {
             @NotNull UserRole role,
             UUID managerId,
             @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes,
-            UUID workScheduleProfileId
+            UUID workScheduleProfileId,
+            @PositiveOrZero java.math.BigDecimal dailyRate
     ) {
         UserProfileChange profile() {
-            return new UserProfileChange(displayName, role, managerId, targetOrDefault(weeklyTargetMinutes), workScheduleProfileId);
+            return new UserProfileChange(displayName, role, managerId, targetOrDefault(weeklyTargetMinutes), workScheduleProfileId, dailyRate);
         }
     }
 
@@ -122,10 +124,11 @@ public class UserAdminController {
             @NotNull UserRole role,
             UUID managerId,
             @NotNull @Min(0) @Max(MAX_WEEKLY_TARGET_MINUTES) Integer weeklyTargetMinutes,
-            UUID workScheduleProfileId
+            UUID workScheduleProfileId,
+            @PositiveOrZero java.math.BigDecimal dailyRate
     ) {
         UserProfileChange profile() {
-            return new UserProfileChange(displayName, role, managerId, weeklyTargetMinutes, workScheduleProfileId);
+            return new UserProfileChange(displayName, role, managerId, weeklyTargetMinutes, workScheduleProfileId, dailyRate);
         }
     }
 
@@ -136,10 +139,11 @@ public class UserAdminController {
     }
 
     public record LocalUserResponse(UUID id, String email, String displayName, UserRole role,
-                                    AccountType accountType, UUID managerId, int weeklyTargetMinutes) {
+                                    AccountType accountType, UUID managerId, int weeklyTargetMinutes,
+                                    java.math.BigDecimal dailyRate) {
         static LocalUserResponse from(AppUserEntity user) {
             return new LocalUserResponse(user.getId(), user.getEmail(), user.getDisplayName(), user.getRole(),
-                    user.getAccountType(), user.getManagerId(), user.getWeeklyTargetMinutes());
+                    user.getAccountType(), user.getManagerId(), user.getWeeklyTargetMinutes(), user.getDailyRate());
         }
     }
 }

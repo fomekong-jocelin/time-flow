@@ -102,4 +102,19 @@ class UserAdminSecurityTest {
                 .andExpect(status().isForbidden());
         verifyNoInteractions(administration);
     }
+
+    @Test
+    void userDailyRateValidation() throws Exception {
+        var target = UUID.randomUUID();
+        mvc.perform(put(USERS + "/" + target).with(user("admin").roles("ADMIN")).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"displayName\":\"Dev\",\"role\":\"COLLABORATOR\",\"managerId\":null,\"weeklyTargetMinutes\":2100,\"dailyRate\":550.00}"))
+                .andExpect(status().isOk());
+        verify(administration).updateProfile(eq(ACTOR), eq(target), any());
+
+        mvc.perform(put(USERS + "/" + target).with(user("admin").roles("ADMIN")).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"displayName\":\"Dev\",\"role\":\"COLLABORATOR\",\"managerId\":null,\"weeklyTargetMinutes\":2100,\"dailyRate\":-50.00}"))
+                .andExpect(status().isBadRequest());
+    }
 }

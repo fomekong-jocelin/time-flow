@@ -1,3 +1,4 @@
+import { I18nService } from '../../core/i18n/i18n.service';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -5,27 +6,44 @@ import { AuthService } from '../../core/auth/auth.service';
 import { AuthConfig } from '../../core/auth/auth.models';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { LogoComponent } from '../../shared/ui/logo.component';
+import { ThemeToggleComponent } from '../../shared/ui/theme-toggle.component';
+import { LangToggleComponent } from '../../shared/ui/lang-toggle.component';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 type LoginField = 'email' | 'password';
 
 /** Écran de connexion — charte v0.1, §10 : logo centré, fond très clair, formulaire court, SSO. */
 @Component({
   selector: 'tf-login-page',
-  imports: [ReactiveFormsModule, IconComponent, LogoComponent],
+  standalone: true,
+  imports: [
+    ReactiveFormsModule,
+    IconComponent,
+    LogoComponent,
+    ThemeToggleComponent,
+    LangToggleComponent,
+    TranslatePipe
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex min-h-screen flex-col bg-app bg-[radial-gradient(60rem_30rem_at_50%_-10%,var(--color-brand-50),transparent)] px-4 text-ink">
-      <main class="mx-auto flex w-full max-w-[26rem] flex-1 flex-col justify-center py-10">
+      <!-- En-tête supérieur avec bascule de langue et de thème -->
+      <header class="mx-auto flex w-full max-w-[26rem] items-center justify-end gap-2 pt-4">
+        <tf-lang-toggle variant="segmented" />
+        <tf-theme-toggle variant="segmented" />
+      </header>
+
+      <main class="mx-auto flex w-full max-w-[26rem] flex-1 flex-col justify-center py-6 sm:py-10">
         <div class="mb-8 flex flex-col items-center text-center">
           <tf-logo variant="stacked" [size]="52" />
-          <p class="mt-5 text-sm text-muted">Vos temps. Vos projets. Plus de valeur.</p>
+          <p class="mt-5 text-sm text-muted">{{ 'auth.subtitle' | translate }}</p>
         </div>
 
         <div class="rounded-ui border border-border bg-surface p-6 shadow-sm sm:p-8">
-          <h1 class="text-2xl font-semibold tracking-tight">Connexion</h1>
-          <p class="mt-1 text-sm text-muted">Choisis ton mode de connexion.</p>
+          <h1 class="text-2xl font-semibold tracking-tight">{{ 'auth.title' | translate }}</h1>
+          <p class="mt-1 text-sm text-muted">{{ 'auth.chooseMode' | translate }}</p>
 
-          <p class="mt-6 text-sm font-medium">Collaborateur INDYLI</p>
+          <p class="mt-6 text-sm font-medium">{{ 'auth.indyliCollaborator' | translate }}</p>
           <button
             type="button"
             (click)="loginMicrosoft()"
@@ -38,43 +56,43 @@ type LoginField = 'email' | 'password';
               <span class="size-2 bg-[#00a4ef]"></span>
               <span class="size-2 bg-[#ffb900]"></span>
             </span>
-            Se connecter avec Microsoft
+            {{ 'auth.loginWithMicrosoft' | translate }}
           </button>
           @if (!config().ssoEnabled) {
             <p id="sso-status" class="mt-2 flex items-center gap-1.5 text-xs text-warning-700">
               <tf-icon name="alert" [size]="14" />
-              SSO non configuré sur cet environnement.
+              {{ 'auth.ssoNotConfigured' | translate }}
             </p>
           }
 
           <div class="my-6 flex items-center gap-3 text-xs text-muted">
             <span class="h-px flex-1 bg-border"></span>
-            ou avec un compte TimeFlow
+            {{ 'auth.orWithTimeFlowAccount' | translate }}
             <span class="h-px flex-1 bg-border"></span>
           </div>
 
           <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-4">
             <div>
-              <label for="login-email" class="mb-1.5 block text-sm font-medium">Adresse email</label>
+              <label for="login-email" class="mb-1.5 block text-sm font-medium">{{ 'auth.emailLabel' | translate }}</label>
               <input
                 id="login-email"
                 formControlName="email"
                 type="email"
                 autocomplete="username"
                 inputmode="email"
-                placeholder="nom@exemple.com"
+                [placeholder]="'auth.emailPlaceholder' | translate"
                 [attr.aria-invalid]="showError('email')"
                 [attr.aria-describedby]="showError('email') ? 'login-email-error' : null"
                 [class]="inputClass('email')" />
               @if (showError('email')) {
                 <p id="login-email-error" class="mt-1.5 text-xs text-error">
-                  {{ form.controls.email.hasError('required') ? 'Saisis ton adresse email.' : 'Saisis une adresse email complète, par exemple nom@indyli-services.com.' }}
+                  {{ form.controls.email.hasError('required') ? ('auth.emailRequired' | translate) : ('auth.emailInvalid' | translate) }}
                 </p>
               }
             </div>
 
             <div>
-              <label for="login-password" class="mb-1.5 block text-sm font-medium">Mot de passe</label>
+              <label for="login-password" class="mb-1.5 block text-sm font-medium">{{ 'auth.passwordLabel' | translate }}</label>
               <div class="relative">
                 <input
                   id="login-password"
@@ -87,14 +105,14 @@ type LoginField = 'email' | 'password';
                 <button
                   type="button"
                   (click)="passwordVisible.set(!passwordVisible())"
-                  [attr.aria-label]="passwordVisible() ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                  [attr.aria-label]="passwordVisible() ? ('auth.hidePassword' | translate) : ('auth.showPassword' | translate)"
                   [attr.aria-pressed]="passwordVisible()"
                   class="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-ui text-muted transition hover:text-ink">
                   <tf-icon [name]="passwordVisible() ? 'eye-off' : 'eye'" [size]="18" />
                 </button>
               </div>
               @if (showError('password')) {
-                <p id="login-password-error" class="mt-1.5 text-xs text-error">Saisis ton mot de passe.</p>
+                <p id="login-password-error" class="mt-1.5 text-xs text-error">{{ 'auth.passwordRequired' | translate }}</p>
               }
             </div>
 
@@ -110,9 +128,9 @@ type LoginField = 'email' | 'password';
               class="flex h-11 w-full items-center justify-center gap-2 rounded-ui bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-wait disabled:bg-brand-700">
               @if (loading()) {
                 <span class="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true"></span>
-                Connexion…
+                {{ 'auth.signingIn' | translate }}
               } @else {
-                Se connecter
+                {{ 'auth.signInButton' | translate }}
               }
             </button>
           </form>
@@ -120,15 +138,16 @@ type LoginField = 'email' | 'password';
 
         <p class="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted">
           <tf-icon name="lock" [size]="14" />
-          Comptes externes créés par un administrateur TimeFlow.
+          {{ 'auth.externalAccountNotice' | translate }}
         </p>
       </main>
 
-      <footer class="py-6 text-center text-xs text-muted">INDYLI Services · TimeFlow v0.1</footer>
+      <footer class="py-6 text-center text-xs text-muted">{{ 'auth.footer' | translate }}</footer>
     </div>
   `
 })
 export class LoginPageComponent implements OnInit {
+  readonly i18n = inject(I18nService);
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -136,7 +155,7 @@ export class LoginPageComponent implements OnInit {
   readonly loading = signal(false);
   readonly submitted = signal(false);
   readonly passwordVisible = signal(false);
-  readonly errorMessage = signal<string | null>(null);
+  readonly errorMessage = this.i18n.messageSignal(null);
   readonly config = signal<AuthConfig>({ ssoEnabled: false, localEnabled: true });
 
   readonly form = this.fb.nonNullable.group({
@@ -177,7 +196,7 @@ export class LoginPageComponent implements OnInit {
       next: () => this.router.navigateByUrl('/mes-temps'),
       error: error => {
         this.loading.set(false);
-        this.errorMessage.set(error?.error?.detail ?? 'Connexion impossible. Vérifie tes identifiants.');
+        this.errorMessage.set(() => this.i18n.problem(error, this.i18n.t('messages.loginFailed')));
       }
     });
   }

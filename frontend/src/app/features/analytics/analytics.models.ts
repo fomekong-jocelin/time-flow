@@ -34,6 +34,14 @@ export interface MonthlyTrendItem {
   activityRate: number;
 }
 
+export interface DailyTrendItem {
+  date: string;
+  label: string;
+  dayOfMonth: number;
+  totalMinutes: number;
+  billableMinutes: number;
+}
+
 export interface AnalyticsOverview {
   period: string;
   periodLabel: string;
@@ -51,4 +59,5 @@ export interface AnalyticsOverview {
   activitiesBreakdown: ActivityBreakdownItem[];
   usersBreakdown: UserBreakdownItem[];
   monthlyTrend: MonthlyTrendItem[];
+  dailyTrend: DailyTrendItem[];
 }

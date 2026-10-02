@@ -79,7 +79,8 @@ public class UserDirectoryService {
                 identities.stream().anyMatch(identity -> identity.isLockedAt(now)),
                 lastLogin, user.getCreatedAt(),
                 profileId,
-                profileName
+                profileName,
+                user.getDailyRate()
         );
     }
 }

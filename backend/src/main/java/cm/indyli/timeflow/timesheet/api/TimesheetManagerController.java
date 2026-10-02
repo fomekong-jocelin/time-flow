@@ -3,6 +3,7 @@ package cm.indyli.timeflow.timesheet.api;
 import cm.indyli.timeflow.auth.application.CurrentUserService;
 import cm.indyli.timeflow.timesheet.application.ManagerTimesheetDetail;
 import cm.indyli.timeflow.timesheet.application.PendingTimesheetSummary;
+import cm.indyli.timeflow.timesheet.application.SubordinateSummary;
 import cm.indyli.timeflow.timesheet.application.TimesheetValidationService;
 import cm.indyli.timeflow.timesheet.domain.TimesheetStatus;
 import jakarta.validation.Valid;
@@ -31,10 +32,20 @@ public class TimesheetManagerController {
         this.currentUserService = currentUserService;
     }
 
+    @GetMapping("/subordinates")
+    public List<cm.indyli.timeflow.timesheet.application.SubordinateSummary> listSubordinates(Authentication authentication) {
+        var principal = currentUserService.resolve(authentication);
+        return validationService.getManagedUsers(principal);
+    }
+
     @GetMapping
     public List<PendingTimesheetSummary> listPending(
             @RequestParam(required = false, defaultValue = "SUBMITTED") String status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart,
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) UUID projectId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromWeek,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toWeek,
             Authentication authentication
     ) {
         var principal = currentUserService.resolve(authentication);
@@ -42,7 +53,7 @@ public class TimesheetManagerController {
         if (status != null && !status.equalsIgnoreCase("ALL")) {
             statusFilter = TimesheetStatus.valueOf(status.toUpperCase());
         }
-        return validationService.listPending(principal, statusFilter, weekStart);
+        return validationService.listPending(principal, statusFilter, weekStart, userId, projectId, fromWeek, toWeek);
     }
 
     @GetMapping("/{timesheetId}")

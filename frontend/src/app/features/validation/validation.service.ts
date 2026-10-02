@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, switchMap } from 'rxjs';
-import { ManagerTimesheetDetail, PendingTimesheetSummary } from './validation.models';
+import { ManagerTimesheetDetail, PendingTimesheetSummary, SubordinateSummary } from './validation.models';
 
 export function problemMessage(error: unknown, fallback: string): string {
   const detail = (error as { error?: { detail?: unknown } })?.error?.detail;
@@ -13,11 +13,24 @@ export class ValidationService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = '/api/v1/manager/timesheets';
 
-  listPending(status = 'SUBMITTED', weekStart?: string): Observable<PendingTimesheetSummary[]> {
+  getSubordinates(): Observable<SubordinateSummary[]> {
+    return this.http.get<SubordinateSummary[]>(`${this.baseUrl}/subordinates`);
+  }
+
+  listPending(
+    status = 'SUBMITTED',
+    weekStart?: string,
+    userId?: string,
+    projectId?: string,
+    fromWeek?: string,
+    toWeek?: string
+  ): Observable<PendingTimesheetSummary[]> {
     let url = `${this.baseUrl}?status=${encodeURIComponent(status)}`;
-    if (weekStart) {
-      url += `&weekStart=${encodeURIComponent(weekStart)}`;
-    }
+    if (weekStart) url += `&weekStart=${encodeURIComponent(weekStart)}`;
+    if (userId) url += `&userId=${encodeURIComponent(userId)}`;
+    if (projectId) url += `&projectId=${encodeURIComponent(projectId)}`;
+    if (fromWeek) url += `&fromWeek=${encodeURIComponent(fromWeek)}`;
+    if (toWeek) url += `&toWeek=${encodeURIComponent(toWeek)}`;
     return this.http.get<PendingTimesheetSummary[]>(url);
   }
 

@@ -3,8 +3,8 @@ spring:
     name: time-flow-api
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/timeflow}
-    username: ${DB_USERNAME:timeflow}
-    password: ${DB_PASSWORD:timeflow}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
   jpa:
     open-in-view: false
     hibernate:

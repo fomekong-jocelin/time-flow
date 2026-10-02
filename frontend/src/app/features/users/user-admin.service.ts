@@ -22,6 +22,7 @@ export interface ManagedUser {
   createdAt: string;
   workScheduleProfileId?: string | null;
   workScheduleProfileName?: string | null;
+  dailyRate?: number | null;
 }
 
 export interface UserProfile {
@@ -30,6 +31,7 @@ export interface UserProfile {
   managerId: string | null;
   weeklyTargetMinutes: number;
   workScheduleProfileId?: string | null;
+  dailyRate?: number | null;
 }
 
 export interface NewUser extends UserProfile {

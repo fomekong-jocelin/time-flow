@@ -1,0 +1,90 @@
+<div class="space-y-6">
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div><p class="text-sm text-brand-600">{{ 'nav.billing' | translate }} / {{ selectedPeriod() }}</p><h1 class="mt-1 text-2xl font-bold text-ink">{{ 'billing.title' | translate }}</h1><p class="mt-1 text-sm text-muted">{{ 'billing.subtitle' | translate }}</p></div>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" (click)="showFilterPanel.set(!showFilterPanel())" [attr.aria-expanded]="showFilterPanel()" aria-controls="billing-filters" class="min-h-11 rounded-xl border border-border bg-surface px-3 text-sm">{{ 'common.filter' | translate }}</button>
+      <button type="button" (click)="exportFile('csv')" [disabled]="exportingCsv() || loading() || !overview()" class="min-h-11 rounded-xl border border-border bg-surface px-3 text-sm disabled:opacity-50">{{ (exportingCsv() ? 'billing.exporting' : 'billing.exportCsv') | translate }}</button>
+      <button type="button" (click)="exportFile('excel')" [disabled]="exportingExcel() || loading() || !overview()" class="min-h-11 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50">{{ (exportingExcel() ? 'billing.exporting' : 'billing.exportExcel') | translate }}</button>
+    </div>
+  </header>
+  @if (overview()) { <p class="rounded-xl border border-border bg-surface p-3 text-sm">{{ (canViewFinancials() ? 'billing.financialAccessNotice' : 'billing.confidentialNotice') | translate }}</p> }
+  @if (showFilterPanel()) {
+    <section id="billing-filters" class="space-y-3 rounded-2xl border border-border bg-surface p-4">
+      @if (optionsError()) { <p role="alert" class="text-sm text-error">{{ 'billing.fix.optionsError' | translate }} <button type="button" (click)="loadFilterOptions()" class="min-h-11 px-3 underline">{{ 'training.fix.retry' | translate }}</button></p> }
+      @if (optionsLoading()) { <p role="status" class="text-sm text-muted">{{ 'common.loading' | translate }}</p> }
+      <div class="grid gap-3 sm:grid-cols-2">
+        @if (canViewTeam()) { <div><label for="billing-user" class="mb-1 block text-sm text-muted">{{ 'billing.collaborator' | translate }}</label><select id="billing-user" [ngModel]="selectedUserId()" (ngModelChange)="selectedUserId.set($event); loadData()" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm"><option value="">{{ 'billing.allCollaborators' | translate }}</option>@for (u of subordinates(); track u.id) { <option [value]="u.id">{{ u.displayName }} ({{ u.email }})</option> }</select></div> }
+        <div><label for="billing-project" class="mb-1 block text-sm text-muted">{{ 'billing.project' | translate }}</label><select id="billing-project" [ngModel]="selectedProjectId()" (ngModelChange)="selectedProjectId.set($event); loadData()" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm"><option value="">{{ 'billing.allProjects' | translate }}</option>@for (p of projects(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }</select></div>
+      </div>
+      <button type="button" (click)="resetFilters()" class="min-h-11 rounded-xl border border-border px-3 text-sm">{{ 'training.fix.resetFilters' | translate }}</button>
+    </section>
+  }
+  <nav [attr.aria-label]="'billing.period' | translate" class="flex flex-wrap gap-2 border-b border-border pb-3">
+    @for (preset of periodPresets(); track preset.key) { <button type="button" (click)="selectPeriod(preset.key)" [attr.aria-pressed]="selectedPeriod() === preset.key" [class.bg-brand-600]="selectedPeriod() === preset.key" [class.text-white]="selectedPeriod() === preset.key" class="min-h-11 rounded-full border border-border px-4 text-sm">{{ preset.label | translate }}</button> }
+  </nav>
+  @if (error()) { <div role="alert" class="rounded-xl border border-error/30 p-4 text-sm text-error"><p>{{ error()! | translate }}</p><button type="button" (click)="loadData()" class="mt-2 min-h-11 rounded-xl border border-border px-3">{{ 'training.fix.retry' | translate }}</button></div> }
+  @if (loading()) { <p role="status" class="py-6 text-sm text-muted">{{ 'common.loading' | translate }}</p> }
+  @if (overview(); as o) {
+    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <tf-kpi-card [label]="'billing.kpiTotalDays' | translate" [value]="i18n.formatNumber(o.billableDays)" icon="calendar" variant="brand" />
+      <tf-kpi-card [label]="'billing.kpiTotalHours' | translate" [value]="hours(o.billableMinutes)" icon="clock" />
+      <tf-kpi-card [label]="'billing.kpiTotalProjects' | translate" [value]="o.totalProjectsCount" icon="folder" />
+      <tf-kpi-card [label]="'billing.kpiTotalContributors' | translate" [value]="o.totalContributorsCount" icon="users" />
+    </div>
+    @if (canViewFinancials()) { <section class="space-y-2 rounded-xl border border-border bg-surface p-4 text-sm"><h2 class="font-semibold">{{ 'billing.fix.pricedTotals' | translate }}</h2><p class="text-xs text-muted">{{ 'billing.fix.noFx' | translate }}</p><tf-money-totals [items]="o.moneyTotals ?? []" /></section> }
+    <nav [attr.aria-label]="'billing.fix.views' | translate" class="grid grid-cols-3 gap-2 border-b border-border pb-3">
+      @for (tab of tabs; track tab.id) { <button type="button" (click)="activeTab.set(tab.id)" [attr.aria-pressed]="activeTab() === tab.id" [class.bg-brand-600]="activeTab() === tab.id" [class.text-white]="activeTab() === tab.id" class="min-h-11 break-words rounded-xl border border-border px-2 py-2 text-xs sm:text-sm">{{ tab.label | translate }}</button> }
+    </nav>
+    @if (activeTab() === 'projects') {
+      <p class="text-xs text-muted">{{ (canViewFinancials() ? 'billing.fix.globalBudget' : 'billing.fix.restrictedBudget') | translate }}</p>
+      @if (o.projects.length === 0) { <p class="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">{{ 'billing.noData' | translate }}</p> }
+      @else {
+        <div class="hidden overflow-x-auto rounded-2xl border border-border bg-surface md:block"><table class="w-full text-left text-xs">
+          <caption class="sr-only">{{ 'billing.tabProjects' | translate }}</caption>
+          <thead class="border-b border-border bg-app text-muted"><tr>
+            <th scope="col" class="p-3">{{ 'billing.colReference' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colProject' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colClient' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colContributors' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colTotalHours' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colBillableHours' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colBillableDays' | translate }}</th><th scope="col" class="p-3">{{ 'billing.budgetTracking' | translate }}</th>
+            @if (canViewFinancials()) { <th scope="col" class="p-3">{{ 'billing.colDailyRate' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colTotalAmount' | translate }}</th> }
+          </tr></thead>
+          <tbody class="divide-y divide-border">@for (p of o.projects; track p.projectId) { <tr>
+            <td class="p-3 font-mono">{{ p.projectReference || '–' }}</td><th scope="row" class="max-w-xs break-words p-3 font-semibold">{{ p.projectName }} <span class="text-xs font-normal text-muted">{{ p.currency }}</span></th><td class="p-3">{{ p.clientOrganization || '–' }}</td><td class="p-3">{{ p.contributorsCount }}</td><td class="p-3">{{ hours(p.totalMinutes) }}</td><td class="p-3">{{ hours(p.billableMinutes) }}</td><td class="p-3 font-semibold text-brand-600">{{ i18n.formatNumber(p.billableDays) }}</td>
+            <td class="min-w-40 p-3">@if (p.remainingDays != null && p.progressDaysPercent != null) { <p>{{ 'billing.fix.remainingDays' | translate:{days: i18n.formatNumber(p.remainingDays)} }}</p><p>{{ i18n.formatNumber(p.progressDaysPercent) }}%</p><progress [value]="clamped(p.progressDaysPercent)" max="100" [attr.aria-label]="'billing.budgetTracking' | translate" class="h-2 w-full"></progress> } @else { <span>–</span> }@if (canViewFinancials() && p.remainingAmount != null) { <p class="mt-1">{{ 'billing.fix.remainingAmount' | translate }}: {{ money(p.remainingAmount, p.currency) }}</p> }</td>
+            @if (canViewFinancials()) { <td class="p-3 font-mono">{{ money(p.dailyRate, p.currency) }}</td><td class="p-3 font-mono">{{ money(p.totalAmount, p.currency) }}@if (p.totalAmount == null && p.billableMinutes > 0) { <p class="mt-1 text-xs text-error">{{ 'billing.fix.missingRate' | translate }}</p> }</td> }
+          </tr> }</tbody>
+        </table></div>
+        <div class="grid gap-3 md:hidden">@for (p of o.projects; track p.projectId) {
+          <article class="space-y-3 rounded-2xl border border-border bg-surface p-4 text-sm">
+            <h3 class="break-words font-semibold">{{ p.projectName }}</h3><p class="break-words text-xs text-muted">{{ p.projectReference }} · {{ p.clientOrganization }} · {{ p.currency }}</p>
+            <dl class="grid grid-cols-2 gap-3 border-t border-border pt-3"><div><dt class="text-xs text-muted">{{ 'billing.colBillableDays' | translate }}</dt><dd>{{ i18n.formatNumber(p.billableDays) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colBillableHours' | translate }}</dt><dd>{{ hours(p.billableMinutes) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colTotalHours' | translate }}</dt><dd>{{ hours(p.totalMinutes) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colContributors' | translate }}</dt><dd>{{ p.contributorsCount }}</dd></div></dl>
+            @if (p.remainingDays != null && p.progressDaysPercent != null) { <div class="space-y-1 border-t border-border pt-3"><p>{{ 'billing.fix.remainingDays' | translate:{days: i18n.formatNumber(p.remainingDays)} }} ({{ i18n.formatNumber(p.progressDaysPercent) }}%)</p><progress [value]="clamped(p.progressDaysPercent)" max="100" [attr.aria-label]="'billing.budgetTracking' | translate" class="h-2 w-full"></progress></div> }
+            @if (canViewFinancials()) {
+              <dl class="grid gap-2 border-t border-border pt-3"><div><dt class="text-xs text-muted">{{ 'billing.colDailyRate' | translate }}</dt><dd>{{ money(p.dailyRate, p.currency) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colTotalAmount' | translate }}</dt><dd>{{ money(p.totalAmount, p.currency) }}</dd></div>@if (p.remainingAmount != null) { <div><dt class="text-xs text-muted">{{ 'billing.fix.remainingAmount' | translate }}</dt><dd>{{ money(p.remainingAmount, p.currency) }}</dd></div> }</dl>
+              @if (p.totalAmount == null && p.billableMinutes > 0) { <p class="text-xs text-error">{{ 'billing.fix.missingRate' | translate }}</p> }
+            }
+          </article>
+        }</div>
+      }
+    }
+    @if (activeTab() === 'users') {
+      @if (o.users.length === 0) { <p class="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">{{ 'billing.noData' | translate }}</p> }
+      @else {
+        <div class="hidden overflow-x-auto rounded-2xl border border-border bg-surface md:block"><table class="w-full text-left text-xs">
+          <caption class="sr-only">{{ 'billing.tabUsers' | translate }}</caption>
+          <thead class="border-b border-border bg-app text-muted"><tr><th scope="col" class="p-3">{{ 'billing.colUser' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colRole' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colSchedule' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colTotalHours' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colBillableHours' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colBillableDays' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colOvertime' | translate }}</th>@if (canViewFinancials()) { <th scope="col" class="p-3">{{ 'billing.colUserRate' | translate }}</th><th scope="col" class="p-3">{{ 'billing.fix.pricedTotals' | translate }}</th> }</tr></thead>
+          <tbody class="divide-y divide-border">@for (u of o.users; track u.userId) { <tr><th scope="row" class="break-words p-3"><p>{{ u.displayName }}</p><p class="break-all font-normal text-muted">{{ u.email }}</p></th><td class="p-3">{{ 'roles.' + u.role | translate }}</td><td class="p-3">{{ u.workScheduleName }}</td><td class="p-3">{{ hours(u.totalMinutes) }}</td><td class="p-3">{{ hours(u.billableMinutes) }}</td><td class="p-3">{{ i18n.formatNumber(u.billableDays) }}</td><td class="p-3">{{ hours(u.overtimeMinutes) }}</td>@if (canViewFinancials()) { <td class="p-3">{{ money(u.dailyRate, u.dailyRateCurrency) }}</td><td class="p-3"><tf-money-totals [items]="u.moneyTotals ?? []" /></td> }</tr> }</tbody>
+        </table></div>
+        <div class="grid gap-3 md:hidden">@for (u of o.users; track u.userId) { <article class="space-y-3 rounded-2xl border border-border bg-surface p-4 text-sm"><h3 class="break-words font-semibold">{{ u.displayName }}</h3><p class="break-all text-xs text-muted">{{ u.email }}</p><p class="text-xs text-muted">{{ 'roles.' + u.role | translate }} · {{ u.workScheduleName }}</p><dl class="grid grid-cols-2 gap-3 border-t border-border pt-3"><div><dt class="text-xs text-muted">{{ 'billing.colTotalHours' | translate }}</dt><dd>{{ hours(u.totalMinutes) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colBillableHours' | translate }}</dt><dd>{{ hours(u.billableMinutes) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colBillableDays' | translate }}</dt><dd>{{ i18n.formatNumber(u.billableDays) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colOvertime' | translate }}</dt><dd>{{ hours(u.overtimeMinutes) }}</dd></div></dl>@if (canViewFinancials()) { <p class="text-xs text-muted">{{ 'billing.colUserRate' | translate }}: {{ money(u.dailyRate, u.dailyRateCurrency) }}</p><h4 class="text-xs font-semibold">{{ 'billing.fix.pricedTotals' | translate }}</h4><tf-money-totals [items]="u.moneyTotals ?? []" /> }</article> }</div>
+      }
+    }
+    @if (activeTab() === 'details') {
+      @if (details().length === 0) { <p class="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">{{ 'billing.noData' | translate }}</p> }
+      @else {
+        <div class="hidden overflow-x-auto rounded-2xl border border-border bg-surface md:block"><table class="w-full text-left text-xs">
+          <caption class="sr-only">{{ 'billing.tabDetails' | translate }}</caption>
+          <thead class="border-b border-border bg-app text-muted"><tr><th scope="col" class="p-3">{{ 'billing.colDate' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colUser' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colProject' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colActivity' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colTotalHours' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colBillable' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colBillableDays' | translate }}</th>@if (canViewFinancials()) { <th scope="col" class="p-3">{{ 'billing.colDailyRate' | translate }}</th><th scope="col" class="p-3">{{ 'billing.colTotalAmount' | translate }}</th> }<th scope="col" class="p-3">{{ 'billing.colComment' | translate }}</th></tr></thead>
+          <tbody class="divide-y divide-border">@for (d of details(); track $index) { <tr><td class="p-3">{{ i18n.formatDate(d.entryDate) }}</td><th scope="row" class="break-words p-3">{{ d.userDisplayName }}</th><td class="break-words p-3">{{ d.projectName }}</td><td class="p-3">{{ d.activityType }}</td><td class="p-3">{{ hours(d.minutes) }}</td><td class="p-3">{{ (d.billable ? 'common.yes' : 'common.no') | translate }}</td><td class="p-3">{{ i18n.formatNumber(d.billableDays) }}</td>@if (canViewFinancials()) { <td class="p-3">{{ money(d.dailyRate, d.currency) }}</td><td class="p-3">{{ money(d.totalAmount, d.currency) }}</td> }<td class="max-w-sm whitespace-pre-wrap break-words p-3">{{ d.comment }}</td></tr> }</tbody>
+        </table></div>
+        <div class="grid gap-3 md:hidden">@for (d of details(); track $index) { <article class="space-y-2 rounded-2xl border border-border bg-surface p-4 text-sm"><p class="text-xs text-muted">{{ i18n.formatDate(d.entryDate) }}</p><h3 class="break-words font-semibold">{{ d.userDisplayName }}</h3><p class="break-words">{{ d.projectName }} · {{ d.activityType }}</p><dl class="grid grid-cols-2 gap-3 border-t border-border pt-3"><div><dt class="text-xs text-muted">{{ 'billing.colTotalHours' | translate }}</dt><dd>{{ hours(d.minutes) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colBillableDays' | translate }}</dt><dd>{{ i18n.formatNumber(d.billableDays) }}</dd></div><div><dt class="text-xs text-muted">{{ 'billing.colBillable' | translate }}</dt><dd>{{ (d.billable ? 'common.yes' : 'common.no') | translate }}</dd></div>@if (canViewFinancials()) { <div><dt class="text-xs text-muted">{{ 'billing.colTotalAmount' | translate }}</dt><dd>{{ money(d.totalAmount, d.currency) }}</dd></div> }</dl>@if (d.comment) { <p class="whitespace-pre-wrap break-words rounded-lg bg-app p-2 text-xs">{{ d.comment }}</p> }</article> }</div>
+      }
+    }
+  }
+</div>
