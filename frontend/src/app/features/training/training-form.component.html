@@ -1,0 +1,93 @@
+<form (ngSubmit)="submit()" novalidate class="space-y-4 text-ink">
+  <fieldset [disabled]="busy()" class="space-y-4">
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <label for="training-ref" class="mb-1 block text-sm font-medium">{{ 'training.reference' | translate }} *</label>
+        <input id="training-ref" name="reference" required maxlength="50" [ngModel]="reference()" (ngModelChange)="reference.set($event); clear('reference')"
+          [attr.aria-invalid]="!!errors()['reference']" aria-describedby="training-ref-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
+        <p id="training-ref-error" class="text-xs text-error">{{ errors()['reference'] ? (errors()['reference'] | translate) : '' }}</p>
+      </div>
+      <div class="sm:col-span-2">
+        <label for="training-title" class="mb-1 block text-sm font-medium">{{ 'training.titleLabel' | translate }} *</label>
+        <input id="training-title" name="title" required maxlength="200" [ngModel]="title()" (ngModelChange)="title.set($event); clear('title')"
+          [attr.aria-invalid]="!!errors()['title']" aria-describedby="training-title-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
+        <p id="training-title-error" class="text-xs text-error">{{ errors()['title'] ? (errors()['title'] | translate) : '' }}</p>
+      </div>
+    </div>
+    <div>
+      <label for="training-desc" class="mb-1 block text-sm font-medium">{{ 'training.descriptionLabel' | translate }}</label>
+      <textarea id="training-desc" name="description" rows="3" maxlength="2000" [ngModel]="description()" (ngModelChange)="description.set($event); clear('description')"
+        aria-describedby="training-desc-error" [attr.aria-invalid]="!!errors()['description']" class="w-full rounded-xl border border-border bg-app p-3 text-sm"></textarea>
+      <p id="training-desc-error" class="text-xs text-error">{{ errors()['description'] ? (errors()['description'] | translate) : '' }}</p>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-3">
+      <div>
+        <label for="training-cat" class="mb-1 block text-sm">{{ 'training.category' | translate }}</label>
+        <select id="training-cat" name="category" [ngModel]="category()" (ngModelChange)="category.set($event)" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm">
+          <option value="INTERNAL">{{ 'training.categoryInternal' | translate }}</option><option value="CLIENT">{{ 'training.categoryClient' | translate }}</option>
+        </select>
+      </div>
+      <div>
+        <label for="training-mode" class="mb-1 block text-sm">{{ 'training.deliveryMode' | translate }}</label>
+        <select id="training-mode" name="deliveryMode" [ngModel]="deliveryMode()" (ngModelChange)="deliveryMode.set($event)" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm">
+          <option value="REMOTE">{{ 'training.modalityRemote' | translate }}</option><option value="ON_SITE">{{ 'training.modalityOnSite' | translate }}</option><option value="HYBRID">{{ 'training.modalityHybrid' | translate }}</option>
+        </select>
+      </div>
+      <div>
+        <label for="training-status" class="mb-1 block text-sm">{{ 'training.statusLabel' | translate }}</label>
+        <select id="training-status" name="status" [ngModel]="status()" (ngModelChange)="status.set($event)" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm">
+          <option value="PLANNED">{{ 'training.statusPlanned' | translate }}</option><option value="IN_PROGRESS">{{ 'training.statusInProgress' | translate }}</option><option value="COMPLETED">{{ 'training.statusCompleted' | translate }}</option><option value="CANCELLED">{{ 'training.statusCancelled' | translate }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div>
+        <label for="training-trainer" class="mb-1 block text-sm">{{ 'training.trainer' | translate }}</label>
+        <select id="training-trainer" name="trainerId" [ngModel]="trainerId()" (ngModelChange)="trainerId.set($event || null)" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm">
+          <option value="">{{ 'training.noTrainer' | translate }}</option>
+          @for (u of trainers(); track u.id) { <option [value]="u.id">{{ u.displayName }}</option> }
+        </select>
+      </div>
+      <div>
+        <label for="training-loc" class="mb-1 block text-sm">{{ 'training.location' | translate }}</label>
+        <input id="training-loc" name="location" maxlength="200" [ngModel]="location()" (ngModelChange)="location.set($event); clear('location')"
+          [attr.aria-invalid]="!!errors()['location']" aria-describedby="training-loc-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
+        <p id="training-loc-error" class="text-xs text-error">{{ errors()['location'] ? (errors()['location'] | translate) : '' }}</p>
+      </div>
+    </div>
+    <label class="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" name="timed" [ngModel]="timed()" (ngModelChange)="toggleTimed($event)" />{{ 'training.fix.includeTimes' | translate }}</label>
+    <p class="text-xs text-muted">{{ timed() ? ('training.fix.timeZone' | translate:{zone: zone}) : ('training.fix.dateOnly' | translate) }}</p>
+    @if (timed() && session()?.timeZone && session()?.timeZone !== zone) { <p class="text-xs text-muted">{{ 'training.fix.sessionZone' | translate:{zone: session()!.timeZone!} }}</p> }
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div>
+        <label for="training-start" class="mb-1 block text-sm">{{ 'training.startDate' | translate }} *</label>
+        <input id="training-start" name="startDate" [type]="timed() ? 'datetime-local' : 'date'" required [ngModel]="startDate()" (ngModelChange)="startDate.set($event); clear('dates')"
+          [attr.aria-invalid]="!!errors()['dates']" aria-describedby="training-dates-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
+      </div>
+      <div>
+        <label for="training-end" class="mb-1 block text-sm">{{ 'training.endDate' | translate }} *</label>
+        <input id="training-end" name="endDate" [type]="timed() ? 'datetime-local' : 'date'" required [ngModel]="endDate()" (ngModelChange)="endDate.set($event); clear('dates')"
+          [attr.aria-invalid]="!!errors()['dates']" aria-describedby="training-dates-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
+      </div>
+    </div>
+    <p id="training-dates-error" role="alert" class="text-xs text-error">{{ errors()['dates'] ? (errors()['dates'] | translate) : '' }}</p>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div>
+        <label for="training-duration" class="mb-1 block text-sm">{{ 'training.durationHours' | translate }} *</label>
+        <input id="training-duration" name="durationHours" type="number" required min="0.5" max="9999.99" step="0.01" [ngModel]="durationHours()" (ngModelChange)="durationHours.set($event); clear('duration')"
+          [attr.aria-invalid]="!!errors()['duration']" aria-describedby="training-duration-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
+        <p id="training-duration-error" class="text-xs text-error">{{ errors()['duration'] ? (errors()['duration'] | translate) : '' }}</p>
+      </div>
+      <div>
+        <label for="training-max" class="mb-1 block text-sm">{{ 'training.maxParticipants' | translate }} *</label>
+        <input id="training-max" name="maxParticipants" type="number" required min="1" max="500" step="1" [ngModel]="maxParticipants()" (ngModelChange)="maxParticipants.set($event); clear('capacity')"
+          [attr.aria-invalid]="!!errors()['capacity']" aria-describedby="training-capacity-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
+        <p id="training-capacity-error" class="text-xs text-error">{{ errors()['capacity'] ? (errors()['capacity'] | translate) : '' }}</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap justify-end gap-2 pt-3">
+      <button type="button" (click)="cancelled.emit()" class="min-h-11 rounded-xl border border-border px-4 text-sm">{{ 'common.cancel' | translate }}</button>
+      <button type="submit" [disabled]="busy()" class="min-h-11 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white disabled:opacity-50">{{ busy() ? ('common.loading' | translate) : ('training.saveSession' | translate) }}</button>
+    </div>
+  </fieldset>
+</form>

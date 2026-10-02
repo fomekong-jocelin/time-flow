@@ -1,0 +1,56 @@
+<tf-dialog [title]="title()" [busy]="busy()" (closed)="close.emit()">
+  @if (error()) {
+    <div role="alert" class="mb-4 rounded-xl border border-error/30 p-3 text-sm text-error"><p>{{ error()! | translate }}</p>
+      <button type="button" (click)="retry.emit()" [disabled]="busy() || loading()" class="mt-2 min-h-11 rounded-xl border border-border px-3">{{ 'training.fix.retry' | translate }}</button>
+    </div>
+  }
+  @if (loading()) { <p role="status" class="py-8 text-sm text-muted">{{ 'common.loading' | translate }}</p> }
+  @else if (session(); as s) {
+    <div class="space-y-5">
+      <p class="break-words font-mono text-sm text-brand-600">{{ s.reference }}</p>
+      @if (s.description) { <p class="whitespace-pre-wrap break-words text-sm">{{ s.description }}</p> }
+      <dl class="grid gap-3 rounded-xl border border-border bg-app p-4 text-sm sm:grid-cols-2">
+        <div><dt class="text-muted">{{ 'training.startDate' | translate }}</dt><dd class="break-words">{{ schedule(s) }}</dd></div>
+        <div><dt class="text-muted">{{ 'training.durationHours' | translate }}</dt><dd>{{ i18n.formatNumber(s.durationHours) }} {{ 'common.hours' | translate }}</dd></div>
+        <div><dt class="text-muted">{{ 'training.trainer' | translate }}</dt><dd class="break-words">{{ s.trainerDisplayName || ('training.noTrainer' | translate) }}</dd></div>
+        <div><dt class="text-muted">{{ 'training.location' | translate }}</dt><dd class="whitespace-pre-wrap break-words">{{ s.location || '–' }}</dd></div>
+      </dl>
+      @if (s.timeZone) { <p class="text-xs text-muted">{{ 'training.fix.sessionZone' | translate:{zone: s.timeZone} }}</p> }
+      @if (link(); as url) { <a [href]="url" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm text-brand-600 underline">{{ 'training.fix.openMeeting' | translate }}</a> }
+      @if (!mutable()) { <p class="rounded-xl bg-app p-3 text-sm">{{ 'training.fix.readOnly' | translate }}</p> }
+      <h3 class="text-base font-semibold">{{ 'training.participantsTitle' | translate:{count: s.registeredCount.toString(), max: s.maxParticipants.toString()} }}</h3>
+      @if (canManage() && mutable()) {
+        <div class="space-y-2 rounded-xl border border-border p-3">
+          @if (usersError()) { <p role="alert" class="text-sm text-error">{{ usersError()! | translate }}</p><button type="button" (click)="reloadUsers.emit()" [disabled]="usersLoading()" class="min-h-11 rounded-xl border border-border px-3">{{ 'training.fix.retry' | translate }}</button> }
+          @else if (usersLoading()) { <p role="status" class="text-sm">{{ 'common.loading' | translate }}</p> }
+          <label for="training-add-user" class="block text-sm">{{ 'training.addParticipant' | translate }}</label>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <select id="training-add-user" name="selectedUser" [ngModel]="selectedUserId()" (ngModelChange)="selectedUserId.set($event)" [disabled]="busy() || usersLoading() || !!usersError()" class="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-app px-3 text-sm">
+              <option value="">{{ 'training.selectParticipant' | translate }}</option>
+              @for (u of availableUsers(); track u.id) { <option [value]="u.id">{{ u.displayName }} ({{ u.email }})</option> }
+            </select>
+            <button type="button" (click)="handleAdd()" [disabled]="!validSelection() || busy() || !roomAvailable() || usersLoading() || !!usersError()" class="min-h-11 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50">{{ 'training.addParticipantBtn' | translate }}</button>
+          </div>
+          @if (!roomAvailable()) { <p class="text-sm text-muted">{{ 'training.fullBadge' | translate }}</p> }
+        </div>
+      }
+      @if (participants().length === 0) { <p class="rounded-xl border border-dashed border-border p-6 text-sm text-muted">{{ 'training.noParticipants' | translate }}</p> }
+      @else {
+        <ul class="space-y-3">
+          @for (p of participants(); track p.userId) {
+            <li class="flex flex-col gap-3 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div class="min-w-0"><p class="break-words text-sm font-semibold">{{ p.userDisplayName }}</p><p class="break-all text-xs text-muted">{{ p.userEmail }}</p><p class="mt-1 text-xs">{{ statusKey(p.status) | translate }} · {{ i18n.formatDate(p.registeredAt) }}</p></div>
+              @if (mutable() && canUpdateStatus()) {
+                <div class="flex flex-wrap gap-2">
+                  @if (p.status === 'REGISTERED' && s.status === 'IN_PROGRESS') { <button type="button" [disabled]="busy()" (click)="mark(p, 'ATTENDED')" class="min-h-11 rounded-xl border border-border px-3 text-sm">{{ 'training.markAttended' | translate }}</button> }
+                  @if (p.status === 'REGISTERED') { <button type="button" [disabled]="busy()" (click)="cancelRegistration(p)" class="min-h-11 rounded-xl border border-border px-3 text-sm">{{ 'training.markCancelled' | translate }}</button> }
+                  @if (p.status === 'CANCELLED') { <button type="button" [disabled]="busy() || !roomAvailable()" (click)="mark(p, 'REGISTERED')" class="min-h-11 rounded-xl border border-border px-3 text-sm">{{ 'training.fix.restoreRegistration' | translate }}</button> }
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</tf-dialog>
