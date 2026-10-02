@@ -5,18 +5,19 @@ import { TranslatePipe } from '../pipes/translate.pipe';
 @Component({
   selector: 'tf-dialog', standalone: true, imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Single scroll container: the <dialog> itself never scrolls (overflow-hidden) and is a flex column only
+  // while open (open:flex keeps the UA display:none of a closed dialog). Only the body section scrolls;
+  // overscroll-contain stops scroll chaining to the page behind.
   styles: [`dialog::backdrop { background: rgb(0 0 0 / 55%); }`],
   template: `
     <dialog #dialog [attr.aria-labelledby]="titleId" (cancel)="cancel($event)"
-      class="m-auto max-h-[90dvh] w-[92vw] max-w-2xl rounded-2xl border border-border bg-surface p-0 text-ink shadow-2xl">
-      <div class="flex max-h-[90dvh] flex-col">
-        <header class="flex shrink-0 items-start justify-between gap-4 border-b border-border p-4 sm:p-5">
-          <h2 #heading [id]="titleId" tabindex="-1" class="min-w-0 break-words text-lg font-semibold">{{ title() }}</h2>
-          <button type="button" [disabled]="busy()" (click)="requestClose()" [attr.aria-label]="'common.close' | translate"
-            class="min-h-11 shrink-0 rounded-xl border border-border px-3 text-sm disabled:opacity-50">{{ 'common.close' | translate }}</button>
-        </header>
-        <section class="min-h-0 overflow-y-auto p-4 sm:p-6"><ng-content /></section>
-      </div>
+      class="m-auto max-h-[90dvh] w-[92vw] max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-surface p-0 text-ink shadow-2xl open:flex">
+      <header class="flex shrink-0 items-start justify-between gap-4 border-b border-border p-4 sm:p-5">
+        <h2 #heading [id]="titleId" tabindex="-1" class="min-w-0 break-words text-lg font-semibold">{{ title() }}</h2>
+        <button type="button" [disabled]="busy()" (click)="requestClose()" [attr.aria-label]="'common.close' | translate"
+          class="min-h-11 shrink-0 rounded-xl border border-border px-3 text-sm disabled:opacity-50">{{ 'common.close' | translate }}</button>
+      </header>
+      <section class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6"><ng-content /></section>
     </dialog>
   `
 })

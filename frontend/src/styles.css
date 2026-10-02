@@ -86,3 +86,8 @@ input:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--color-ink);
   caret-color: var(--color-ink);
 }
+
+/* TICKET-0020 : pendant qu'une modale native est ouverte, la page derrière ne défile plus (une seule barre de défilement visible). */
+html:has(dialog[open]) {
+  overflow: hidden;
+}

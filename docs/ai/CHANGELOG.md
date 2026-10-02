@@ -4,6 +4,10 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ## [Unreleased]
 
+### Fixed : TICKET-0020, défilement des modales
+
+- Une seule barre de défilement dans les modales `tf-dialog` (corps défilant, en-tête fixe, page de fond bloquée). Voir [TICKET-0020](tickets/TICKET-0020-dialog-single-scroll.md).
+
 ### Fixed : TICKET-0019, participants et formateurs
 
 - Retrait d'un inscrit avec confirmation nommée, annulations séparées et historique conservé.

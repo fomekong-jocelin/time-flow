@@ -34,6 +34,7 @@
 | TICKET-0017 | PR #19 | Budget projet, tarifs et devises : correction du cumul | IN_REVIEW | P0 |
 | TICKET-0018 | PR #19 | Remédiation TF-01 à TF-11, BF-01 à BF-03, GOV-01 | IN_REVIEW | P0 |
 | TICKET-0019 | PR #19 | Retrait, correction administrative des présences, exclusion formateur/participant | IN_REVIEW | P1 |
+| TICKET-0020 | à créer | Modales : une seule zone de défilement | IN_REVIEW | P2 |
 
 ## Décisions actées
 
