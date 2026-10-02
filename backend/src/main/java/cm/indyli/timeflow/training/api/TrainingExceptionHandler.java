@@ -21,7 +21,10 @@ public class TrainingExceptionHandler {
     public ProblemDetail handleValidation(TrainingValidationException ex) {
         HttpStatus status = ex.getCode().endsWith("notFound") ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
         if (Set.of("training.errors.full", "training.errors.closed", "training.errors.historyProtected",
-                "training.errors.duplicateReference", "training.errors.capacityBelowOccupancy").contains(ex.getCode())) {
+                "training.errors.duplicateReference", "training.errors.capacityBelowOccupancy",
+                "training.errors.conflict", "training.errors.trainerParticipantConflict",
+                "training.errors.trainerAttendanceConflict", "training.errors.trainerWithdrawalRequired",
+                "training.errors.closedReactivation").contains(ex.getCode())) {
             status = HttpStatus.CONFLICT;
         }
         return problem(status, ex.getCode(), ex.getMessage());

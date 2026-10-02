@@ -7,6 +7,7 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { DialogComponent } from '../../shared/ui/dialog.component';
 import { TrainingService } from './training.service';
+import { ParticipantCorrection, selfRegistrationAllowed } from './training-participation';
 import { ParticipantStatus, TrainingFormData, TrainingKpi, TrainingPage, TrainingSession, TrainingStatus, TrainingUser } from './training.models';
 import { TrainingFormComponent } from './training-form.component';
 import { TrainingParticipantsModalComponent } from './training-participants-modal.component';
@@ -23,6 +24,8 @@ export class TrainingPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly requests = new Subject<void>();
   private detailRequest?: Subscription;
+  private formRequest?: Subscription;
+  readonly formLoading = signal(false);
   private usersLoaded = false;
   readonly result = signal<TrainingPage>({ items: [], page: 0, size: 24, totalItems: 0, totalPages: 0 });
   readonly loading = signal(false); readonly error = signal<string | null>(null);
@@ -63,7 +66,7 @@ export class TrainingPageComponent implements OnInit {
       this.result.set(result);
     });
     this.loadKpis();
-    this.destroyRef.onDestroy(() => this.detailRequest?.unsubscribe());
+    this.destroyRef.onDestroy(() => { this.detailRequest?.unsubscribe(); this.formRequest?.unsubscribe(); });
   }
   reload(): void { this.requests.next(); this.loadKpis(); }
   filterChanged(): void { this.page.set(0); this.requests.next(); }
@@ -90,10 +93,7 @@ export class TrainingPageComponent implements OnInit {
     });
   }
   mutable(s: TrainingSession): boolean { return s.status === 'PLANNED' || s.status === 'IN_PROGRESS'; }
-  canRegister(s: TrainingSession): boolean {
-    const open = s.endsAt ? new Date(s.endsAt).getTime() > Date.now() : s.endDate >= new Date().toISOString().slice(0, 10);
-    return this.mutable(s) && open && !s.isCurrentUserRegistered && s.registeredCount < s.maxParticipants;
-  }
+  canRegister(s: TrainingSession): boolean { return selfRegistrationAllowed(s); }
   canUnregister(s: TrainingSession): boolean { return this.mutable(s) && s.currentUserParticipantStatus === 'REGISTERED'; }
   statusKey(status: TrainingStatus): string {
     return { PLANNED: 'training.statusPlanned', IN_PROGRESS: 'training.statusInProgress',
@@ -104,8 +104,22 @@ export class TrainingPageComponent implements OnInit {
       : `${this.i18n.formatDate(s.startDate)} → ${this.i18n.formatDate(s.endDate)}`;
   }
   openForm(session: TrainingSession | null = null): void {
-    if (!this.canManage() || (session && !this.mutable(session))) return;
-    this.editingSession.set(session); this.formError.set(null); this.showForm.set(true); this.loadUsers();
+    if (!this.canManage() || this.formBusy() || (session && !this.mutable(session))) return;
+    this.formRequest?.unsubscribe();
+    this.formError.set(null); this.loadUsers();
+    if (!session) {
+      this.editingSession.set(null); this.showForm.set(true); return;
+    }
+    // List DTOs omit participants. Fetch detail before asking for a trainer-transfer confirmation.
+    this.formLoading.set(true);
+    this.formRequest = this.service.get(session.id).pipe(finalize(() => this.formLoading.set(false)),
+      takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: full => {
+          if (!this.mutable(full)) { this.error.set('training.errors.closed'); return; }
+          this.editingSession.set(full); this.showForm.set(true);
+        },
+        error: error => this.error.set(this.problem(error))
+      });
   }
   closeForm(): void { if (!this.formBusy()) { this.showForm.set(false); this.editingSession.set(null); } }
   save(data: TrainingFormData): void {
@@ -148,6 +162,10 @@ export class TrainingPageComponent implements OnInit {
   }
   updateStatus(event: { userId: string; status: ParticipantStatus }): void {
     const s = this.detail(); if (s) this.mutate(this.service.updateParticipantStatus(s.id, event.userId, event.status), true);
+  }
+  correctParticipant(event: ParticipantCorrection): void {
+    const s = this.detail();
+    if (s && this.canManage()) this.mutate(this.service.correctParticipant(s.id, event), true);
   }
   private mutate(request: Observable<unknown>, refreshDetail = false): void {
     if (this.actionBusy()) return;

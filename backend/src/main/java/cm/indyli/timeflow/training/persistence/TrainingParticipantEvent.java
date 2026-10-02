@@ -13,17 +13,28 @@ public class TrainingParticipantEvent {
     private ParticipantStatus toStatus;
     @Column(name = "changed_at", nullable = false) private OffsetDateTime changedAt;
     @Column(name = "actor_id") private UUID actorId;
+    @Column(name = "reason", length = 500) private String reason;
+    @Column(name = "event_kind", length = 32) private String eventKind;
 
     protected TrainingParticipantEvent() {}
 
     public TrainingParticipantEvent(ParticipantStatus from, ParticipantStatus to, UUID actorId) {
+        this(from, to, actorId, null, from == null ? "REGISTRATION" : "STATUS_CHANGE");
+    }
+
+    public TrainingParticipantEvent(ParticipantStatus from, ParticipantStatus to, UUID actorId,
+                                    String reason, String eventKind) {
         this.fromStatus = from;
         this.toStatus = to;
         this.actorId = actorId;
         this.changedAt = OffsetDateTime.now();
+        this.reason = reason;
+        this.eventKind = eventKind;
     }
     public ParticipantStatus getFromStatus() { return fromStatus; }
     public ParticipantStatus getToStatus() { return toStatus; }
     public UUID getActorId() { return actorId; }
     public OffsetDateTime getChangedAt() { return changedAt; }
+    public String getReason() { return reason; }
+    public String getEventKind() { return eventKind; }
 }

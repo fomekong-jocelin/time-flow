@@ -104,7 +104,16 @@ public class TrainingService {
         var session = locked(id);
         requireMutable(session);
         validateCommand(command, id);
-        if (command.maxParticipants() < occupiedCount(id)) throw error("capacityBelowOccupancy", "La capacité est inférieure aux inscriptions actives.");
+        var trainerParticipant = command.trainerId() == null ? Optional.<TrainingParticipantEntity>empty()
+                : participantRepository.findByTrainingIdAndUserId(id, command.trainerId());
+        boolean withdraw = TrainingParticipantPolicy.trainerWithdrawalRequired(
+                trainerParticipant.map(TrainingParticipantEntity::getStatus).orElse(null), command.withdrawTrainerRegistration());
+        if (command.maxParticipants() < occupiedCount(id) - (withdraw ? 1 : 0)) throw error("capacityBelowOccupancy", "La capacité est inférieure aux inscriptions actives.");
+        if (withdraw) {
+            trainerParticipant.orElseThrow().changeStatus(ParticipantStatus.CANCELLED, currentUserId,
+                    "Retrait de l'inscription confirmé lors de l'affectation comme formateur.", "TRAINER_ASSIGNMENT");
+            participantRepository.save(trainerParticipant.orElseThrow());
+        }
         session.update(command.reference(), command.title(), command.description(), command.trainerId(),
                 command.location(), command.deliveryMode(), command.category(), command.status(), command.startDate(),
                 command.endDate(), command.durationHours(), command.maxParticipants());
@@ -125,6 +134,7 @@ public class TrainingService {
         UUID userId = requestedUserId == null && actor != null ? actor.userId() : requestedUserId;
         TrainingAccess.requireSelfOrManager(actor, userId);
         var session = locked(sessionId);
+        TrainingParticipantPolicy.requireNotTrainer(session.getTrainerId(), userId);
         requireEnrollmentOpen(session);
         requireActiveUser(userId);
         var existing = participantRepository.findByTrainingIdAndUserId(sessionId, userId);
@@ -155,6 +165,7 @@ public class TrainingService {
         var session = locked(sessionId);
         TrainingAccess.requireAttendance(session, actor);
         if (status == null) throw error("invalid", "Le statut est obligatoire.");
+        if (status != ParticipantStatus.CANCELLED) TrainingParticipantPolicy.requireNotTrainer(session.getTrainerId(), userId);
         var participant = participantRepository.findByTrainingIdAndUserId(sessionId, userId)
                 .orElseThrow(() -> error("notRegistered", "Inscription introuvable."));
         if (participant.getStatus() == status) return;
@@ -263,7 +274,7 @@ public class TrainingService {
         var dtos = participants.stream().map(p -> {
             var user = users.get(p.getUserId());
             return new TrainingParticipantDto(p.getId(), p.getUserId(), user == null ? "" : user.getDisplayName(),
-                    user == null ? "" : user.getEmail(), p.getStatus(), p.getRegisteredAt());
+                    user == null ? "" : user.getEmail(), p.getStatus(), p.getRegisteredAt(), p.getAttendedAt());
         }).toList();
         var currentStatus = participants.stream().filter(p -> p.getUserId().equals(currentUserId))
                 .map(TrainingParticipantEntity::getStatus).findFirst().orElse(null);

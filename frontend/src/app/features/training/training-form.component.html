@@ -43,10 +43,19 @@
     <div class="grid gap-3 sm:grid-cols-2">
       <div>
         <label for="training-trainer" class="mb-1 block text-sm">{{ 'training.trainer' | translate }}</label>
-        <select id="training-trainer" name="trainerId" [ngModel]="trainerId()" (ngModelChange)="trainerId.set($event || null)" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm">
+        <select id="training-trainer" name="trainerId" [ngModel]="trainerId()" (ngModelChange)="selectTrainer($event)" [attr.aria-invalid]="!!errors()['trainer']" aria-describedby="training-trainer-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm">
           <option value="">{{ 'training.noTrainer' | translate }}</option>
           @for (u of trainers(); track u.id) { <option [value]="u.id">{{ u.displayName }}</option> }
         </select>
+        <p id="training-trainer-error" role="alert" class="text-xs text-error">{{ errors()['trainer'] ? (errors()['trainer'] | translate) : '' }}</p>
+        @if (trainerParticipant(); as participant) {
+          @if (participant.status === 'REGISTERED') {
+            <p class="mt-2 text-xs text-muted">{{ 'training.participation.transferNotice' | translate }}</p>
+            <label class="mt-2 flex items-start gap-2 text-sm"><input type="checkbox" name="withdrawTrainerRegistration" [ngModel]="withdrawTrainerRegistration()" (ngModelChange)="withdrawTrainerRegistration.set($event); clear('trainer')" />{{ 'training.participation.transferConsent' | translate }}</label>
+          } @else {
+            <p role="status" class="mt-2 text-xs text-error">{{ 'training.errors.trainerAttendanceConflict' | translate }}</p>
+          }
+        }
       </div>
       <div>
         <label for="training-loc" class="mb-1 block text-sm">{{ 'training.location' | translate }}</label>
@@ -60,12 +69,12 @@
     @if (timed() && session()?.timeZone && session()?.timeZone !== zone) { <p class="text-xs text-muted">{{ 'training.fix.sessionZone' | translate:{zone: session()!.timeZone!} }}</p> }
     <div class="grid gap-3 sm:grid-cols-2">
       <div>
-        <label for="training-start" class="mb-1 block text-sm">{{ 'training.startDate' | translate }} *</label>
+        <label for="training-start" class="mb-1 block text-sm">{{ (timed() ? 'training.startDate' : 'training.participation.startDate') | translate }} *</label>
         <input id="training-start" name="startDate" [type]="timed() ? 'datetime-local' : 'date'" required [ngModel]="startDate()" (ngModelChange)="startDate.set($event); clear('dates')"
           [attr.aria-invalid]="!!errors()['dates']" aria-describedby="training-dates-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
       </div>
       <div>
-        <label for="training-end" class="mb-1 block text-sm">{{ 'training.endDate' | translate }} *</label>
+        <label for="training-end" class="mb-1 block text-sm">{{ (timed() ? 'training.endDate' : 'training.participation.endDate') | translate }} *</label>
         <input id="training-end" name="endDate" [type]="timed() ? 'datetime-local' : 'date'" required [ngModel]="endDate()" (ngModelChange)="endDate.set($event); clear('dates')"
           [attr.aria-invalid]="!!errors()['dates']" aria-describedby="training-dates-error" class="min-h-11 w-full rounded-xl border border-border bg-app px-3 text-sm" />
       </div>
@@ -87,7 +96,7 @@
     </div>
     <div class="flex flex-wrap justify-end gap-2 pt-3">
       <button type="button" (click)="cancelled.emit()" class="min-h-11 rounded-xl border border-border px-4 text-sm">{{ 'common.cancel' | translate }}</button>
-      <button type="submit" [disabled]="busy()" class="min-h-11 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white disabled:opacity-50">{{ busy() ? ('common.loading' | translate) : ('training.saveSession' | translate) }}</button>
+      <button type="submit" [disabled]="busy()" class="min-h-11 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white disabled:opacity-50">{{ busy() ? ('common.loading' | translate) : ((trainerParticipant()?.status === 'REGISTERED' && withdrawTrainerRegistration() ? 'training.participation.transferAndSave' : 'training.saveSession') | translate) }}</button>
     </div>
   </fieldset>
 </form>

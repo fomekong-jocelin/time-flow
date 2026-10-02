@@ -42,10 +42,26 @@ public class TrainingParticipantEntity {
     }
 
     public void changeStatus(ParticipantStatus next, UUID actorId) {
+        changeStatus(next, actorId, null, "STATUS_CHANGE");
+    }
+
+    public void changeStatus(ParticipantStatus next, UUID actorId, String reason, String eventKind) {
         Objects.requireNonNull(next);
         if (status == next) return;
-        events.add(new TrainingParticipantEvent(status, next, actorId));
+        events.add(new TrainingParticipantEvent(status, next, actorId, reason, eventKind));
         status = next;
+    }
+
+    /** Migration snapshots (fromStatus == null) cannot establish when attendance was actually marked. */
+    public OffsetDateTime getAttendedAt() {
+        if (status != ParticipantStatus.ATTENDED) return null;
+        for (int i = events.size() - 1; i >= 0; i--) {
+            var event = events.get(i);
+            if (event.getToStatus() == ParticipantStatus.ATTENDED && event.getFromStatus() != null) {
+                return event.getChangedAt();
+            }
+        }
+        return null;
     }
 
     public void setStatus(ParticipantStatus status) { changeStatus(status, null); }

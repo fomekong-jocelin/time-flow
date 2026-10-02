@@ -4,6 +4,16 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ## [Unreleased]
 
+### Fixed : TICKET-0019, participants et formateurs
+
+- Retrait d'un inscrit avec confirmation nommée, annulations séparées et historique conservé.
+- Correction administrative d'une présence ou participation clôturée, avec motif obligatoire, contrôle de rôle/CSRF et statut attendu.
+- Interdiction du cumul formateur/participant actif sur une même session dans les parcours UI et serveur.
+- Transfert explicite d'un inscrit vers le rôle de formateur dans une seule transaction; présence existante à corriger préalablement.
+- Affichage séparé des dates d'inscription et de présence, sans réutiliser la date d'inscription comme date de présence.
+- V11 additive pour les motifs et types d'événements, sans réécriture des migrations ni nettoyage automatique des données.
+- Tests ciblés exécutés : 16 tests Node et 29 assertions de politique Java. Tests Spring/PostgreSQL et build Angular à confirmer. Voir [TICKET-0019](tickets/TICKET-0019-participants-and-trainers.md).
+
 ### Fixed : TICKET-0018, audit des formations et de la facturation
 
 - Vérification serveur de l'affectation du TRAINER avant modification de présence; validation du statut obligatoire et erreurs métier codées.
@@ -24,7 +34,7 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 ### Vérification
 
 PR réelle: [#19](https://github.com/fomekong-jocelin/time-flow/pull/19), vers main, non fusionnée.
-Statut: **IN_REVIEW**, pas DONE. 21 tests ciblés Node et 29 assertions Java exécutés avec succès. Les suites/builds complets et la recette visuelle restent non validés. Voir [les preuves et limites](verification/TICKET-0018-checks.md) et [TICKET-0018](tickets/TICKET-0018-audit-remediation.md).
+Statut: **IN_REVIEW**, pas DONE. Les 21 tests ciblés Node et 29 assertions Java de TICKET-0018 ont été exécutés lors de l'intervention précédente. Les suites/builds complets et la recette visuelle restent non validés. Voir [les preuves et limites](verification/TICKET-0018-checks.md), [TICKET-0018](tickets/TICKET-0018-audit-remediation.md) et les vérifications propres à TICKET-0019 ci-dessus.
 
 ## Historique antérieur conservé intégralement
 

@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { switchMap } from 'rxjs';
 import { ParticipantStatus, TrainingFilters, TrainingFormData, TrainingKpi, TrainingPage, TrainingSession, TrainingUser } from './training.models';
+import type { ParticipantCorrection } from './training-participation';
 
 @Injectable({ providedIn: 'root' })
 export class TrainingService {
@@ -41,5 +42,10 @@ export class TrainingService {
   updateParticipantStatus(sessionId: string, userId: string, status: ParticipantStatus) {
     return this.http.get('/api/v1/auth/csrf').pipe(switchMap(() => this.http.patch<void>(
       `${this.baseUrl}/${sessionId}/participants/${userId}/status`, { status })));
+  }
+  correctParticipant(sessionId: string, correction: ParticipantCorrection) {
+    const { userId, ...command } = correction;
+    return this.http.get('/api/v1/auth/csrf').pipe(switchMap(() => this.http.post<void>(
+      `${this.baseUrl}/${sessionId}/participants/${userId}/corrections`, command)));
   }
 }

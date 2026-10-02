@@ -5,7 +5,7 @@
 | Champ | Valeur |
 |---|---|
 | Dernière mise à jour | 2026-10-02 |
-| Phase | Remédiation de l'audit Formations et Facturation (TICKET-0018) |
+| Phase | Remédiation Formations/Facturation et gestion des participants (TICKET-0018/0019) |
 | État | IN_REVIEW |
 | Cible V1 | Sync projets Azure DevOps + saisie hebdomadaire + validation + reporting de base |
 | Risques actuels | Vérifications complètes non validées; recette navigateur et parcours SSO avec App Registration Microsoft Entra réelle à effectuer |
@@ -33,6 +33,7 @@
 | TICKET-0016 | à créer | Filtrage multi-critères et réactivité mobile Manager/Admin | DONE | P0 |
 | TICKET-0017 | PR #19 | Budget projet, tarifs et devises : correction du cumul | IN_REVIEW | P0 |
 | TICKET-0018 | PR #19 | Remédiation TF-01 à TF-11, BF-01 à BF-03, GOV-01 | IN_REVIEW | P0 |
+| TICKET-0019 | PR #19 | Retrait, correction administrative des présences, exclusion formateur/participant | IN_REVIEW | P1 |
 
 ## Décisions actées
 
@@ -48,10 +49,13 @@
 - Formations : tables training_session et training_participant, interne/client, présentiel/distanciel/hybride et états planifié/en cours/terminé/annulé.
 - ADMIN/DIRECTION pilotent le catalogue. Le TRAINER affecté émarge; les collaborateurs/managers gèrent leurs inscriptions. Les présences et sessions clôturées sont conservées. L'annulation logique et la réactivation ajoutent des événements.
 - Les anciens enregistrements restent au jour près; les horaires explicites sont ajoutés par V10 sans inventer les données manquantes. Catalogue paginé et détails sous /formations.
+- TICKET-0019 : retrait confirmé, correction administrative motivée et horodatée, séparation formateur/participant dans une même session, transfert explicite d'un inscrit vers formateur. Les sessions clôturées peuvent faire l'objet d'un retrait administratif sans réouverture. V11 conserve les motifs sans altérer les anciennes données.
 
 ## Preuves de remédiation
 
-Les 21 tests ciblés Node et 29 assertions Java sont exécutés avec succès sur des fichiers dont les empreintes Git ont été vérifiées. Les checks GitHub Actions déclenchés sur 2869214 n'ont pas produit de validation complète. Ne pas assimiler ces contrôles ciblés à mvn verify, npm test complet ou une recette visuelle. Voir [le journal](verification/TICKET-0018-checks.md).
+Les 21 tests ciblés Node et 29 assertions Java de TICKET-0018 ont été exécutés avec succès lors de l'intervention précédente sur des fichiers dont les empreintes Git ont été vérifiées. Les checks GitHub Actions déclenchés sur 2869214 n'ont pas produit de validation complète. Voir [le journal](verification/TICKET-0018-checks.md).
+
+TICKET-0019 : 16 tests Node et 29 assertions Java de politique exécutés avec succès; 8 fichiers TypeScript transpilés sans diagnostic syntaxique. Tests Spring/HTTP/PostgreSQL ajoutés, non exécutés dans ce conteneur. Ne pas assimiler les contrôles ciblés à mvn verify, npm test complet ou une recette visuelle. Voir [le ticket](tickets/TICKET-0019-participants-and-trainers.md).
 
 La PR #13 concerne un autre changement déjà fusionné. La PR correcte est #19. Aucun changement de cette remédiation n'est déclaré fusionné ni déployé ici.
 
@@ -60,4 +64,4 @@ La PR #13 concerne un autre changement déjà fusionné. La PR correcte est #19.
 - Projet seul ou Work Item Azure DevOps dès V1.
 - Validation par manager, chef de projet ou double validation; hypothèse actuelle : manager direct app_user.manager_id.
 - Périodicité hebdomadaire uniquement ou mensuelle également.
-- Visibilité fine de l'annuaire/participants pour les comptes externes, procédure de correction des présences après clôture et gestion future des données de démonstration historiques. Ces décisions ne sont pas remplacées par des hypothèses silencieuses.
+- Visibilité fine de l'annuaire/participants pour les comptes externes et gestion future des données de démonstration historiques. Ces décisions ne sont pas remplacées par des hypothèses silencieuses.

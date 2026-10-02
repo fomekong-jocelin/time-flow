@@ -2,6 +2,7 @@ package cm.indyli.timeflow.training.persistence;
 
 import cm.indyli.timeflow.training.domain.ParticipantStatus;
 import cm.indyli.timeflow.training.domain.TrainingStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface TrainingParticipantRepository extends JpaRepository<TrainingParticipantEntity, UUID> {
+    @EntityGraph(attributePaths = "events")
     List<TrainingParticipantEntity> findByTrainingId(UUID trainingId);
     List<TrainingParticipantEntity> findByUserId(UUID userId);
     List<TrainingParticipantEntity> findByUserIdAndTrainingIdIn(UUID userId, Collection<UUID> trainingIds);

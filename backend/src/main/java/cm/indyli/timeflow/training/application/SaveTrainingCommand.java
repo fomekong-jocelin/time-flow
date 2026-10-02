@@ -23,12 +23,20 @@ public record SaveTrainingCommand(
         @Min(1) @Max(500) int maxParticipants,
         OffsetDateTime startsAt,
         OffsetDateTime endsAt,
-        @Size(max = 64) String timeZone
+        @Size(max = 64) String timeZone,
+        boolean withdrawTrainerRegistration
 ) {
+    public SaveTrainingCommand(String reference, String title, String description, UUID trainerId,
+            String location, DeliveryMode deliveryMode, TrainingCategory category, TrainingStatus status,
+            LocalDate startDate, LocalDate endDate, BigDecimal durationHours, int maxParticipants,
+            OffsetDateTime startsAt, OffsetDateTime endsAt, String timeZone) {
+        this(reference, title, description, trainerId, location, deliveryMode, category, status,
+                startDate, endDate, durationHours, maxParticipants, startsAt, endsAt, timeZone, false);
+    }
     public SaveTrainingCommand(String reference, String title, String description, UUID trainerId,
             String location, DeliveryMode deliveryMode, TrainingCategory category, TrainingStatus status,
             LocalDate startDate, LocalDate endDate, BigDecimal durationHours, int maxParticipants) {
         this(reference, title, description, trainerId, location, deliveryMode, category, status,
-                startDate, endDate, durationHours, maxParticipants, null, null, null);
+                startDate, endDate, durationHours, maxParticipants, null, null, null, false);
     }
 }

@@ -4,7 +4,7 @@ export type TrainingStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLE
 export type ParticipantStatus = 'REGISTERED' | 'ATTENDED' | 'CANCELLED';
 export interface TrainingParticipant {
   id: string; userId: string; userDisplayName: string; userEmail: string;
-  status: ParticipantStatus; registeredAt: string;
+  status: ParticipantStatus; registeredAt: string; attendedAt?: string | null;
 }
 export interface TrainingSession {
   id: string; reference: string; title: string; description: string | null;
@@ -28,6 +28,7 @@ export interface TrainingFormData {
   location: string | null; deliveryMode: DeliveryMode; category: TrainingCategory; status: TrainingStatus;
   startDate: string; endDate: string; durationHours: number; maxParticipants: number;
   startsAt?: string | null; endsAt?: string | null; timeZone?: string | null;
+  withdrawTrainerRegistration?: boolean;
 }
 export interface TrainingUser { id: string; displayName: string; email: string; role: string; }
 export interface TrainingFilters {
