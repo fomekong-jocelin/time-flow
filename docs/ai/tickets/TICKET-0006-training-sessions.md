@@ -1,87 +1,49 @@
-# TICKET-0006 — Module Formations : Catalogue, planification des sessions, formateurs et participants
+# TICKET-0006 : catalogue, planification, formateurs et participants
+
+Status: IN_REVIEW
+Mise à jour: 2026-10-02
+PR de remédiation: #19
+Suite de l'audit: [TICKET-0018](TICKET-0018-audit-remediation.md)
 
 ## 1. Objectif
 
-Mettre en place le module de gestion des formations dans TimeFlow :
-- **Catalogue & Sessions de formation** : Création, planification et suivi des sessions de formation (`training_session`).
-- **Typologie & Modalités** : Formation interne (montée en compétences) ou client (facturable), modalités (présentiel, distanciel, hybride), volume horaire prévisionnel.
-- **Rôles & Responsabilités** :
-  - `ADMIN` & `DIRECTION` : Gestion complète du catalogue, planification, affectation des formateurs et inscription des participants.
-  - `TRAINER` : Consultation des sessions animées, accès à la liste des participants et émargement/présence.
-  - `COLLABORATOR` & `MANAGER` : Consultation du catalogue, visualisation de ses inscriptions aux formations, auto-inscription/désinscription.
-- **Participants** : Table de liaison `training_participant` pour inscrire les collaborateurs, suivre leur statut (inscrit, présent, annulé).
-- **Interface Utilisateur Angular (`/formations`)** :
-  - Remplacement du lien inactif « Bientôt » dans le menu latéral par la route active `/formations`.
-  - Dashboard avec KPI (Total sessions, sessions planifiées, en cours, terminées, volume horaire, inscriptions).
-  - Vues desktop et mobile ergonomiques sans coupure de texte.
-  - Volet ou modale de création / édition de session avec sélection du formateur et des participants.
-  - Modale de gestion des participants avec mise à jour du statut de présence (Présent, Annulé).
-- **Internationalisation & Sécurité** : Traduction bilingue FR/EN complète, sécurité deny-by-default, tests automatisés 100% passants.
+Gérer les sessions de formation de TimeFlow: catalogue, titre/référence/objectifs, formateur, dates et horaires explicites lorsqu'ils sont connus, durée pédagogique, capacité, modalités (présentiel/distanciel/hybride), catégorie interne/client et statuts.
 
-## 2. Critères d'acceptation
+ADMIN et DIRECTION pilotent les sessions et inscriptions. Le TRAINER consulte et émarge ses sessions affectées. COLLABORATOR et MANAGER consultent le catalogue et gèrent leurs inscriptions. L'interface /formations est bilingue FR/EN, adaptée aux petits écrans et aux interactions clavier.
 
-- [x] CA-01 : Migration Flyway `V9__training_sessions.sql` créant les tables `training_session` et `training_participant`.
-- [x] CA-02 : API REST backend sécurisée sous `/api/v1/trainings` (liste filtrable, détail, création, mise à jour, suppression, changement de statut, inscription/désinscription de participants).
-- [x] CA-03 : Contrôle d'accès RBAC : Admin et Direction peuvent créer/modifier des formations ; Formateurs (`TRAINER`) ont accès à leurs sessions animées et peuvent marquer la présence ; Collaborateurs ont accès aux formations disponibles et à leurs inscriptions.
-- [x] CA-04 : Route Angular `/formations` intégrée dans `app.routes.ts` et shell applicatif `app-shell.component.ts` (icône `graduation`).
-- [x] CA-05 : Interface Angular responsive avec cartes KPI, filtres (statut, modalité, recherche texte), cartes de formation ergonomiques et gestion des participants.
-- [x] CA-06 : Internationalisation FR/EN complète (zéro texte en dur, clés conformes aux tests i18n).
-- [x] CA-07 : Tests unitaires, de sécurité et d'intégration backend (`mvn test`, 154 tests) et tests frontend (`npm test`, 15 tests) 100% au vert.
-- [x] CA-08 : Documentation à jour (`PROJECT-TRACKING.md`, `CHANGELOG.md`).
+## 2. Critères d'acceptation après audit
 
-## 3. Contexte analysé
+| Critère | Implémentation | Validation restante |
+|---|---|---|
+| CA-01 : tables sessions/participants | V9 conservée; V10 additive pour horaires et événements | Migration et mapping sur PostgreSQL |
+| CA-02 : API sécurisée CRUD, détail, filtres et participants | Contrôleur, services, recherche paginée et codes d'erreur | Exécution de la suite backend |
+| CA-03 : autorisation par rôle et affectation | Contrôle objet côté service, principal résolu et statut obligatoire | Tests négatifs HTTP et service réels |
+| CA-04 : route /formations et navigation | Conservées | Recette navigateur |
+| CA-05 : catalogue, capacité et gestion participants | Comptage inscrits + présents, verrou, réactivation et historique | Concurrence PostgreSQL et flux complets |
+| CA-06 : interface FR/EN | Messages et templates traduits | Suite i18n complète et recette |
+| CA-07 : tests et builds | Tests ajoutés et 21 tests ciblés Node réussis | mvn verify, npm test complet, build Angular |
+| CA-08 : documentation et suivi | Tracking, changelog et ticket de remédiation mis à jour | Revue finale avant DONE |
 
-- [x] Fichiers et comportement existants inspectés : `app-shell.component.ts` (menu `nav.training`), `UserRole.java` (`TRAINER`), `ActivityType.java` (`TRAINING`), `AnalyticsService.java` (`trainingMinutes`).
-- [x] Impacts API/data/UI identifiés :
-  - DB : `training_session` (titre, référence, description, formateur, dates, heures, statut, modalité, capacité) et `training_participant` (session, collaborateur, statut, date inscription).
-  - API : `TrainingController`, `TrainingService`, `TrainingSessionEntity`, `TrainingParticipantEntity`.
-  - UI : `TrainingPageComponent`, `TrainingFormComponent`, `TrainingParticipantsModalComponent`, `TrainingService`.
-- [x] Sécurité analysée : RBAC deny-by-default, validation CSRF, contraintes d'unicité et validation des dates.
-- [x] Tests existants vérifiés : 154 tests backend et 15 tests frontend passants.
+## 3. Contexte et impacts
 
-## 4. Plan d'action
+La base auditée était 5adeb68, avec le module déclaré DONE. L'audit a identifié des écarts d'accès objet, d'horaires, de capacité, de transitions, de récupération d'erreur et de validation visuelle. Le statut DONE de cette livraison ne vaut pas acceptation après audit.
 
-- [x] 1. Migration Flyway `V9__training_sessions.sql`.
-- [x] 2. Backend - Entités JPA, DTOs, Repository et Service de domaine pour les formations.
-- [x] 3. Backend - `TrainingController` avec endpoints CRUD et gestion des participants (`/api/v1/trainings`).
-- [x] 4. Backend - Tests unitaires et de sécurité (`TrainingSecurityTest`, `TrainingServiceTest`).
-- [x] 5. Frontend - Service Angular `training.service.ts` et modèles TypeScript.
-- [x] 6. Frontend - Composants `training-form.component.ts` et `training-participants-modal.component.ts`.
-- [x] 7. Frontend - Page principale `training-page.component.ts` et activation dans `app.routes.ts` / `app-shell.component.ts`.
-- [x] 8. Frontend - Dictionnaires i18n `fr.ts` et `en.ts` et tests unitaires (`training.test.mjs`).
-- [x] 9. Vérification complète (`mvn test`, `npm test`, `npm run build`).
-- [x] 10. Mise à jour `PROJECT-TRACKING.md` et `CHANGELOG.md`.
+Les modules impactés sont training/domain, application, persistence, api, les composants Angular de formation, les traductions et le dialogue partagé. Les corrections de facturation embarquées sont suivies dans TICKET-0018 et la même PR.
 
-## 5. Implémentation
+## 4. Règles de remédiation
 
-- Backend :
-  - `V9__training_sessions.sql` : Tables `training_session` et `training_participant`, index de performance et contraintes d'unicité.
-  - Domain : `DeliveryMode`, `TrainingCategory`, `TrainingStatus`, `ParticipantStatus`, `TrainingValidationException`.
-  - Persistence : `TrainingSessionEntity`, `TrainingParticipantEntity`, `TrainingSessionRepository`, `TrainingParticipantRepository`.
-  - Application : `TrainingService`, `TrainingSessionDto`, `TrainingParticipantDto`, `TrainingKpiDto`, `SaveTrainingCommand`.
-  - API : `TrainingController`, `TrainingExceptionHandler`.
-- Frontend :
-  - `training.models.ts`, `training.service.ts`.
-  - `training-form.component.ts` : Formulaire de création / édition avec validation des dates, sélection du formateur et des modalités.
-  - `training-participants-modal.component.ts` : Modale de suivi des inscriptions, ajout/suppression et mise à jour de présence (`ATTENDED`, `CANCELLED`).
-  - `training-page.component.ts` : Dashboard avec 6 cartes KPI, barre de filtres multi-critères, grille de cartes de sessions avec jauge de remplissage, auto-inscription/désinscription.
-  - Activation de la route `/formations` dans `app.routes.ts` et du lien dans `app-shell.component.ts`.
-  - Traductions FR/EN complètes dans `fr.ts` et `en.ts`.
+- Un TRAINER n'émarge que sa session affectée; ADMIN/DIRECTION conservent leurs droits. Les formateurs affectables doivent être actifs et posséder le rôle éligible.
+- Les inscriptions REGISTERED et ATTENDED occupent une place. Toutes les mutations pertinentes verrouillent la session avant calcul.
+- CANCELLED peut être réactivé sous réserve d'ouverture et de capacité. Une présence ATTENDED ne peut pas être supprimée par désinscription. Une session comportant un historique ne peut pas être supprimée physiquement par l'API.
+- Les sessions clôturées/annulées sont immuables dans cette version. Une correction après clôture nécessitera une procédure explicite.
+- Les anciennes sessions date seule restent éditables sans inventer d'horaire. Les sessions horaires conservent startsAt, endsAt et timeZone en plus des dates civiles.
+- Les erreurs de détail ne fabriquent pas une liste vide. Les erreurs de mutation sont présentées dans leur contexte, et les descriptions complètes restent consultables.
+- L'API historique de liste est conservée; le frontend utilise la nouvelle recherche paginée. Les KPI sont libellés comme globaux.
 
-## 6. Tests et vérifications
+## 5. Tests et preuves
 
-- [x] Unit tests : `TrainingServiceTest` (8 tests)
-- [x] Security tests : `TrainingSecurityTest` (6 tests)
-- [x] Frontend tests : `training.test.mjs`, `i18n.test.mjs` (15 tests totaux au vert)
-- [x] Full build test : `npm run build` (0 erreurs, 0 avertissements) et `mvn test` (154 tests au vert)
-- [x] Regression checks : validation des flux existants (CRA, validation manager, facturation, projets)
+Les tests de service, sécurité objet, PostgreSQL, dates et i18n sont présents. La commande `bash scripts/verify-audit-helpers.sh` exécute sans installation de dépendances 21 tests Node ciblés et 29 assertions Java concernant les helpers financiers/CSV. Les fichiers vérifiés correspondent aux empreintes Git du code publié.
 
-## 7. Documentation
+**Ne pas conclure que tous les tests passent.** Les exécutions CI initiales sont en échec avant validation des suites; la cause détaillée n'a pas pu être obtenue via le connecteur. Les builds complets, la concurrence sur PostgreSQL et la recette navigateur/tableur restent à confirmer.
 
-- [x] PROJECT-TRACKING mis à jour
-- [x] CHANGELOG mis à jour
-- [x] Ticket de suivi validé
-
-## 8. Statut
-
-Status: DONE
+Voir [le journal de vérification](../verification/TICKET-0018-checks.md). Le ticket ne revient à DONE qu'après ces validations et la revue de la véritable PR #19.
