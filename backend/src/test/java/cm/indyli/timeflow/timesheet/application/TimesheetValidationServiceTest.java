@@ -214,4 +214,65 @@ class TimesheetValidationServiceTest {
         assertThat(subordinates).hasSize(1);
         assertThat(subordinates.getFirst().displayName()).isEqualTo("Collab User");
     }
+
+    @Test
+    void getSubordinateWeekDetail_whenTimesheetExists_returnsFullDetail() {
+        var collab = AppUserEntity.local("collab@indyli.com", "Collab User", UserRole.COLLABORATOR);
+        collab.updateAdministrativeProfile("Collab User", UserRole.COLLABORATOR, managerId, 2100);
+
+        var sheet = TimesheetEntity.draft(collab.getId(), monday);
+        when(userRepository.findById(collab.getId())).thenReturn(Optional.of(collab));
+        when(timesheetRepository.findByUserIdAndWeekStartWithEntries(collab.getId(), monday))
+                .thenReturn(Optional.of(sheet));
+        when(timesheetRepository.findByIdWithEntries(sheet.getId())).thenReturn(Optional.of(sheet));
+
+        var overview = new TimesheetOverview(
+                sheet.getId(), collab.getId(), monday, monday.plusDays(6), TimesheetStatus.DRAFT,
+                null, null, null, 2100, 420, 420, 0, Map.of(), List.of(), null, true
+        );
+        when(timesheetService.mapToOverview(eq(sheet), eq(2100), any())).thenReturn(overview);
+        when(validationRepository.findByTimesheetIdOrderByDecidedAtDesc(sheet.getId())).thenReturn(List.of());
+
+        var detail = service.getSubordinateWeekDetail(managerPrincipal, collab.getId(), monday);
+
+        assertThat(detail).isNotNull();
+        assertThat(detail.userDisplayName()).isEqualTo("Collab User");
+        assertThat(detail.overview().totalMinutes()).isEqualTo(420);
+    }
+
+    @Test
+    void getSubordinateWeekDetail_whenTimesheetDoesNotExist_returnsEmptyOverview() {
+        var collab = AppUserEntity.local("collab@indyli.com", "Collab User", UserRole.COLLABORATOR);
+        collab.updateAdministrativeProfile("Collab User", UserRole.COLLABORATOR, managerId, 2100);
+
+        when(userRepository.findById(collab.getId())).thenReturn(Optional.of(collab));
+        when(timesheetRepository.findByUserIdAndWeekStartWithEntries(collab.getId(), monday))
+                .thenReturn(Optional.empty());
+
+        var emptyOverview = new TimesheetOverview(
+                null, collab.getId(), monday, monday.plusDays(6), TimesheetStatus.DRAFT,
+                null, null, null, 2100, 0, 0, 0, Map.of(), List.of(), null, true
+        );
+        when(timesheetService.buildEmptyOverview(collab.getId(), monday, 2100)).thenReturn(emptyOverview);
+
+        var detail = service.getSubordinateWeekDetail(managerPrincipal, collab.getId(), monday);
+
+        assertThat(detail).isNotNull();
+        assertThat(detail.timesheetId()).isNull();
+        assertThat(detail.userDisplayName()).isEqualTo("Collab User");
+        assertThat(detail.overview().totalMinutes()).isEqualTo(0);
+    }
+
+    @Test
+    void getSubordinateWeekDetail_whenUserNotManaged_throwsAccessDenied() {
+        UUID otherManagerId = UUID.randomUUID();
+        var collab = AppUserEntity.local("collab@indyli.com", "Collab User", UserRole.COLLABORATOR);
+        collab.updateAdministrativeProfile("Collab User", UserRole.COLLABORATOR, otherManagerId, 2100);
+
+        when(userRepository.findById(collab.getId())).thenReturn(Optional.of(collab));
+
+        assertThatThrownBy(() -> service.getSubordinateWeekDetail(managerPrincipal, collab.getId(), monday))
+                .isInstanceOf(TimesheetValidationException.class)
+                .hasMessageContaining("Vous n'êtes pas le manager responsable");
+    }
 }

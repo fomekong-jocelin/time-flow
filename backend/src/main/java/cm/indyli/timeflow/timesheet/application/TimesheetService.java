@@ -154,7 +154,7 @@ public class TimesheetService {
         return mapToOverview(saved, weeklyTargetMinutes, null);
     }
 
-    private TimesheetOverview buildEmptyOverview(UUID userId, LocalDate weekStart, int weeklyTargetMinutes) {
+    public TimesheetOverview buildEmptyOverview(UUID userId, LocalDate weekStart, int weeklyTargetMinutes) {
         Map<String, Integer> dailyTotals = new LinkedHashMap<>();
         for (int i = 0; i < 7; i++) {
             dailyTotals.put(weekStart.plusDays(i).toString(), 0);

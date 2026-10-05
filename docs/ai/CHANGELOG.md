@@ -4,6 +4,41 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ## [Unreleased]
 
+### Added : TICKET-0022, écran de consultation et suivi des feuilles de temps des collaborateurs (N+1 / Manager / Direction)
+
+- **Écran dédié de suivi d'équipe (`/equipe/temps` — « Temps équipe »)** :
+  - Accessible aux rôles `MANAGER`, `DIRECTION` et `ADMIN` dans la barre de navigation desktop et mobile.
+  - Vue d'ensemble YouTrack-style pour visualiser l'activité et le temps passé par chaque membre de son équipe sans devoir attendre la soumission formelle pour validation.
+- **Filtres multi-critères réactifs** :
+  - Filtre collaborateur (subordonnés directs ou vue globale pour Direction/Admin).
+  - Navigation rapide par semaine (`Semaine précédente`, `Cette semaine`, `Semaine suivante`, ou `Toutes les semaines`).
+  - Filtre par statut (Tous, Brouillon, Soumise, Validée, Rejetée).
+  - Filtre par projet actif.
+  - Bouton de réinitialisation instantanée des filtres.
+- **Indicateurs clés d'équipe (KPIs)** :
+  - Total d'heures équipe (avec équivalent jours ouvrés standard).
+  - Heures facturables et taux TACE moyen de l'équipe.
+  - Nombre de collaborateurs actifs / suivis.
+  - État d'avancement des feuilles (décompte des feuilles en attente, validées et brouillons).
+- **Tableau et cartes mobiles YouTrack-style** :
+  - Jauge de complétude visuelle par rapport à l'objectif hebdomadaire (ex: 35h cible).
+  - Badges de projets et alertes de conformité du temps de travail.
+  - Suppression de tout effet ring sur les inputs / sélecteurs conformément aux exigences d'élégance UI.
+- **Consultation détaillée haute fidélité** :
+  - Modale YouTrack-style avec navigation directe entre semaines pour le collaborateur sélectionné.
+  - Grille matricielle Lun-Dim avec Work Items Azure DevOps (#ID et titre) et commentaires journaliers.
+  - Consultation de l'historique des validations et actions directes d'approbation / renvoi avec motif obligatoire pour les feuilles au statut `SUBMITTED`.
+- **API & Sécurité backend** :
+  - Endpoint `GET /api/v1/manager/timesheets/view?userId={userId}&weekStart={weekStart}` avec contrôle strict `ValidationPolicy.ensureManagerScope` (deny-by-default, 403 Forbidden hors périmètre).
+  - Génération gracieuse d'une structure vide (`buildEmptyOverview`) pour les semaines sans imputations préalables.
+  - Tri naturel par semaine (`ORDER BY t.weekStart DESC, t.submittedAt DESC`) dans `TimesheetRepository`.
+  - Support du filtre `status=ALL` dans `TimesheetManagerController.listPending`.
+- **Tests & Qualité** :
+  - 20 tests backend passants (`TimesheetValidationServiceTest`, `TimesheetManagerSecurityTest`).
+  - 58 tests frontend Node/ESM et i18n passants (`team-timesheets.test.mjs`, `i18n.test.mjs`).
+  - Build Angular validé sans avertissement avec chargement paresseux du chunk.
+  - Voir [TICKET-0022](tickets/TICKET-0022-manager-subordinates-timesheets-view.md).
+
 ### Added / Changed : TICKET-0021, refonte de la feuille de temps YouTrack-style (mobile, desktop light et work items)
 
 - **Expérience Mobile-First YouTrack-style** :

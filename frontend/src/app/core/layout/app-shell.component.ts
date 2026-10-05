@@ -18,6 +18,7 @@ interface NavItemDef {
 
 const NAV_ITEM_DEFS: readonly NavItemDef[] = [
   { key: 'nav.timesheets', icon: 'clock', path: '/mes-temps' },
+  { key: 'nav.teamTimesheets', icon: 'calendar', path: '/equipe/temps', roles: ['MANAGER', 'DIRECTION', 'ADMIN'] },
   { key: 'nav.validation', icon: 'check', path: '/validation', roles: ['MANAGER', 'DIRECTION', 'ADMIN'] },
   { key: 'nav.billing', icon: 'receipt', path: '/facturation', roles: ['MANAGER', 'DIRECTION', 'ADMIN'] },
   { key: 'nav.projects', icon: 'folder', path: '/projets' },

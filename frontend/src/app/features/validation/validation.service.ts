@@ -38,6 +38,10 @@ export class ValidationService {
     return this.http.get<ManagerTimesheetDetail>(`${this.baseUrl}/${timesheetId}`);
   }
 
+  viewSubordinateWeek(userId: string, weekStart: string): Observable<ManagerTimesheetDetail> {
+    return this.http.get<ManagerTimesheetDetail>(`${this.baseUrl}/view?userId=${encodeURIComponent(userId)}&weekStart=${encodeURIComponent(weekStart)}`);
+  }
+
   validate(timesheetId: string, comment?: string): Observable<ManagerTimesheetDetail> {
     return this.withCsrf(() => this.http.post<ManagerTimesheetDetail>(`${this.baseUrl}/${timesheetId}/validate`, { comment }));
   }

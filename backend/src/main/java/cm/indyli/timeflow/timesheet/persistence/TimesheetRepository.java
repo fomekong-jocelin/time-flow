@@ -15,9 +15,9 @@ public interface TimesheetRepository extends JpaRepository<TimesheetEntity, UUID
     Optional<TimesheetEntity> findByUserIdAndWeekStart(UUID userId, LocalDate weekStart);
     @Query("SELECT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries WHERE t.id = :id")
     Optional<TimesheetEntity> findByIdWithEntries(@Param("id") UUID id);
-    @Query("SELECT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries WHERE t.userId IN :userIds AND (:status IS NULL OR t.status = :status) ORDER BY t.submittedAt DESC, t.weekStart DESC")
+    @Query("SELECT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries WHERE t.userId IN :userIds AND (:status IS NULL OR t.status = :status) ORDER BY t.weekStart DESC, t.submittedAt DESC")
     List<TimesheetEntity> findByUserIdsAndStatusWithEntries(@Param("userIds") java.util.Collection<UUID> userIds, @Param("status") TimesheetStatus status);
-    @Query("SELECT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries WHERE (:status IS NULL OR t.status = :status) ORDER BY t.submittedAt DESC, t.weekStart DESC")
+    @Query("SELECT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries WHERE (:status IS NULL OR t.status = :status) ORDER BY t.weekStart DESC, t.submittedAt DESC")
     List<TimesheetEntity> findAllByStatusWithEntries(@Param("status") TimesheetStatus status);
     @Query("""
         SELECT DISTINCT t FROM TimesheetEntity t LEFT JOIN FETCH t.entries

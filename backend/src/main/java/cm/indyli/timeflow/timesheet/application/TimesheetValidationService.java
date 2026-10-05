@@ -226,6 +226,31 @@ public class TimesheetValidationService {
         );
     }
 
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MANAGER', 'DIRECTION', 'ADMIN')")
+    public ManagerTimesheetDetail getSubordinateWeekDetail(TimeFlowPrincipal principal, UUID userId, LocalDate weekStart) {
+        TimesheetPolicy.ensureValidWeekStart(weekStart);
+        var author = userRepository.findById(userId)
+                .orElseThrow(() -> new TimesheetValidationException("Collaborateur introuvable."));
+
+        ValidationPolicy.ensureManagerScope(author.getManagerId(), principal.userId(), principal.role());
+
+        var existing = timesheetRepository.findByUserIdAndWeekStartWithEntries(userId, weekStart);
+        if (existing.isPresent()) {
+            return getTimesheetDetail(principal, existing.get().getId());
+        }
+
+        var emptyOverview = timesheetService.buildEmptyOverview(userId, weekStart, author.getWeeklyTargetMinutes());
+        return new ManagerTimesheetDetail(
+                null,
+                author.getId(),
+                author.getDisplayName(),
+                author.getEmail(),
+                emptyOverview,
+                List.of()
+        );
+    }
+
     @Transactional
     @PreAuthorize("hasAnyRole('MANAGER', 'DIRECTION', 'ADMIN')")
     public ManagerTimesheetDetail validate(TimeFlowPrincipal principal, UUID timesheetId, String comment) {

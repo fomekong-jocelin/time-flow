@@ -180,4 +180,30 @@ class TimesheetManagerSecurityTest {
 
         verifyNoInteractions(validationService);
     }
+
+    @Test
+    void managerCanViewSubordinateWeek() throws Exception {
+        when(currentUserService.resolve(any())).thenReturn(managerPrincipal);
+        UUID targetUserId = UUID.randomUUID();
+        LocalDate monday = LocalDate.of(2026, 10, 5);
+        var detail = new ManagerTimesheetDetail(
+                timesheetId, targetUserId, "Alice Martin", "alice@indyli.com",
+                new TimesheetOverview(timesheetId, targetUserId, monday,
+                        monday.plusDays(6), TimesheetStatus.DRAFT, null, null, null,
+                        2100, 1050, 1050, 0, Map.of(), List.of(), null, false),
+                List.of()
+        );
+        when(validationService.getSubordinateWeekDetail(eq(managerPrincipal), eq(targetUserId), eq(monday)))
+                .thenReturn(detail);
+
+        mvc.perform(get("/api/v1/manager/timesheets/view")
+                        .param("userId", targetUserId.toString())
+                        .param("weekStart", monday.toString())
+                        .with(user("manager@indyli.com").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userDisplayName").value("Alice Martin"))
+                .andExpect(jsonPath("$.overview.totalMinutes").value(1050));
+
+        verify(validationService).getSubordinateWeekDetail(eq(managerPrincipal), eq(targetUserId), eq(monday));
+    }
 }

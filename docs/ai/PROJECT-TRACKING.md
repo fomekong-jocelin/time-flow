@@ -36,9 +36,11 @@
 | TICKET-0019 | PR #19 | Retrait, correction administrative des présences, exclusion formateur/participant | IN_REVIEW | P1 |
 | TICKET-0020 | à créer | Modales : une seule zone de défilement | IN_REVIEW | P2 |
 | TICKET-0021 | à créer | Refonte UX/UI Feuille de temps : Mobile Calendar Strip, Grille Light & Work Items | DONE | P0 |
+| TICKET-0022 | à créer | Écran de consultation et suivi des feuilles de temps des collaborateurs (N+1 / Manager) | DONE | P0 |
 
 ## Décisions actées
 
+- TICKET-0022 : Écran dédié de suivi d'équipe `/equipe/temps` (Temps équipe) pour Managers, Direction et Admin. Filtres multi-critères réactifs (Collaborateur managé, Période/Semaine avec sélecteur rapide, Statut tous/brouillon/soumise/validée/rejetée, Projet). KPIs d'équipe synthétiques (Heures totales équipe, équivalent jours, TACE moyen, collaborateurs actifs, suivi des états). Tableau et cartes mobiles YouTrack-style sans effet de ring sur les inputs. Vue détaillée haute fidélité avec grille matricielle Lun-Dim, Work Items Azure DevOps (#ID et titre), commentaires journaliers, alertes de conformité du temps de travail et actions directes d'approbation/rejet. Endpoint backend sécurisé deny-by-default `GET /api/v1/manager/timesheets/view?userId={userId}&weekStart={weekStart}` avec retour structuré gracieux même si aucune feuille n'est encore enregistrée en base.
 - TICKET-0021 : Refonte responsive et ergonomique du CRA inspirée de YouTrack. Vue Mobile dédiée avec Calendar Strip sticky et cartes d'imputation journalières (steppers tactiles, presets 3.5h/7h). Grille Desktop Thème Light épurée avec association optionnelle aux Work Items Azure DevOps (#ID et titre) et popover de commentaire journalier. Migration Flyway V12 additive sur time_entry avec indexation. Rétrocompatibilité totale garantie.
 - Authentification hybride : SSO Entra ID pour internes et comptes locaux pour externes.
 - Modèle BFF/session : aucun access token OAuth dans le SPA. Inscription publique désactivée.

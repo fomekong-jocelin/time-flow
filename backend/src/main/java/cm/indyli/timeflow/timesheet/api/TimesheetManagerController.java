@@ -50,10 +50,20 @@ public class TimesheetManagerController {
     ) {
         var principal = currentUserService.resolve(authentication);
         TimesheetStatus statusFilter = null;
-        if (status != null && !status.equalsIgnoreCase("ALL")) {
+        if (status != null && !status.equalsIgnoreCase("ALL") && !status.isBlank()) {
             statusFilter = TimesheetStatus.valueOf(status.toUpperCase());
         }
         return validationService.listPending(principal, statusFilter, weekStart, userId, projectId, fromWeek, toWeek);
+    }
+
+    @GetMapping("/view")
+    public ManagerTimesheetDetail viewSubordinateWeek(
+            @RequestParam UUID userId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart,
+            Authentication authentication
+    ) {
+        var principal = currentUserService.resolve(authentication);
+        return validationService.getSubordinateWeekDetail(principal, userId, weekStart);
     }
 
     @GetMapping("/{timesheetId}")
