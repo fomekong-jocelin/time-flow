@@ -95,13 +95,26 @@ public class TimesheetService {
 
                         if (entry.minutes() > 0) {
                             dailyTotals.merge(entry.entryDate(), entry.minutes(), Integer::sum);
+                            String entryComment = (entry.comment() != null && !entry.comment().isBlank())
+                                    ? entry.comment().trim()
+                                    : (line.comment() != null && !line.comment().isBlank() ? line.comment().trim() : null);
+
+                            String workItemId = (line.workItemId() != null && !line.workItemId().isBlank())
+                                    ? line.workItemId().trim()
+                                    : null;
+                            String workItemTitle = (line.workItemTitle() != null && !line.workItemTitle().isBlank())
+                                    ? line.workItemTitle().trim()
+                                    : null;
+
                             newEntries.add(TimeEntryEntity.create(
                                     line.projectId(),
+                                    workItemId,
+                                    workItemTitle,
                                     line.activityType(),
                                     entry.entryDate(),
                                     entry.minutes(),
                                     billable,
-                                    line.comment()
+                                    entryComment
                             ));
                         }
                     }
@@ -183,9 +196,11 @@ public class TimesheetService {
         int billableMinutes = 0;
         int internalMinutes = 0;
 
-        record LineKey(UUID projectId, String activityType, boolean billable, String comment) {
+        record LineKey(UUID projectId, String workItemId, String workItemTitle, String activityType, boolean billable) {
         }
-        Map<LineKey, Map<LocalDate, Integer>> grouped = new LinkedHashMap<>();
+        record DayEntryData(int minutes, String comment) {
+        }
+        Map<LineKey, Map<LocalDate, DayEntryData>> grouped = new LinkedHashMap<>();
 
         for (var entry : timesheet.getEntries()) {
             totalMinutes += entry.getMinutes();
@@ -197,8 +212,20 @@ public class TimesheetService {
             }
             dailyTotals.merge(entry.getEntryDate().toString(), entry.getMinutes(), Integer::sum);
 
-            var key = new LineKey(entry.getProjectId(), entry.getActivityType(), entry.isBillable(), entry.getComment());
-            grouped.computeIfAbsent(key, k -> new HashMap<>()).put(entry.getEntryDate(), entry.getMinutes());
+            var key = new LineKey(
+                    entry.getProjectId(),
+                    entry.getWorkItemId(),
+                    entry.getWorkItemTitle(),
+                    entry.getActivityType(),
+                    entry.isBillable()
+            );
+            grouped.computeIfAbsent(key, k -> new HashMap<>())
+                    .merge(entry.getEntryDate(),
+                            new DayEntryData(entry.getMinutes(), entry.getComment()),
+                            (oldVal, newVal) -> new DayEntryData(
+                                    oldVal.minutes() + newVal.minutes(),
+                                    newVal.comment() != null ? newVal.comment() : oldVal.comment()
+                            ));
         }
 
         List<TimesheetOverview.TimesheetLineOverview> lines = new ArrayList<>();
@@ -210,20 +237,28 @@ public class TimesheetService {
 
             List<TimesheetOverview.DayEntryOverview> dayEntries = new ArrayList<>();
             int lineTotal = 0;
+            String firstComment = null;
             for (int i = 0; i < 7; i++) {
                 LocalDate date = weekStart.plusDays(i);
-                int minutes = dayMap.getOrDefault(date, 0);
+                DayEntryData dayData = dayMap.get(date);
+                int minutes = dayData != null ? dayData.minutes() : 0;
+                String comment = dayData != null ? dayData.comment() : null;
+                if (firstComment == null && comment != null && !comment.isBlank()) {
+                    firstComment = comment;
+                }
                 lineTotal += minutes;
-                dayEntries.add(new TimesheetOverview.DayEntryOverview(date, minutes));
+                dayEntries.add(new TimesheetOverview.DayEntryOverview(date, minutes, comment));
             }
 
             lines.add(new TimesheetOverview.TimesheetLineOverview(
                     key.projectId(),
                     projectName,
                     null,
+                    key.workItemId(),
+                    key.workItemTitle(),
                     key.activityType(),
                     key.billable(),
-                    key.comment(),
+                    firstComment,
                     lineTotal,
                     dayEntries
             ));

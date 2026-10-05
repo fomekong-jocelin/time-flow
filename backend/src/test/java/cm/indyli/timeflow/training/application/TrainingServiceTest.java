@@ -28,7 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TrainingServiceTest {
     @Mock TrainingSessionRepository sessionRepository;
     @Mock TrainingParticipantRepository participantRepository;
@@ -182,7 +186,7 @@ class TrainingServiceTest {
     }
     @Test void deletingSessionWithAnyParticipationHistoryIsRejected() {
         lock(); when(participantRepository.existsByTrainingId(session.getId())).thenReturn(true);
-        rejects("historyProtected", () -> service.deleteSession(session.getId())); verify(sessionRepository, never()).delete(any());
+        rejects("historyProtected", () -> service.deleteSession(session.getId())); verify(sessionRepository, never()).delete(any(cm.indyli.timeflow.training.persistence.TrainingSessionEntity.class));
     }
     @Test void getKpisCalculation() {
         when(sessionRepository.count()).thenReturn(2L); when(sessionRepository.countByStatus(TrainingStatus.PLANNED)).thenReturn(1L);

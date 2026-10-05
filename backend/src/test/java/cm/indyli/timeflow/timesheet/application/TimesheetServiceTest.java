@@ -161,4 +161,40 @@ class TimesheetServiceTest {
         assertThat(result.submittedAt()).isNotNull();
         assertThat(result.editable()).isFalse();
     }
+
+    @Test
+    void saveDraft_savesWorkItemsAndDailyComments() {
+        var user = AppUserEntity.local("test@indyli.com", "Test User", UserRole.COLLABORATOR);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(timesheetRepository.findByUserIdAndWeekStartWithEntries(userId, monday)).thenReturn(Optional.empty());
+
+        var project = new ProjectStore.ProjectView(projectId, "Mission Alpha", "LOCAL", "INDYLI", true, true, "ALPHA-1");
+        when(projectStore.findById(projectId)).thenReturn(Optional.of(project));
+
+        var command = new SaveTimesheetCommand(List.of(
+                new SaveTimesheetCommand.LineCommand(
+                        projectId,
+                        "142",
+                        "Refonte login SSO",
+                        "PROJECT",
+                        true,
+                        "Travaux sprint",
+                        List.of(
+                                new SaveTimesheetCommand.EntryCommand(monday, 420, "Intégration SSO Azure AD"),
+                                new SaveTimesheetCommand.EntryCommand(monday.plusDays(1), 420, null)
+                        )
+                )
+        ));
+
+        when(timesheetRepository.save(any(TimesheetEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var result = timesheetService.saveDraft(userId, monday, command);
+
+        assertThat(result.lines()).hasSize(1);
+        var line = result.lines().getFirst();
+        assertThat(line.workItemId()).isEqualTo("142");
+        assertThat(line.workItemTitle()).isEqualTo("Refonte login SSO");
+        assertThat(line.entries().getFirst().comment()).isEqualTo("Intégration SSO Azure AD");
+        assertThat(line.entries().get(1).comment()).isEqualTo("Travaux sprint");
+    }
 }

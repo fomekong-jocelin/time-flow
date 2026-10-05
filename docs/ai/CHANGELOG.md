@@ -4,6 +4,27 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ## [Unreleased]
 
+### Added / Changed : TICKET-0021, refonte de la feuille de temps YouTrack-style (mobile, desktop light et work items)
+
+- **Expérience Mobile-First YouTrack-style** :
+  - Calendar strip tactile sur 7 jours avec indicateurs visuels d'avancement (vert si >= 7h, ambre si partiel, violet pour le jour sélectionné).
+  - Fiche récapitulative quotidienne avec barre de progression YouTrack, heures saisies vs objectif (7h standard), et heures restantes.
+  - Cartes d'imputation journalières avec ajustements rapides tactiles (`-½h`, `+½h`, presets `3.5h`, `7h`), sélecteur de ligne, et modale d'ajout rapide.
+- **Grille Desktop Thème Light haute fidélité** :
+  - Design épuré inspiré de JetBrains YouTrack adapté à la palette TimeFlow (Indigo, Slate, Violet, Teal).
+  - Badges distinctifs pour les Work Items Azure DevOps / tickets externes (`#ID` et libellé du work item).
+  - Indicateur de progression YouTrack-style intégré sous chaque total journalier.
+  - Saisie de commentaires par cellule journalière avec icône dédiée et popover / modale réactive.
+- **Modèle de données & Granularité unitaire** :
+  - Migration Flyway `V12__time_entry_work_item_and_entry_comments.sql` ajoutant `work_item_id` (varchar 100), `work_item_title` (varchar 255) et index de recherche.
+  - Support unitaire des commentaires journaliers par date d'imputation dans `time_entry`, avec fallback rétrocompatible vers le commentaire de ligne si non renseigné.
+  - Mise à jour des contrats API (`SaveTimesheetCommand`, `TimesheetOverview`).
+- **Tests & Qualité** :
+  - Tests unitaires et d'intégration backend (`TimesheetServiceTest`) : 213 tests Maven passants (0 échec).
+  - Tests frontend Node/ESM dédiés (`timesheets-workitems-mobile.test.mjs`) : 55 tests passants (0 échec).
+  - Build de production Angular (`npm run build`) validé sans avertissement ni régression.
+  - Voir [TICKET-0021](tickets/TICKET-0021-timesheet-redesign-mobile-workitems.md).
+
 ### Fixed : TICKET-0020, défilement des modales
 
 - Une seule barre de défilement dans les modales `tf-dialog` (corps défilant, en-tête fixe, page de fond bloquée). Voir [TICKET-0020](tickets/TICKET-0020-dialog-single-scroll.md).

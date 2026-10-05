@@ -15,10 +15,13 @@ interface RowViewModel {
   projectId: string;
   projectName: string;
   clientName?: string | null;
+  workItemId?: string | null;
+  workItemTitle?: string | null;
   activityType: ActivityType;
   billable: boolean;
   comment?: string | null;
   hoursByDate: Record<string, number>;
+  commentsByDate: Record<string, string>;
 }
 
 @Component({
@@ -45,6 +48,19 @@ export class TimesheetPageComponent implements OnInit {
     return calendarWeek(this.currentDate(), new Date(), workingDays, allowWeekend, holidays, this.i18n.currentLang());
   });
 
+  readonly selectedMobileDate = signal<string>(toIsoDateString(new Date()));
+  readonly activeCommentCell = signal<{ row: RowViewModel; date: string; dayLabel: string } | null>(null);
+
+  readonly selectedDay = computed(() => {
+    const iso = this.selectedMobileDate();
+    return this.week().days.find(d => d.isoDate === iso) ?? this.week().days[0];
+  });
+
+  readonly targetDayHours = computed<number>(() => {
+    const sched = this.mySchedule();
+    return sched ? +(sched.dailyTargetMinutes / 60).toFixed(1) : 7.0;
+  });
+
   readonly overtimeHours = computed<number>(() => {
     const total = this.totalHours();
     const target = this.targetHours();
@@ -61,6 +77,8 @@ export class TimesheetPageComponent implements OnInit {
 
   readonly showAddLineModal = signal<boolean>(false);
   selectedProjectId = '';
+  selectedWorkItemId = '';
+  selectedWorkItemTitle = '';
   selectedActivityType: ActivityType = 'PROJECT';
   selectedBillable = true;
   selectedComment = '';
@@ -203,6 +221,8 @@ export class TimesheetPageComponent implements OnInit {
 
   openAddLineModal(): void {
     this.selectedProjectId = this.activeProjects().length > 0 ? this.activeProjects()[0].id : '';
+    this.selectedWorkItemId = '';
+    this.selectedWorkItemTitle = '';
     this.selectedActivityType = 'PROJECT';
     this.selectedBillable = this.activeProjects().length > 0 ? this.activeProjects()[0].billableDefault : true;
     this.selectedComment = '';
@@ -221,10 +241,13 @@ export class TimesheetPageComponent implements OnInit {
     const newRow: RowViewModel = {
       projectId: project.id,
       projectName: project.name,
+      workItemId: this.selectedWorkItemId.trim() || null,
+      workItemTitle: this.selectedWorkItemTitle.trim() || null,
       activityType: this.selectedActivityType,
       billable: this.selectedBillable,
       comment: this.selectedComment.trim() || null,
-      hoursByDate: initialHours
+      hoursByDate: initialHours,
+      commentsByDate: {}
     };
 
     this.rows.update(r => [...r, newRow]);
@@ -233,6 +256,50 @@ export class TimesheetPageComponent implements OnInit {
 
   removeLine(index: number): void {
     this.rows.update(r => r.filter((_, i) => i !== index));
+  }
+
+  selectMobileDate(isoDate: string): void {
+    this.selectedMobileDate.set(isoDate);
+  }
+
+  adjustHours(row: RowViewModel, isoDate: string, delta: number): void {
+    if (!this.isEditable()) return;
+    const current = row.hoursByDate[isoDate] || 0;
+    const next = Math.max(0, Math.min(24, Math.round((current + delta) * 10) / 10));
+    row.hoursByDate[isoDate] = next;
+    this.rows.update(r => [...r]);
+  }
+
+  setHours(row: RowViewModel, isoDate: string, targetHours: number): void {
+    if (!this.isEditable()) return;
+    row.hoursByDate[isoDate] = Math.max(0, Math.min(24, targetHours));
+    this.rows.update(r => [...r]);
+  }
+
+  openCommentModal(row: RowViewModel, date: string, dayLabel: string): void {
+    this.activeCommentCell.set({ row, date, dayLabel });
+  }
+
+  closeCommentModal(): void {
+    this.activeCommentCell.set(null);
+  }
+
+  saveCommentFromModal(comment: string): void {
+    const active = this.activeCommentCell();
+    if (active) {
+      active.row.commentsByDate[active.date] = comment.trim();
+      this.rows.update(r => [...r]);
+      this.closeCommentModal();
+    }
+  }
+
+  getDayComment(row: RowViewModel, date: string): string {
+    return row.commentsByDate[date] || '';
+  }
+
+  hasDayComment(row: RowViewModel, date: string): boolean {
+    const c = row.commentsByDate[date];
+    return !!c && c.trim().length > 0;
   }
 
   saveDraft(): void {
@@ -284,6 +351,17 @@ export class TimesheetPageComponent implements OnInit {
     return h.toLocaleString(this.i18n.locale(), { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' h';
   }
 
+  completionPercent(hours: number): number {
+    const target = this.targetDayHours();
+    if (!target || target <= 0) return 0;
+    return Math.min(100, Math.round((hours / target) * 100));
+  }
+
+  remainingDayHours(dateIso: string): number {
+    const total = this.dailyTotals()[dateIso] || 0;
+    return Math.max(0, +(this.targetDayHours() - total).toFixed(1));
+  }
+
   activityLabel(type: ActivityType): string {
     switch (type) {
       case 'PROJECT': return this.i18n.t('activities.PROJECT');
@@ -306,32 +384,50 @@ export class TimesheetPageComponent implements OnInit {
     const newRows: RowViewModel[] = [];
     for (const line of overview.lines) {
       const hoursMap: Record<string, number> = {};
+      const commentsMap: Record<string, string> = {};
       for (const entry of line.entries) {
         hoursMap[entry.date] = entry.minutes / 60;
+        if (entry.comment) {
+          commentsMap[entry.date] = entry.comment;
+        }
       }
       newRows.push({
         projectId: line.projectId,
         projectName: line.projectName,
         clientName: line.clientName,
+        workItemId: line.workItemId,
+        workItemTitle: line.workItemTitle,
         activityType: line.activityType,
         billable: line.billable,
         comment: line.comment,
-        hoursByDate: hoursMap
+        hoursByDate: hoursMap,
+        commentsByDate: commentsMap
       });
     }
     this.rows.set(newRows);
+
+    const days = this.week().days;
+    const currentSel = this.selectedMobileDate();
+    if (!days.some(d => d.isoDate === currentSel)) {
+      const todayIso = toIsoDateString(new Date());
+      const hasToday = days.some(d => d.isoDate === todayIso);
+      this.selectedMobileDate.set(hasToday ? todayIso : this.week().mondayIsoDate);
+    }
   }
 
   private buildPayload(): SaveTimesheetPayload {
     return {
       lines: this.rows().map(row => ({
         projectId: row.projectId,
+        workItemId: row.workItemId,
+        workItemTitle: row.workItemTitle,
         activityType: row.activityType,
         billable: row.billable,
         comment: row.comment,
         entries: Object.entries(row.hoursByDate).map(([date, hours]) => ({
           entryDate: date,
-          minutes: Math.round((hours || 0) * 60)
+          minutes: Math.round((hours || 0) * 60),
+          comment: row.commentsByDate[date]?.trim() || row.comment || null
         }))
       }))
     };
