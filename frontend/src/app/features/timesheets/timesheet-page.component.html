@@ -274,7 +274,7 @@
                                     [ngModel]="row.hoursByDate[day.isoDate] || 0"
                                     (ngModelChange)="onHourChange(row, day.isoDate, $event)"
                                     [attr.aria-label]="row.projectName + ' ' + day.label"
-                                    class="w-16 rounded-md border bg-surface px-1.5 py-1.5 text-center text-sm tabular-nums text-foreground transition focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600"
+                                    class="w-16 rounded-md border bg-surface px-1.5 py-1.5 text-center text-sm tabular-nums text-foreground transition focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0"
                                     [class.border-border]="day.isWorkingDay"
                                     [class.border-dashed]="!day.isWorkingDay"
                                     [class.border-amber-300]="!day.isWorkingDay && (row.hoursByDate[day.isoDate] || 0) > 0" />
@@ -379,7 +379,7 @@
                       type="button"
                       (click)="selectMobileDate(day.isoDate)"
                       [class]="selectedMobileDate() === day.isoDate
-                        ? 'bg-brand-600 text-white shadow-xs ring-2 ring-brand-600/30'
+                        ? 'bg-brand-600 text-white shadow-sm'
                         : 'bg-surface text-foreground hover:bg-app border border-border'"
                       class="flex flex-col items-center py-2 px-1 rounded-xl transition text-center min-w-0">
                       <span class="text-[10px] font-semibold uppercase tracking-wider opacity-80">{{ day.label }}</span>
@@ -506,7 +506,7 @@
                               max="24"
                               [ngModel]="row.hoursByDate[selectedMobileDate()] || 0"
                               (ngModelChange)="onHourChange(row, selectedMobileDate(), $event)"
-                              class="w-16 h-9 rounded-lg border border-border bg-surface text-center font-bold tabular-nums text-foreground focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600" />
+                              class="w-16 h-9 rounded-lg border border-border bg-surface text-center font-bold tabular-nums text-foreground focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
                             <button
                               type="button"
                               (click)="adjustHours(row, selectedMobileDate(), 0.5)"
@@ -538,7 +538,7 @@
                             [ngModel]="getDayComment(row, selectedMobileDate())"
                             (ngModelChange)="row.commentsByDate[selectedMobileDate()] = $event"
                             [placeholder]="'timesheets.dailyCommentPlaceholder' | translate"
-                            class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground placeholder:text-muted focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600" />
+                            class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground placeholder:text-muted focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
                         </div>
                       } @else {
                         <div class="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
@@ -584,7 +584,7 @@
             <!-- En-tête -->
             <div class="flex items-center justify-between border-b border-border/80 px-5 py-4 bg-surface">
               <div class="flex items-center gap-3">
-                <div class="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 ring-1 ring-brand-500/20">
+                <div class="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 border border-brand-200/80 dark:border-brand-800/40">
                   <tf-icon name="chat" [size]="16" />
                 </div>
                 <div>
@@ -616,7 +616,7 @@
                 rows="3"
                 [value]="getDayComment(active.row, active.date)"
                 [placeholder]="'timesheets.dailyCommentPlaceholder' | translate"
-                class="block w-full rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 p-3 text-xs text-foreground transition placeholder:text-muted/60 hover:border-brand-400 focus:bg-surface focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20"></textarea>
+                class="block w-full rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 p-3 text-xs text-foreground transition placeholder:text-muted/60 hover:border-brand-400 focus:bg-surface focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0"></textarea>
             </div>
 
             <!-- Pied de modal -->
@@ -646,7 +646,7 @@
             <!-- En-tête YouTrack-style -->
             <div class="flex items-center justify-between border-b border-border/80 px-6 py-4 bg-surface">
               <div class="flex items-center gap-3">
-                <div class="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 ring-1 ring-brand-500/20">
+                <div class="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 border border-brand-200/80 dark:border-brand-800/40">
                   <tf-icon name="plus" [size]="18" [strokeWidth]="2.2" />
                 </div>
                 <div>
@@ -685,7 +685,7 @@
                         [(ngModel)]="selectedProjectId"
                         name="projectSelect"
                         required
-                        class="w-full appearance-none rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3 py-2 pr-8 text-xs font-medium text-foreground transition hover:border-brand-400 focus:bg-surface focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+                        class="w-full appearance-none rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3 py-2 pr-8 text-xs font-medium text-foreground transition hover:border-brand-400 focus:bg-surface focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0">
                         <option value="" disabled>{{ 'timesheets.modalChooseProject' | translate }}</option>
                         @for (project of activeProjects(); track project.id) {
                           <option [value]="project.id">{{ project.name }}</option>
@@ -707,7 +707,7 @@
                         id="activity-select"
                         [(ngModel)]="selectedActivityType"
                         name="activitySelect"
-                        class="w-full appearance-none rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3 py-2 pr-8 text-xs font-medium text-foreground transition hover:border-brand-400 focus:bg-surface focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+                        class="w-full appearance-none rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3 py-2 pr-8 text-xs font-medium text-foreground transition hover:border-brand-400 focus:bg-surface focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0">
                         <option value="PROJECT">{{ 'activities.PROJECT' | translate }}</option>
                         <option value="TRAINING">{{ 'activities.TRAINING' | translate }}</option>
                         <option value="SUPPORT">{{ 'activities.SUPPORT' | translate }}</option>
@@ -749,7 +749,7 @@
                           [(ngModel)]="selectedWorkItemId"
                           name="workItemIdInput"
                           [placeholder]="'timesheets.modalWorkItemIdPlaceholder' | translate"
-                          class="w-full rounded-lg border border-border bg-surface pl-6 pr-2.5 py-1.5 text-xs font-medium text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                          class="w-full rounded-lg border border-border bg-surface pl-6 pr-2.5 py-1.5 text-xs font-medium text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
                       </div>
                     </div>
 
@@ -764,7 +764,7 @@
                         [(ngModel)]="selectedWorkItemTitle"
                         name="workItemTitleInput"
                         [placeholder]="'timesheets.modalWorkItemTitlePlaceholder' | translate"
-                        class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                        class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
                     </div>
                   </div>
                 </div>
@@ -781,7 +781,7 @@
                     [(ngModel)]="selectedComment"
                     name="commentInput"
                     [placeholder]="'timesheets.modalCommentPlaceholder' | translate"
-                    class="w-full rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3.5 py-2 text-xs text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:bg-surface focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
+                    class="w-full rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3.5 py-2 text-xs text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:bg-surface focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
                 </div>
 
                 <!-- Facturable : Carte toggle interactive stylisée -->

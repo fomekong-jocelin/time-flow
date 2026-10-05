@@ -78,6 +78,17 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+/* Neutralise les effets de ring ou de contour épais sur tous les champs de saisie */
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Neutralise le fond bleu de l'autocomplétion Chrome. */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
