@@ -46,22 +46,80 @@ public class TimesheetValidationService {
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('MANAGER', 'DIRECTION', 'ADMIN')")
+    public List<SubordinateSummary> getManagedUsers(TimeFlowPrincipal principal) {
+        if (principal.role() == UserRole.MANAGER) {
+            return userRepository.findByManagerId(principal.userId()).stream()
+                    .map(u -> new SubordinateSummary(u.getId(), u.getDisplayName(), u.getEmail(), u.getRole().name()))
+                    .sorted(Comparator.comparing(SubordinateSummary::displayName))
+                    .toList();
+        }
+        return userRepository.findAll().stream()
+                .map(u -> new SubordinateSummary(u.getId(), u.getDisplayName(), u.getEmail(), u.getRole().name()))
+                .sorted(Comparator.comparing(SubordinateSummary::displayName))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MANAGER', 'DIRECTION', 'ADMIN')")
     public List<PendingTimesheetSummary> listPending(TimeFlowPrincipal principal, TimesheetStatus statusFilter, LocalDate weekFilter) {
+        return listPending(principal, statusFilter, weekFilter, null, null, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MANAGER', 'DIRECTION', 'ADMIN')")
+    public List<PendingTimesheetSummary> listPending(
+            TimeFlowPrincipal principal,
+            TimesheetStatus statusFilter,
+            LocalDate weekFilter,
+            UUID targetUserId,
+            UUID targetProjectId,
+            LocalDate fromWeek,
+            LocalDate toWeek
+    ) {
         List<TimesheetEntity> sheets;
 
         if (principal.role() == UserRole.MANAGER) {
             List<AppUserEntity> managedUsers = userRepository.findByManagerId(principal.userId());
-            if (managedUsers.isEmpty()) {
-                return List.of();
+            Set<UUID> allowedUserIds = new HashSet<>();
+            allowedUserIds.add(principal.userId());
+            for (var u : managedUsers) {
+                allowedUserIds.add(u.getId());
             }
-            Set<UUID> userIds = managedUsers.stream().map(AppUserEntity::getId).collect(Collectors.toSet());
-            sheets = timesheetRepository.findByUserIdsAndStatusWithEntries(userIds, statusFilter);
+
+            if (targetUserId != null) {
+                if (!allowedUserIds.contains(targetUserId)) {
+                    throw new org.springframework.security.access.AccessDeniedException("Cet utilisateur n'est pas sous votre responsabilité managériale.");
+                }
+                sheets = timesheetRepository.findByUserIdsAndStatusWithEntries(Set.of(targetUserId), statusFilter);
+            } else {
+                if (managedUsers.isEmpty()) {
+                    sheets = List.of();
+                } else {
+                    Set<UUID> userIds = managedUsers.stream().map(AppUserEntity::getId).collect(Collectors.toSet());
+                    sheets = timesheetRepository.findByUserIdsAndStatusWithEntries(userIds, statusFilter);
+                }
+            }
         } else {
-            sheets = timesheetRepository.findAllByStatusWithEntries(statusFilter);
+            if (targetUserId != null) {
+                sheets = timesheetRepository.findByUserIdsAndStatusWithEntries(Set.of(targetUserId), statusFilter);
+            } else {
+                sheets = timesheetRepository.findAllByStatusWithEntries(statusFilter);
+            }
         }
 
         if (weekFilter != null) {
             sheets = sheets.stream().filter(s -> s.getWeekStart().equals(weekFilter)).toList();
+        }
+        if (fromWeek != null) {
+            sheets = sheets.stream().filter(s -> !s.getWeekStart().isBefore(fromWeek)).toList();
+        }
+        if (toWeek != null) {
+            sheets = sheets.stream().filter(s -> !s.getWeekStart().isAfter(toWeek)).toList();
+        }
+        if (targetProjectId != null) {
+            sheets = sheets.stream()
+                    .filter(s -> s.getEntries().stream().anyMatch(e -> targetProjectId.equals(e.getProjectId())))
+                    .toList();
         }
 
         Map<UUID, AppUserEntity> usersById = userRepository.findAll().stream()
@@ -165,6 +223,31 @@ public class TimesheetValidationService {
                 author.getEmail(),
                 overview,
                 historyItems
+        );
+    }
+
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('MANAGER', 'DIRECTION', 'ADMIN')")
+    public ManagerTimesheetDetail getSubordinateWeekDetail(TimeFlowPrincipal principal, UUID userId, LocalDate weekStart) {
+        TimesheetPolicy.ensureValidWeekStart(weekStart);
+        var author = userRepository.findById(userId)
+                .orElseThrow(() -> new TimesheetValidationException("Collaborateur introuvable."));
+
+        ValidationPolicy.ensureManagerScope(author.getManagerId(), principal.userId(), principal.role());
+
+        var existing = timesheetRepository.findByUserIdAndWeekStartWithEntries(userId, weekStart);
+        if (existing.isPresent()) {
+            return getTimesheetDetail(principal, existing.get().getId());
+        }
+
+        var emptyOverview = timesheetService.buildEmptyOverview(userId, weekStart, author.getWeeklyTargetMinutes());
+        return new ManagerTimesheetDetail(
+                null,
+                author.getId(),
+                author.getDisplayName(),
+                author.getEmail(),
+                emptyOverview,
+                List.of()
         );
     }
 

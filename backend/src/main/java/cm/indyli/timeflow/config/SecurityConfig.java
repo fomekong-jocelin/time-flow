@@ -49,6 +49,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/holidays").hasAnyRole("ADMIN", "DIRECTION")
                         .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/holidays/**").hasAnyRole("ADMIN", "DIRECTION")
                         .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/holidays/**").hasAnyRole("ADMIN", "DIRECTION")
+                        .requestMatchers("/api/v1/admin/projects", "/api/v1/admin/projects/**").hasAnyRole("ADMIN", "DIRECTION")
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/manager/**").hasAnyRole("MANAGER", "DIRECTION", "ADMIN")
                         .requestMatchers("/api/v1/**").authenticated()

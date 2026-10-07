@@ -5,12 +5,15 @@ export type ActivityType = 'PROJECT' | 'TRAINING' | 'SUPPORT' | 'INTERNAL';
 export interface DayEntry {
   date: string; // YYYY-MM-DD
   minutes: number;
+  comment?: string | null;
 }
 
 export interface TimesheetLine {
   projectId: string;
   projectName: string;
   clientName?: string | null;
+  workItemId?: string | null;
+  workItemTitle?: string | null;
   activityType: ActivityType;
   billable: boolean;
   comment?: string | null;
@@ -43,10 +46,12 @@ export interface TimesheetOverview {
 export interface SaveTimesheetPayload {
   lines: {
     projectId: string;
+    workItemId?: string | null;
+    workItemTitle?: string | null;
     activityType: ActivityType;
     billable: boolean;
     comment?: string | null;
-    entries: { entryDate: string; minutes: number }[];
+    entries: { entryDate: string; minutes: number; comment?: string | null }[];
   }[];
 }
 

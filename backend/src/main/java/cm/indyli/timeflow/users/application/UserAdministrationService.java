@@ -146,6 +146,7 @@ public class UserAdministrationService {
             scheduleId = user.getWorkScheduleProfileId();
         }
         user.updateAdministrativeProfile(profile.displayName(), profile.role(), profile.managerId(), profile.weeklyTargetMinutes(), scheduleId);
+        user.setDailyRate(profile.dailyRate());
         userRepository.save(user);
     }
 

@@ -9,6 +9,33 @@
   <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script>
+    (function() {
+      var theme = 'system';
+      var lang;
+      try {
+        theme = localStorage.getItem('timeflow-theme') || 'system';
+        lang = localStorage.getItem('timeflow-lang');
+      } catch (e) {}
+      if (theme !== 'light' && theme !== 'dark' && theme !== 'system') theme = 'system';
+      try {
+        var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch (e) {}
+      if (lang !== 'fr' && lang !== 'en') {
+        lang = (navigator.languages || [navigator.language])
+          .map(function(value) { return value.toLowerCase().split('-')[0]; })
+          .find(function(value) { return value === 'fr' || value === 'en'; }) || 'fr';
+      }
+      document.documentElement.setAttribute('lang', lang);
+    })();
+  </script>
 </head>
 <body>
   <tf-root></tf-root>

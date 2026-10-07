@@ -20,7 +20,8 @@ export interface CalendarWeek {
   days: WeekDay[];
 }
 
-const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const DAY_LABELS_FR = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+const DAY_LABELS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DAY_KEYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
 export function calendarWeek(
@@ -28,13 +29,18 @@ export function calendarWeek(
   today: Date = new Date(),
   workingDays: string[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'],
   includeWeekend: boolean = false,
-  holidays: { date: string; name: string; isWorked: boolean }[] = []
+  holidays: { date: string; name: string; isWorked: boolean }[] = [],
+  locale: string = 'fr'
 ): CalendarWeek {
+  const isEn = locale.startsWith('en');
+  const dayLabels = isEn ? DAY_LABELS_EN : DAY_LABELS_FR;
+  const intlLocale = isEn ? 'en-US' : 'fr-FR';
+
   const monday = startOfDay(target);
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
   const sunday = addDays(monday, 6);
-  const shortDate = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit' });
-  const longDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
+  const shortDate = new Intl.DateTimeFormat(intlLocale, { day: '2-digit', month: '2-digit' });
+  const longDate = new Intl.DateTimeFormat(intlLocale, { day: 'numeric', month: 'short' });
 
   const totalDays = includeWeekend ? 7 : 5;
   const days: WeekDay[] = Array.from({ length: totalDays }, (_, index) => {
@@ -43,7 +49,7 @@ export function calendarWeek(
     const isoDate = toIsoDateString(date);
     const holidayMatch = holidays.find(h => h.date === isoDate);
     return {
-      label: DAY_LABELS[index],
+      label: dayLabels[index],
       date: shortDate.format(date),
       isoDate,
       isToday: date.getTime() === startOfDay(today).getTime(),

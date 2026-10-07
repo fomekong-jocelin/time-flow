@@ -5,6 +5,7 @@ import cm.indyli.timeflow.projects.domain.ExcelProject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,7 +19,8 @@ import org.springframework.stereotype.Component;
 public class ProjectWorkbook {
     public static final int MAX_BYTES = 1024 * 1024;
     private static final int MAX_ROWS = 5000;
-    private static final List<String> HEADERS = List.of("Référence", "Nom", "Actif", "Facturable");
+    public static final List<String> BASE_HEADERS = List.of("Référence", "Nom", "Actif", "Facturable");
+    public static final List<String> EXTENDED_HEADERS = List.of("Référence", "Nom", "Actif", "Facturable", "TJM", "Jours budget", "Budget total", "Devise");
 
     public List<ExcelProject> read(byte[] bytes) {
         if (bytes.length == 0 || bytes.length > MAX_BYTES) throw invalid("Fichier vide ou supérieur à 1 Mo.");
@@ -27,9 +29,15 @@ public class ProjectWorkbook {
             var sheet = workbook.getSheet("Projets");
             if (sheet == null || sheet.getRow(0) == null) throw invalid("Onglet Projets et en-têtes obligatoires. Utilisez le modèle.");
             if (sheet.getLastRowNum() > MAX_ROWS) throw invalid("Maximum 5 000 lignes de projets.");
-            if (sheet.getRow(0).getLastCellNum() != HEADERS.size()) throw invalid("Quatre colonnes attendues. Utilisez le modèle.");
-            for (int column = 0; column < HEADERS.size(); column++) {
-                if (!HEADERS.get(column).equals(text(sheet.getRow(0).getCell(column)))) throw invalid("En-têtes invalides. Utilisez le modèle.");
+            int numCols = sheet.getRow(0).getLastCellNum();
+            if (numCols != 4 && numCols != 8) throw invalid("Quatre ou huit colonnes attendues. Utilisez le modèle.");
+            for (int column = 0; column < 4; column++) {
+                if (!BASE_HEADERS.get(column).equals(text(sheet.getRow(0).getCell(column)))) throw invalid("En-têtes invalides. Utilisez le modèle.");
+            }
+            if (numCols == 8) {
+                for (int column = 4; column < 8; column++) {
+                    if (!EXTENDED_HEADERS.get(column).equals(text(sheet.getRow(0).getCell(column)))) throw invalid("En-têtes invalides. Utilisez le modèle.");
+                }
             }
             var projects = new ArrayList<ExcelProject>();
             var references = new HashSet<String>();
@@ -37,13 +45,26 @@ public class ProjectWorkbook {
                 var row = sheet.getRow(index);
                 if (row == null) continue;
                 try {
-                    if (row.getLastCellNum() > HEADERS.size()) throw invalid("Colonnes supplémentaires non autorisées.");
+                    if (row.getLastCellNum() > numCols) throw invalid("Colonnes supplémentaires non autorisées.");
                     String reference = text(row.getCell(0));
                     String name = text(row.getCell(1));
                     String active = text(row.getCell(2));
                     String billable = text(row.getCell(3));
                     if ((reference + name + active + billable).isBlank()) continue;
-                    var project = new ExcelProject(reference, name, bool(active), bool(billable));
+
+                    BigDecimal dailyRate = null;
+                    BigDecimal budgetDays = null;
+                    BigDecimal totalPrice = null;
+                    String currency = "EUR";
+                    if (numCols == 8) {
+                        dailyRate = parseDecimal(text(row.getCell(4)));
+                        budgetDays = parseDecimal(text(row.getCell(5)));
+                        totalPrice = parseDecimal(text(row.getCell(6)));
+                        String c = text(row.getCell(7));
+                        if (!c.isBlank()) currency = c;
+                    }
+
+                    var project = new ExcelProject(reference, name, bool(active), bool(billable), dailyRate, budgetDays, totalPrice, currency);
                     if (!references.add(reference)) throw invalid("Référence présente plusieurs fois dans le fichier.");
                     projects.add(project);
                 } catch (IllegalArgumentException | InvalidProjectWorkbook exception) {
@@ -63,6 +84,15 @@ public class ProjectWorkbook {
         if (cell == null || cell.getCellType() == CellType.BLANK) return "";
         if (cell.getCellType() != CellType.STRING) throw invalid("Les cellules doivent contenir du texte, sans formule.");
         return cell.getStringCellValue().trim();
+    }
+
+    private BigDecimal parseDecimal(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            return new BigDecimal(s.trim().replace(',', '.'));
+        } catch (NumberFormatException e) {
+            throw invalid("Nombre décimal invalide : " + s);
+        }
     }
 
     private boolean bool(String value) {
@@ -96,16 +126,25 @@ public class ProjectWorkbook {
 
     public byte[] write(List<ProjectStore.ProjectView> projects, boolean template) {
         try (var workbook = new XSSFWorkbook(); var output = new ByteArrayOutputStream()) {
-            var editable = sheet(workbook, "Projets", HEADERS);
+            var editable = sheet(workbook, "Projets", EXTENDED_HEADERS);
             if (template) {
-                addRow(editable, List.of("DEMO-001", "Mission de démonstration", "OUI", "OUI"));
+                addRow(editable, List.of("DEMO-001", "Mission de démonstration", "OUI", "OUI", "650", "50", "32500", "EUR"));
             } else {
-                var external = sheet(workbook, "Autres sources", List.of("Référence", "Nom", "Actif", "Facturable", "Source", "Organisation"));
+                var external = sheet(workbook, "Autres sources", List.of("Référence", "Nom", "Actif", "Facturable", "TJM", "Jours budget", "Budget total", "Devise", "Source", "Organisation"));
                 for (var project : projects) {
-                    var values = new ArrayList<>(List.of(project.reference() == null ? project.id().toString() : project.reference(),
-                            project.name(), project.active() ? "OUI" : "NON", project.billableDefault() ? "OUI" : "NON"));
-                    if ("EXCEL".equals(project.source())) addRow(editable, values);
-                    else {
+                    var values = new ArrayList<>(List.of(
+                            project.reference() == null ? project.id().toString() : project.reference(),
+                            project.name(),
+                            project.active() ? "OUI" : "NON",
+                            project.billableDefault() ? "OUI" : "NON",
+                            project.dailyRate() != null ? project.dailyRate().toPlainString() : "",
+                            project.budgetDays() != null ? project.budgetDays().toPlainString() : "",
+                            project.totalPrice() != null ? project.totalPrice().toPlainString() : "",
+                            project.currency() != null ? project.currency() : "EUR"
+                    ));
+                    if ("EXCEL".equals(project.source())) {
+                        addRow(editable, values);
+                    } else {
                         values.add(project.source());
                         values.add(project.organization() == null ? "" : project.organization());
                         addRow(external, values);
@@ -117,6 +156,7 @@ public class ProjectWorkbook {
             addRow(guide, List.of("Seul l'onglet Projets est importé. Autres sources est un export de consultation (Azure, internes)."));
             addRow(guide, List.of("Référence stable et unique : lettres, chiffres, points, tirets, underscores (100 caractères maximum)."));
             addRow(guide, List.of("Nom : 255 caractères maximum. Actif et Facturable : OUI ou NON. Toutes les cellules au format texte."));
+            addRow(guide, List.of("TJM, Jours budget, Budget total et Devise sont optionnels. Devise par défaut : EUR (ou USD, XAF, etc.)."));
             addRow(guide, List.of("Une référence existante est mise à jour. Une ligne absente n'est jamais supprimée. 5 000 lignes, 1 Mo maximum."));
             addRow(guide, List.of("Le modèle contient DEMO-001 : remplacez ou conservez cette ligne pour tester un import."));
             workbook.write(output);
@@ -154,7 +194,6 @@ public class ProjectWorkbook {
     private void addRow(Sheet sheet, List<String> values) {
         var row = sheet.createRow(sheet.getLastRowNum() + 1);
         for (int column = 0; column < values.size(); column++) {
-            // Explicit string cells keep names beginning with '=' as text, never formulas.
             row.createCell(column, CellType.STRING).setCellValue(values.get(column));
         }
         sheet.setAutoFilter(new CellRangeAddress(0, sheet.getLastRowNum(), 0, values.size() - 1));

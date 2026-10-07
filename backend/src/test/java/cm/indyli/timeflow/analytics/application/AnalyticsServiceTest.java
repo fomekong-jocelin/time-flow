@@ -91,6 +91,13 @@ class AnalyticsServiceTest {
         assertThat(overview.contributorsCount()).isEqualTo(1);
         assertThat(overview.projectsBreakdown()).hasSize(1);
         assertThat(overview.projectsBreakdown().get(0).projectName()).isEqualTo("Projet Client");
+        assertThat(overview.dailyTrend()).hasSize(31);
+        assertThat(overview.dailyTrend().get(5).dayOfMonth()).isEqualTo(6);
+        assertThat(overview.dailyTrend().get(5).totalMinutes()).isEqualTo(1200);
+        assertThat(overview.dailyTrend().get(5).billableMinutes()).isEqualTo(1200);
+        assertThat(overview.dailyTrend().get(6).dayOfMonth()).isEqualTo(7);
+        assertThat(overview.dailyTrend().get(6).totalMinutes()).isEqualTo(900);
+        assertThat(overview.dailyTrend().get(6).billableMinutes()).isEqualTo(0);
     }
 
     @Test

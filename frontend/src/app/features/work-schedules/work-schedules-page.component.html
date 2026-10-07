@@ -1,0 +1,670 @@
+
+    <div class="space-y-6">
+      <!-- En-tête de page responsive -->
+      <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-sm font-medium text-brand-600">
+            <span>TimeFlow</span>
+            <span class="text-muted">/</span>
+            <span>{{ 'nav.workSchedules' | translate }}</span>
+          </div>
+          <h1 class="mt-1 text-2xl font-bold tracking-tight text-ink sm:text-3xl">{{ 'workSchedules.title' | translate }}</h1>
+          <p class="mt-1 text-sm text-muted">
+            {{ 'workSchedules.subtitle' | translate }}
+          </p>
+        </div>
+        @if (activeTab() === 'schedules') {
+          <button
+            type="button"
+            (click)="openCreateModal()"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-2xs transition hover:bg-brand-500 focus:outline-none whitespace-nowrap">
+            <tf-icon name="plus" [size]="18" />
+            <span>{{ 'workSchedules.addProfile' | translate }}</span>
+          </button>
+        }
+      </header>
+
+      <!-- Navigation par sous-onglets fluide -->
+      <div class="flex gap-2 border-b border-border overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <button
+          type="button"
+          (click)="activeTab.set('schedules')"
+          class="flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap"
+          [class.border-brand-600]="activeTab() === 'schedules'"
+          [class.text-brand-600]="activeTab() === 'schedules'"
+          [class.font-semibold]="activeTab() === 'schedules'"
+          [class.border-transparent]="activeTab() !== 'schedules'"
+          [class.text-muted]="activeTab() !== 'schedules'"
+          [class.hover:text-ink]="activeTab() !== 'schedules'">
+          <tf-icon name="clock" [size]="16" />
+          <span>{{ 'workSchedules.tabSchedules' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="activeTab.set('ot_et')"
+          class="flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap"
+          [class.border-brand-600]="activeTab() === 'ot_et'"
+          [class.text-brand-600]="activeTab() === 'ot_et'"
+          [class.font-semibold]="activeTab() === 'ot_et'"
+          [class.border-transparent]="activeTab() !== 'ot_et'"
+          [class.text-muted]="activeTab() !== 'ot_et'"
+          [class.hover:text-ink]="activeTab() !== 'ot_et'">
+          <tf-icon name="sliders" [size]="16" />
+          <span>{{ 'workSchedules.tabOvertime' | translate }}</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="activeTab.set('holidays')"
+          class="flex items-center gap-2 border-b-2 px-3.5 py-2 text-sm font-medium transition whitespace-nowrap"
+          [class.border-brand-600]="activeTab() === 'holidays'"
+          [class.text-brand-600]="activeTab() === 'holidays'"
+          [class.font-semibold]="activeTab() === 'holidays'"
+          [class.border-transparent]="activeTab() !== 'holidays'"
+          [class.text-muted]="activeTab() !== 'holidays'"
+          [class.hover:text-ink]="activeTab() !== 'holidays'">
+          <tf-icon name="calendar" [size]="16" />
+          <span>{{ 'workSchedules.tabHolidays' | translate }}</span>
+        </button>
+      </div>
+
+      <!-- Onglet 1 : Régimes horaires -->
+      @if (activeTab() === 'schedules') {
+        <!-- Cartes synthétiques KPI sans coupure -->
+        <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs">
+            <p class="text-xs font-medium uppercase tracking-wider text-muted">{{ 'workSchedules.kpiTotal' | translate }}</p>
+            <p class="mt-1 text-2xl font-bold text-ink">{{ profiles().length }}</p>
+            <p class="mt-1 text-xs text-muted">{{ 'workSchedules.activeStatusCount' | translate:{ active: activeCount(), inactive: profiles().length - activeCount() } }}</p>
+          </div>
+          <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs">
+            <p class="text-xs font-medium uppercase tracking-wider text-muted">{{ 'workSchedules.kpiDefault' | translate }}</p>
+            <div class="mt-1 flex items-center gap-2 flex-wrap">
+              <p class="text-lg font-bold text-brand-600 sm:text-xl">{{ defaultProfile()?.name || ('common.none' | translate) }}</p>
+              <span class="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-800 whitespace-nowrap">{{ 'workSchedules.defaultBadge' | translate }}</span>
+            </div>
+            <p class="mt-1 text-xs text-muted">{{ formatMinutes(defaultProfile()?.weeklyTargetMinutes || 0) }} {{ 'workSchedules.perWeek' | translate }}</p>
+          </div>
+          <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs">
+            <p class="text-xs font-medium uppercase tracking-wider text-muted">{{ 'workSchedules.kpiAssigned' | translate }}</p>
+            <p class="mt-1 text-2xl font-bold text-ink">{{ totalAssignedUsers() }}</p>
+            <p class="mt-1 text-xs text-muted">{{ 'workSchedules.kpiAssignedSub' | translate }}</p>
+          </div>
+        </section>
+
+        <!-- Feedback messages -->
+        @if (errorMessage()) {
+          <div class="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
+            <tf-icon name="alert" class="shrink-0 text-red-600" />
+            <span>{{ errorMessage() }}</span>
+            <button type="button" (click)="errorMessage.set(null)" class="ml-auto text-xs font-medium underline">{{ 'common.close' | translate }}</button>
+          </div>
+        }
+        @if (successMessage()) {
+          <div class="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800" role="alert">
+            <tf-icon name="check" class="shrink-0 text-emerald-600" />
+            <span>{{ successMessage() }}</span>
+            <button type="button" (click)="successMessage.set(null)" class="ml-auto text-xs font-medium underline">{{ 'common.close' | translate }}</button>
+          </div>
+        }
+
+        <!-- Vue mobile (< lg) : cartes d'application tactiles modernes -->
+        <div class="space-y-3 block lg:hidden">
+          @if (loading()) {
+            <div class="rounded-xl border border-border bg-surface p-8 text-center text-muted">
+              {{ 'workSchedules.loadingSchedules' | translate }}
+            </div>
+          } @else if (profiles().length === 0) {
+            <div class="rounded-xl border border-border bg-surface p-8 text-center text-muted">
+              {{ 'workSchedules.noProfiles' | translate }}
+            </div>
+          } @else {
+            @for (profile of profiles(); track profile.id) {
+              <div class="rounded-xl border border-border bg-surface p-4 shadow-2xs space-y-3" [class.opacity-60]="!profile.active">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-bold text-ink text-base leading-tight">{{ profile.name }}</span>
+                      @if (profile.isDefault) {
+                        <span class="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-800 whitespace-nowrap">
+                          {{ 'workSchedules.defaultBadge' | translate }}
+                        </span>
+                      }
+                    </div>
+                    <p class="font-mono text-xs text-muted mt-0.5">{{ profile.code }}</p>
+                    @if (profile.description) {
+                      <p class="text-xs text-muted mt-1 leading-relaxed">{{ profile.description }}</p>
+                    }
+                  </div>
+                  <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap"
+                    [class]="profile.active ? 'bg-emerald-50 text-emerald-700' : 'bg-zinc-100 text-zinc-600'">
+                    <span class="size-1.5 rounded-full" [class]="profile.active ? 'bg-emerald-500' : 'bg-zinc-400'"></span>
+                    {{ profile.active ? ('common.active' | translate) : ('common.inactive' | translate) }}
+                  </span>
+                </div>
+
+                <!-- Jours ouvrés en pilules tactiles -->
+                <div>
+                  <p class="text-[11px] font-medium uppercase tracking-wider text-muted mb-1">{{ 'workSchedules.colWorkingDays' | translate }}</p>
+                  <div class="flex items-center gap-1">
+                    @for (day of weekDays(); track day.key) {
+                      <span
+                        [title]="day.fullLabel"
+                        class="inline-grid size-7 place-items-center rounded-md text-xs font-medium"
+                        [class.bg-brand-600]="isWorkingDay(profile, day.key)"
+                        [class.text-white]="isWorkingDay(profile, day.key)"
+                        [class.bg-app]="!isWorkingDay(profile, day.key)"
+                        [class.text-muted]="!isWorkingDay(profile, day.key)"
+                        [class.opacity-40]="!isWorkingDay(profile, day.key)">
+                        {{ day.shortLabel[0] }}
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <!-- Grille métriques -->
+                <div class="grid grid-cols-2 gap-2 text-xs rounded-lg bg-app/50 p-3">
+                  <div>
+                    <span class="text-muted block text-[11px]">{{ 'workSchedules.colTargets' | translate }} :</span>
+                    <span class="font-semibold text-ink">{{ formatMinutes(profile.weeklyTargetMinutes) }} {{ 'workSchedules.perWeekShort' | translate }}</span>
+                    <span class="text-muted text-[11px] ml-1">({{ formatMinutes(profile.dailyTargetMinutes) }} {{ 'workSchedules.perDayShort' | translate }})</span>
+                  </div>
+                  <div>
+                    <span class="text-muted block text-[11px]">{{ 'workSchedules.colLegalCaps' | translate }} :</span>
+                    <span class="font-medium text-ink">{{ 'workSchedules.maxShort' | translate }} {{ formatMinutes(profile.maxDailyMinutes) }} {{ 'workSchedules.perDayShort' | translate }}</span>
+                  </div>
+                  <div>
+                    <span class="text-muted block text-[11px]">{{ 'workSchedules.colWeekend' | translate }} :</span>
+                    <span [class]="profile.allowWeekendEntry ? 'text-emerald-700 font-semibold' : 'text-zinc-600'">
+                      {{ profile.allowWeekendEntry ? ('workSchedules.allowed' | translate) : ('workSchedules.forbidden' | translate) }}
+                    </span>
+                  </div>
+                  <div>
+                    <span class="text-muted block text-[11px]">{{ 'workSchedules.colCollaborators' | translate }} :</span>
+                    <span class="font-semibold text-ink">{{ 'workSchedules.collabCount' | translate:{ count: profile.assignedUsersCount } }}</span>
+                  </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="pt-2 border-t border-border flex items-center justify-end gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    (click)="openEditModal(profile)"
+                    class="flex-1 min-w-[5rem] rounded-lg border border-border px-3 py-2 text-xs font-medium text-ink transition hover:bg-app text-center whitespace-nowrap">
+                    {{ 'common.edit' | translate }}
+                  </button>
+                  @if (!profile.isDefault) {
+                    <button
+                      type="button"
+                      (click)="setDefault(profile)"
+                      [disabled]="!profile.active"
+                      class="flex-1 min-w-[5rem] rounded-lg border border-border px-3 py-2 text-xs font-medium text-brand-600 transition hover:bg-brand-50 disabled:opacity-40 text-center whitespace-nowrap">
+                      {{ 'workSchedules.defaultBadge' | translate }}
+                    </button>
+                    <button
+                      type="button"
+                      (click)="toggleActive(profile)"
+                      class="rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted transition hover:bg-app hover:text-ink text-center whitespace-nowrap">
+                      {{ profile.active ? ('users.deactivate' | translate) : ('users.activate' | translate) }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        <!-- Vue desktop (hidden lg:block) : grand tableau sans aucune coupure de texte -->
+        <div class="hidden lg:block overflow-hidden rounded-xl border border-border bg-surface shadow-2xs">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="border-b border-border bg-app/50 text-xs font-semibold uppercase tracking-wider text-muted">
+                <tr>
+                  <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'workSchedules.colRegimeCode' | translate }}</th>
+                  <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'workSchedules.colWorkingDays' | translate }}</th>
+                  <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'workSchedules.colTargets' | translate }}</th>
+                  <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'workSchedules.colLegalCaps' | translate }}</th>
+                  <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'workSchedules.colWeekend' | translate }}</th>
+                  <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'workSchedules.colCollaborators' | translate }}</th>
+                  <th scope="col" class="px-5 py-3.5 whitespace-nowrap">{{ 'workSchedules.colStatus' | translate }}</th>
+                  <th scope="col" class="px-5 py-3.5 text-right whitespace-nowrap">{{ 'common.actions' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border">
+                @if (loading()) {
+                  <tr>
+                    <td colspan="8" class="px-5 py-8 text-center text-muted">{{ 'workSchedules.loadingSchedules' | translate }}</td>
+                  </tr>
+                } @else if (profiles().length === 0) {
+                  <tr>
+                    <td colspan="8" class="px-5 py-8 text-center text-muted">{{ 'workSchedules.noProfiles' | translate }}</td>
+                  </tr>
+                } @else {
+                  @for (profile of profiles(); track profile.id) {
+                    <tr class="transition hover:bg-app/40" [class.opacity-60]="!profile.active">
+                      <td class="px-5 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                          <span class="font-semibold text-ink">{{ profile.name }}</span>
+                          @if (profile.isDefault) {
+                            <span class="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-800 whitespace-nowrap">
+                              {{ 'workSchedules.defaultBadge' | translate }}
+                            </span>
+                          }
+                        </div>
+                        <p class="font-mono text-xs text-muted">{{ profile.code }}</p>
+                        @if (profile.description) {
+                          <p class="mt-0.5 max-w-xs truncate text-xs text-muted/80" [title]="profile.description">{{ profile.description }}</p>
+                        }
+                      </td>
+                      <td class="px-5 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-1">
+                          @for (day of weekDays(); track day.key) {
+                            <span
+                              [title]="day.fullLabel"
+                              class="inline-grid size-6 place-items-center rounded text-[11px] font-medium"
+                              [class.bg-brand-600]="isWorkingDay(profile, day.key)"
+                              [class.text-white]="isWorkingDay(profile, day.key)"
+                              [class.bg-app]="!isWorkingDay(profile, day.key)"
+                              [class.text-muted]="!isWorkingDay(profile, day.key)"
+                              [class.opacity-40]="!isWorkingDay(profile, day.key)">
+                              {{ day.shortLabel[0] }}
+                            </span>
+                          }
+                        </div>
+                      </td>
+                      <td class="px-5 py-4 whitespace-nowrap">
+                        <div class="font-medium text-ink">{{ formatMinutes(profile.weeklyTargetMinutes) }} {{ 'workSchedules.perWeekShort' | translate }}</div>
+                        <div class="text-xs text-muted">{{ formatMinutes(profile.dailyTargetMinutes) }} {{ 'workSchedules.perDayShort' | translate }}</div>
+                      </td>
+                      <td class="px-5 py-4 whitespace-nowrap">
+                        <div class="text-xs text-ink font-medium">{{ 'workSchedules.maxShort' | translate }} {{ formatMinutes(profile.maxDailyMinutes) }} {{ 'workSchedules.perDayShort' | translate }}</div>
+                        <div class="text-xs text-muted">{{ 'workSchedules.maxShort' | translate }} {{ formatMinutes(profile.maxWeeklyMinutes) }} {{ 'workSchedules.perWeekShort' | translate }}</div>
+                      </td>
+                      <td class="px-5 py-4 whitespace-nowrap">
+                        @if (profile.allowWeekendEntry) {
+                          <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 whitespace-nowrap">
+                            {{ 'workSchedules.allowed' | translate }}
+                          </span>
+                        } @else {
+                          <span class="inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 whitespace-nowrap">
+                            {{ 'workSchedules.forbidden' | translate }}
+                          </span>
+                        }
+                      </td>
+                      <td class="px-5 py-4 whitespace-nowrap">
+                        <span class="font-medium text-ink">{{ 'workSchedules.collabCount' | translate:{ count: profile.assignedUsersCount } }}</span>
+                      </td>
+                      <td class="px-5 py-4 whitespace-nowrap">
+                        @if (profile.active) {
+                          <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 whitespace-nowrap">
+                            <span class="size-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                            {{ 'common.active' | translate }}
+                          </span>
+                        } @else {
+                          <span class="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600 whitespace-nowrap">
+                            <span class="size-1.5 rounded-full bg-zinc-400" aria-hidden="true"></span>
+                            {{ 'common.inactive' | translate }}
+                          </span>
+                        }
+                      </td>
+                      <td class="px-5 py-4 text-right whitespace-nowrap">
+                        <div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                          <button
+                            type="button"
+                            (click)="openEditModal(profile)"
+                            class="whitespace-nowrap inline-flex items-center rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-ink transition hover:bg-app">
+                            {{ 'common.edit' | translate }}
+                          </button>
+                          @if (!profile.isDefault) {
+                            <button
+                              type="button"
+                              (click)="setDefault(profile)"
+                              [disabled]="!profile.active"
+                              class="whitespace-nowrap inline-flex items-center rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-brand-600 transition hover:bg-brand-50 disabled:opacity-40">
+                              {{ 'workSchedules.defaultBadge' | translate }}
+                            </button>
+                            <button
+                              type="button"
+                              (click)="toggleActive(profile)"
+                              class="whitespace-nowrap inline-flex items-center rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted transition hover:bg-app hover:text-ink">
+                              {{ profile.active ? ('users.deactivate' | translate) : ('users.activate' | translate) }}
+                            </button>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Onglet 2 : Politiques OT & ET -->
+      @if (activeTab() === 'ot_et') {
+        <tf-overtime-policies-panel
+          [profiles]="profiles()"
+          (editRequested)="openEditModal($event)" />
+      }
+
+      <!-- Onglet 3 : Jours fériés -->
+      @if (activeTab() === 'holidays') {
+        <tf-public-holidays-panel />
+      }
+
+      <!-- Modale Création / Édition complète avec onglet OT/ET -->
+      @if (modalOpen()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs" role="dialog" aria-modal="true">
+          <div class="w-full max-w-2xl rounded-2xl border border-border bg-surface p-6 shadow-xl space-y-5 max-h-[90vh] overflow-y-auto">
+            <header class="flex items-center justify-between border-b border-border pb-3">
+              <h2 class="text-lg font-bold text-ink">
+                {{ editingProfile() ? ('workSchedules.editProfile' | translate) : ('workSchedules.newProfileModalTitle' | translate) }}
+              </h2>
+              <button type="button" (click)="closeModal()" class="text-muted hover:text-ink text-sm">✕</button>
+            </header>
+
+            <form (ngSubmit)="saveModal()" class="space-y-4">
+              <!-- Code & Nom -->
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-muted">{{ 'workSchedules.formCode' | translate }}</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="formCode"
+                    name="formCode"
+                    [disabled]="editingProfile() !== null"
+                    [placeholder]="'workSchedules.codePlaceholder' | translate"
+                    required
+                    class="mt-1.5 w-full rounded-lg border border-border bg-app px-3 py-2 text-sm font-mono text-ink placeholder:text-muted/50 focus:border-brand-500 focus:outline-none disabled:opacity-50" />
+                  <p class="mt-1 text-[11px] text-muted">{{ 'workSchedules.formCodeSub' | translate }}</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-muted">{{ 'workSchedules.formName' | translate }}</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="formName"
+                    name="formName"
+                    [placeholder]="'workSchedules.namePlaceholder' | translate"
+                    required
+                    class="mt-1.5 w-full rounded-lg border border-border bg-app px-3 py-2 text-sm text-ink placeholder:text-muted/50 focus:border-brand-500 focus:outline-none" />
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-muted">{{ 'workSchedules.formDescription' | translate }}</label>
+                <input
+                  type="text"
+                  [(ngModel)]="formDescription"
+                  name="formDescription"
+                  [placeholder]="'workSchedules.descriptionPlaceholder' | translate"
+                  class="mt-1.5 w-full rounded-lg border border-border bg-app px-3 py-2 text-sm text-ink placeholder:text-muted/50 focus:border-brand-500 focus:outline-none" />
+              </div>
+
+              <!-- Jours ouvrés -->
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-muted mb-2">{{ 'workSchedules.contractualDays' | translate }}</label>
+                <div class="flex flex-wrap gap-2">
+                  @for (day of weekDays(); track day.key) {
+                    <button
+                      type="button"
+                      (click)="toggleFormDay(day.key)"
+                      class="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition"
+                      [class.bg-brand-50]="formWorkingDays().includes(day.key)"
+                      [class.border-brand-500]="formWorkingDays().includes(day.key)"
+                      [class.text-brand-800]="formWorkingDays().includes(day.key)"
+                      [class.border-border]="!formWorkingDays().includes(day.key)"
+                      [class.bg-app]="!formWorkingDays().includes(day.key)"
+                      [class.text-muted]="!formWorkingDays().includes(day.key)">
+                      <tf-icon [name]="formWorkingDays().includes(day.key) ? 'check' : 'bars'" [size]="14" />
+                      {{ day.fullLabel }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Heures Cibles -->
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-xl border border-border bg-app/30 p-3.5">
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-muted">{{ 'workSchedules.weeklyTargetHours' | translate }}</label>
+                  <div class="mt-1.5 flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="1"
+                      max="60"
+                      [(ngModel)]="formWeeklyHours"
+                      name="formWeeklyHours"
+                      (change)="recalcDailyFromWeekly()"
+                      required
+                      class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand-500 focus:outline-none" />
+                    <span class="text-xs text-muted font-medium">h {{ 'workSchedules.perWeekShort' | translate }}</span>
+                  </div>
+                  <p class="mt-1 text-[11px] text-muted">{{ MathRound(formWeeklyHours * 60) }} min {{ 'workSchedules.perWeekShort' | translate }}</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-muted">{{ 'workSchedules.dailyTargetHours' | translate }}</label>
+                  <div class="mt-1.5 flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="1"
+                      max="12"
+                      [(ngModel)]="formDailyHours"
+                      name="formDailyHours"
+                      required
+                      class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand-500 focus:outline-none" />
+                    <span class="text-xs text-muted font-medium">h {{ 'workSchedules.perDayShort' | translate }}</span>
+                  </div>
+                  <p class="mt-1 text-[11px] text-muted">{{ MathRound(formDailyHours * 60) }} min {{ 'workSchedules.perDayShort' | translate }}</p>
+                </div>
+              </div>
+
+              <!-- Plafonds Légaux -->
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-xl border border-border bg-app/30 p-3.5">
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-muted">{{ 'workSchedules.maxDailyHours' | translate }}</label>
+                  <div class="mt-1.5 flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="1"
+                      max="12"
+                      [(ngModel)]="formMaxDailyHours"
+                      name="formMaxDailyHours"
+                      required
+                      class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand-500 focus:outline-none" />
+                    <span class="text-xs text-muted font-medium">h {{ 'workSchedules.perDayShort' | translate }}</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold uppercase tracking-wider text-muted">{{ 'workSchedules.maxWeeklyHours' | translate }}</label>
+                  <div class="mt-1.5 flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="1"
+                      max="60"
+                      [(ngModel)]="formMaxWeeklyHours"
+                      name="formMaxWeeklyHours"
+                      required
+                      class="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink focus:border-brand-500 focus:outline-none" />
+                    <span class="text-xs text-muted font-medium">h {{ 'workSchedules.perWeekShort' | translate }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section Paramètres OT (Overtime / Heures supplémentaires) -->
+              <div class="rounded-xl border border-border bg-brand-50/20 p-3.5 space-y-3">
+                <div class="flex items-center gap-2">
+                  <tf-icon name="clock" [size]="16" class="text-brand-600" />
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-brand-600">{{ 'workSchedules.otSectionTitle' | translate }}</h4>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <label class="block text-[11px] font-medium text-muted">{{ 'workSchedules.otTriggerThreshold' | translate }}</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      [(ngModel)]="formOtThresholdHours"
+                      name="formOtThresholdHours"
+                      class="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-brand-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-muted">{{ 'workSchedules.otTier1Rate' | translate }}</label>
+                    <input
+                      type="number"
+                      step="0.05"
+                      [(ngModel)]="formOtRateTier1"
+                      name="formOtRateTier1"
+                      placeholder="1.25 (+25%)"
+                      class="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-brand-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-muted">{{ 'workSchedules.otTier2Rate' | translate }}</label>
+                    <input
+                      type="number"
+                      step="0.05"
+                      [(ngModel)]="formOtRateTier2"
+                      name="formOtRateTier2"
+                      placeholder="1.50 (+50%)"
+                      class="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-brand-500 focus:outline-none" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label class="block text-[11px] font-medium text-muted">{{ 'workSchedules.otHolidayRate' | translate }}</label>
+                    <input
+                      type="number"
+                      step="0.05"
+                      [(ngModel)]="formOtRateHoliday"
+                      name="formOtRateHoliday"
+                      placeholder="2.00 (+100%)"
+                      class="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-brand-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-medium text-muted">{{ 'workSchedules.otCompMode' | translate }}</label>
+                    <select
+                      [(ngModel)]="formOtCompensationMode"
+                      name="formOtCompensationMode"
+                      class="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-brand-500 focus:outline-none">
+                      <option value="PAY">{{ 'workSchedules.optPaySalary' | translate }}</option>
+                      <option value="RECOVERY">{{ 'workSchedules.optRecoveryRtt' | translate }}</option>
+                      <option value="HYBRID">{{ 'workSchedules.optHybridChoice' | translate }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section Paramètres ET (Extra Time / Heures complémentaires) -->
+              <div class="rounded-xl border border-border bg-teal-50/20 p-3.5 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <tf-icon name="sliders" [size]="16" class="text-teal-600" />
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-teal-700">{{ 'workSchedules.etSectionTitle' | translate }}</h4>
+                  </div>
+                  <label class="flex items-center gap-2 cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="formEtAllowed"
+                      name="formEtAllowed"
+                      class="rounded border-border text-teal-600 focus:ring-teal-500" />
+                    <span class="font-medium text-ink">{{ 'workSchedules.activateEt' | translate }}</span>
+                  </label>
+                </div>
+                @if (formEtAllowed) {
+                  <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div>
+                      <label class="block text-[11px] font-medium text-muted">{{ 'workSchedules.etMaxHoursLabel' | translate }}</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        [(ngModel)]="formEtMaxHours"
+                        name="formEtMaxHours"
+                        class="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-teal-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label class="block text-[11px] font-medium text-muted">{{ 'workSchedules.etRateLabel' | translate }}</label>
+                      <input
+                        type="number"
+                        step="0.05"
+                        [(ngModel)]="formEtRate"
+                        name="formEtRate"
+                        placeholder="1.10 (+10%)"
+                        class="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-teal-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label class="block text-[11px] font-medium text-muted">{{ 'workSchedules.etCompLabel' | translate }}</label>
+                      <select
+                        [(ngModel)]="formEtCompensationMode"
+                        name="formEtCompensationMode"
+                        class="mt-1 w-full rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-ink focus:border-teal-500 focus:outline-none">
+                        <option value="PAY">{{ 'workSchedules.optEtPay' | translate }}</option>
+                        <option value="RECOVERY">{{ 'workSchedules.optEtRecovery' | translate }}</option>
+                      </select>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Options Week-end & Défaut -->
+              <div class="space-y-3 pt-2">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="formAllowWeekend"
+                    name="formAllowWeekend"
+                    class="rounded border-border text-brand-600 focus:ring-brand-500" />
+                  <div>
+                    <span class="text-sm font-medium text-ink">{{ 'workSchedules.allowWeekend' | translate }}</span>
+                    <p class="text-xs text-muted">{{ 'workSchedules.allowWeekendSub' | translate }}</p>
+                  </div>
+                </label>
+
+                @if (!editingProfile()) {
+                  <label class="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="formIsDefault"
+                      name="formIsDefault"
+                      class="rounded border-border text-brand-600 focus:ring-brand-500" />
+                    <div>
+                      <span class="text-sm font-medium text-ink">{{ 'workSchedules.setDefaultLabel' | translate }}</span>
+                      <p class="text-xs text-muted">{{ 'workSchedules.setDefaultSub' | translate }}</p>
+                    </div>
+                  </label>
+                }
+              </div>
+
+              @if (modalError()) {
+                <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                  {{ modalError() }}
+                </div>
+              }
+
+              <!-- Boutons action -->
+              <div class="flex items-center justify-end gap-3 border-t border-border pt-4">
+                <button
+                  type="button"
+                  (click)="closeModal()"
+                  class="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition hover:bg-app hover:text-ink">
+                  {{ 'common.cancel' | translate }}
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="submitting()"
+                  class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-2xs transition hover:bg-brand-500 focus:outline-none disabled:opacity-50">
+                  @if (submitting()) {
+                    <span>{{ 'workSchedules.saving' | translate }}</span>
+                  } @else {
+                    <span>{{ editingProfile() ? ('workSchedules.updateBtn' | translate) : ('workSchedules.createBtn' | translate) }}</span>
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+    </div>

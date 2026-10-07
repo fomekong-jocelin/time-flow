@@ -35,6 +35,12 @@ public class TimeEntryEntity {
     @Column(length = 1000)
     private String comment;
 
+    @Column(name = "work_item_id", length = 100)
+    private String workItemId;
+
+    @Column(name = "work_item_title", length = 255)
+    private String workItemTitle;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -44,11 +50,13 @@ public class TimeEntryEntity {
     protected TimeEntryEntity() {
     }
 
-    public static TimeEntryEntity create(UUID projectId, String activityType, LocalDate entryDate, int minutes, boolean billable, String comment) {
+    public static TimeEntryEntity create(UUID projectId, String workItemId, String workItemTitle, String activityType, LocalDate entryDate, int minutes, boolean billable, String comment) {
         var now = OffsetDateTime.now();
         var entity = new TimeEntryEntity();
         entity.id = UUID.randomUUID();
         entity.projectId = projectId;
+        entity.workItemId = workItemId;
+        entity.workItemTitle = workItemTitle;
         entity.activityType = activityType;
         entity.entryDate = entryDate;
         entity.minutes = minutes;
@@ -57,6 +65,10 @@ public class TimeEntryEntity {
         entity.createdAt = now;
         entity.updatedAt = now;
         return entity;
+    }
+
+    public static TimeEntryEntity create(UUID projectId, String activityType, LocalDate entryDate, int minutes, boolean billable, String comment) {
+        return create(projectId, null, null, activityType, entryDate, minutes, billable, comment);
     }
 
     public UUID getId() {
@@ -93,6 +105,14 @@ public class TimeEntryEntity {
 
     public String getComment() {
         return comment;
+    }
+
+    public String getWorkItemId() {
+        return workItemId;
+    }
+
+    public String getWorkItemTitle() {
+        return workItemTitle;
     }
 
     public OffsetDateTime getCreatedAt() {

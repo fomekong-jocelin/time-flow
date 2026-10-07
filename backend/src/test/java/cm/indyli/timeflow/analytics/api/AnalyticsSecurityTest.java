@@ -77,6 +77,7 @@ class AnalyticsSecurityTest {
                 List.of(),
                 List.of(),
                 List.of(),
+                List.of(),
                 List.of()
         );
         when(analyticsService.getOverview(eq(principal), eq("2026-10"), any(), any())).thenReturn(overview);

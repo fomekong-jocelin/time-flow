@@ -17,16 +17,25 @@ public record SaveTimesheetCommand(
 ) {
     public record LineCommand(
             @NotNull UUID projectId,
+            @Size(max = 100) String workItemId,
+            @Size(max = 255) String workItemTitle,
             @NotBlank @Pattern(regexp = "PROJECT|TRAINING|SUPPORT|INTERNAL") String activityType,
             Boolean billable,
             @Size(max = 1000) String comment,
             @NotNull List<@Valid EntryCommand> entries
     ) {
+        public LineCommand(UUID projectId, String activityType, Boolean billable, String comment, List<EntryCommand> entries) {
+            this(projectId, null, null, activityType, billable, comment, entries);
+        }
     }
 
     public record EntryCommand(
             @NotNull LocalDate entryDate,
-            @Min(0) @Max(1440) int minutes
+            @Min(0) @Max(1440) int minutes,
+            @Size(max = 1000) String comment
     ) {
+        public EntryCommand(LocalDate entryDate, int minutes) {
+            this(entryDate, minutes, null);
+        }
     }
 }

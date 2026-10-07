@@ -19,5 +19,6 @@ public record AnalyticsOverview(
         List<ProjectBreakdownItem> projectsBreakdown,
         List<ActivityBreakdownItem> activitiesBreakdown,
         List<UserBreakdownItem> usersBreakdown,
-        List<MonthlyTrendItem> monthlyTrend
+        List<MonthlyTrendItem> monthlyTrend,
+        List<DailyTrendItem> dailyTrend
 ) {}

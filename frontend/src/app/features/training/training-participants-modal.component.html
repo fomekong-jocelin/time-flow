@@ -1,0 +1,101 @@
+<tf-dialog [title]="title()" [busy]="busy()" (closed)="close.emit()">
+  @if (error()) {
+    <div role="alert" class="mb-4 rounded-xl border border-error/30 p-3 text-sm text-error"><p>{{ error()! | translate }}</p>
+      <button type="button" (click)="retry.emit()" [disabled]="busy() || loading()" class="mt-2 min-h-11 rounded-xl border border-border px-3">{{ 'training.fix.retry' | translate }}</button>
+    </div>
+  }
+  @if (loading()) { <p role="status" class="py-8 text-sm text-muted">{{ 'common.loading' | translate }}</p> }
+  @else if (session(); as s) {
+    <div class="space-y-5">
+      <p class="break-words font-mono text-sm text-brand-600">{{ s.reference }}</p>
+      @if (s.description) { <p class="whitespace-pre-wrap break-words text-sm">{{ s.description }}</p> }
+      <dl class="grid gap-3 rounded-xl border border-border bg-app p-4 text-sm sm:grid-cols-2">
+        <div><dt class="text-muted">{{ (s.startsAt ? 'training.startDate' : 'training.participation.dates') | translate }}</dt><dd class="break-words">{{ schedule(s) }}</dd></div>
+        <div><dt class="text-muted">{{ 'training.durationHours' | translate }}</dt><dd>{{ i18n.formatNumber(s.durationHours) }} {{ 'common.hours' | translate }}</dd></div>
+        <div><dt class="text-muted">{{ 'training.trainer' | translate }}</dt><dd class="break-words">{{ s.trainerDisplayName || ('training.noTrainer' | translate) }}</dd></div>
+        <div><dt class="text-muted">{{ 'training.location' | translate }}</dt><dd class="whitespace-pre-wrap break-words">{{ s.location || '–' }}</dd></div>
+      </dl>
+      @if (s.timeZone) { <p class="text-xs text-muted">{{ 'training.fix.sessionZone' | translate:{zone: s.timeZone} }}</p> }
+      @if (link(); as url) { <a [href]="url" target="_blank" rel="noopener noreferrer" class="inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm text-brand-600 underline">{{ 'training.fix.openMeeting' | translate }}</a> }
+      @if (!mutable()) { <p class="rounded-xl bg-app p-3 text-sm">{{ 'training.participation.closedNotice' | translate }}</p> }
+      <h3 class="text-base font-semibold">{{ 'training.participantsTitle' | translate:{count: s.registeredCount.toString(), max: s.maxParticipants.toString()} }}</h3>
+      @if (canManage() && mutable()) {
+        <div class="space-y-2 rounded-xl border border-border p-3">
+          @if (usersError()) { <p role="alert" class="text-sm text-error">{{ usersError()! | translate }}</p><button type="button" (click)="reloadUsers.emit()" [disabled]="usersLoading()" class="min-h-11 rounded-xl border border-border px-3">{{ 'training.fix.retry' | translate }}</button> }
+          @else if (usersLoading()) { <p role="status" class="text-sm">{{ 'common.loading' | translate }}</p> }
+          <label for="training-add-user" class="block text-sm">{{ 'training.addParticipant' | translate }}</label>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <select id="training-add-user" name="selectedUser" [ngModel]="selectedUserId()" (ngModelChange)="selectedUserId.set($event)" [disabled]="busy() || usersLoading() || !!usersError()" class="min-h-11 min-w-0 flex-1 rounded-xl border border-border bg-app px-3 text-sm">
+              <option value="">{{ 'training.selectParticipant' | translate }}</option>
+              @for (u of availableUsers(); track u.id) { <option [value]="u.id">{{ u.displayName }} ({{ u.email }})</option> }
+            </select>
+            <button type="button" (click)="handleAdd()" [disabled]="!validSelection() || busy() || !roomAvailable() || usersLoading() || !!usersError()" class="min-h-11 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50">{{ 'training.addParticipantBtn' | translate }}</button>
+          </div>
+          <p class="text-xs text-muted">{{ 'training.participation.trainerExcluded' | translate }}</p>
+          @if (!roomAvailable()) { <p class="text-sm text-muted">{{ 'training.fullBadge' | translate }}</p> }
+        </div>
+      }
+      @if (activeParticipants().length === 0) { <p class="rounded-xl border border-dashed border-border p-6 text-sm text-muted">{{ 'training.participation.noActiveParticipants' | translate }}</p> }
+      <ul class="space-y-3">
+        @for (p of activeParticipants(); track p.userId) { <li><ng-container [ngTemplateOutlet]="participantRow" [ngTemplateOutletContext]="{ $implicit: p }" /></li> }
+      </ul>
+      @if (cancelledParticipants().length) {
+        <details class="rounded-xl border border-border p-3">
+          <summary class="min-h-11 cursor-pointer text-sm font-semibold">{{ 'training.participation.cancelledList' | translate:{count: cancelledParticipants().length} }}</summary>
+          <ul class="mt-2 space-y-3">
+            @for (p of cancelledParticipants(); track p.userId) { <li><ng-container [ngTemplateOutlet]="participantRow" [ngTemplateOutletContext]="{ $implicit: p }" /></li> }
+          </ul>
+        </details>
+      }
+      <ng-template #participantRow let-p>
+        <div class="space-y-3 rounded-xl border border-border p-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0 space-y-1">
+              <p class="break-words text-sm font-semibold">{{ p.userDisplayName }}</p><p class="break-all text-xs text-muted">{{ p.userEmail }}</p>
+              <p class="text-xs">{{ 'training.participation.status' | translate }}: {{ statusKey(p.status) | translate }}</p>
+              <p class="text-xs text-muted">{{ 'training.participation.registeredOn' | translate }}: {{ i18n.formatDate(p.registeredAt) }}</p>
+              @if (p.status === 'ATTENDED') {
+                <p class="text-xs text-muted">{{ 'training.participation.attendanceRecordedOn' | translate }}: {{ p.attendedAt ? i18n.formatDate(p.attendedAt, true) : ('training.participation.unknownAttendanceDate' | translate) }}</p>
+              }
+              @if (inconsistent(p)) { <p role="status" class="text-xs text-error">{{ 'training.participation.inconsistent' | translate }}</p> }
+            </div>
+            <div class="flex shrink-0 flex-wrap gap-2">
+              @if (mutable() && canUpdateStatus()) {
+                @if (p.status === 'REGISTERED' && s.status === 'IN_PROGRESS' && p.userId !== s.trainerId) { <button type="button" [disabled]="busy()" (click)="mark(p, 'ATTENDED')" class="min-h-11 rounded-xl border border-border px-3 text-sm">{{ 'training.markAttended' | translate }}</button> }
+                @if (p.status === 'REGISTERED') { <button type="button" [disabled]="busy()" (click)="requestWithdrawal(p)" [attr.aria-expanded]="withdrawal()?.userId === p.userId" class="min-h-11 rounded-xl border border-border px-3 text-sm text-error">{{ 'training.participation.remove' | translate }}</button> }
+                @if (p.status === 'CANCELLED' && p.userId !== s.trainerId) { <button type="button" [disabled]="busy() || !roomAvailable()" (click)="mark(p, 'REGISTERED')" class="min-h-11 rounded-xl border border-border px-3 text-sm">{{ 'training.fix.restoreRegistration' | translate }}</button> }
+              }
+              @if (canManage() && (p.status === 'ATTENDED' || (!mutable() && p.status === 'REGISTERED'))) {
+                <button type="button" [disabled]="busy()" (click)="openCorrection(p)" [attr.aria-expanded]="correction()?.userId === p.userId" class="min-h-11 rounded-xl border border-border px-3 text-sm">{{ (p.status === 'ATTENDED' ? 'training.participation.correctAttendance' : 'training.participation.adminCorrection') | translate }}</button>
+              }
+            </div>
+          </div>
+          @if (withdrawal()?.userId === p.userId) {
+            <fieldset [disabled]="busy()" class="space-y-3 rounded-xl bg-app p-3">
+              <legend class="text-sm font-semibold">{{ 'training.participation.removeConfirm' | translate:{name: p.userDisplayName} }}</legend>
+              <p class="text-xs text-muted">{{ 'training.participation.keepHistory' | translate }}</p>
+              <div class="flex flex-wrap gap-2"><button type="button" (click)="withdrawal.set(null)" class="min-h-11 rounded-xl border border-border px-3">{{ 'common.cancel' | translate }}</button><button type="button" (click)="confirmWithdrawal()" class="min-h-11 rounded-xl border border-error px-3 text-error">{{ 'training.participation.confirmRemove' | translate }}</button></div>
+            </fieldset>
+          }
+          @if (correction()?.userId === p.userId) {
+            <form (ngSubmit)="submitCorrection()" novalidate>
+              <fieldset [disabled]="busy()" class="space-y-3 rounded-xl bg-app p-3">
+                <legend class="text-sm font-semibold">{{ 'training.participation.correctionFor' | translate:{name: p.userDisplayName} }}</legend>
+                <p class="text-xs text-muted">{{ 'training.participation.correctionNotice' | translate }}</p>
+                <label [for]="'correction-status-' + p.userId" class="block text-sm">{{ 'training.participation.targetStatus' | translate }}</label>
+                <select [id]="'correction-status-' + p.userId" name="correctionStatus" [ngModel]="correctionStatus()" (ngModelChange)="correctionStatus.set($event)" class="min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm">
+                  <option value="CANCELLED">{{ 'training.participation.remove' | translate }}</option>
+                  @if (canRestore(p)) { <option value="REGISTERED">{{ 'training.participation.returnRegistered' | translate }}</option> }
+                </select>
+                <label [for]="'correction-reason-' + p.userId" class="block text-sm">{{ 'training.participation.reason' | translate }}</label>
+                <textarea [id]="'correction-reason-' + p.userId" name="reason" rows="3" required minlength="5" maxlength="500" [ngModel]="reason()" (ngModelChange)="reason.set($event)" [attr.aria-invalid]="correctionTouched() && !reasonValid()" [attr.aria-describedby]="'correction-error-' + p.userId" class="w-full rounded-xl border border-border bg-surface p-3 text-sm"></textarea>
+                <p [id]="'correction-error-' + p.userId" role="alert" class="text-xs text-error">{{ correctionTouched() && !reasonValid() ? ('training.errors.correctionReasonRequired' | translate) : '' }}</p>
+                <div class="flex flex-wrap gap-2"><button type="button" (click)="correction.set(null)" class="min-h-11 rounded-xl border border-border px-3">{{ 'common.cancel' | translate }}</button><button type="submit" [disabled]="busy()" class="min-h-11 rounded-xl bg-brand-600 px-3 text-sm font-semibold text-white">{{ 'training.participation.confirmCorrection' | translate }}</button></div>
+              </fieldset>
+            </form>
+          }
+        </div>
+      </ng-template>
+    </div>
+  }
+</tf-dialog>

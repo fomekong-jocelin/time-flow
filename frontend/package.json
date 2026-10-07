@@ -5,7 +5,7 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build",
-    "test": "ng test --watch=false"
+    "test": "node --import ./tests/register-typescript.mjs --test tests/*.test.mjs"
   },
   "dependencies": {
     "@angular/common": "~22.2.0",

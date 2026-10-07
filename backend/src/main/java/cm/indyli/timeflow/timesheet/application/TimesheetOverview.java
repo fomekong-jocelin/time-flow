@@ -81,17 +81,35 @@ public record TimesheetOverview(
             UUID projectId,
             String projectName,
             String clientName,
+            String workItemId,
+            String workItemTitle,
             String activityType,
             boolean billable,
             String comment,
             int lineTotalMinutes,
             List<DayEntryOverview> entries
     ) {
+        public TimesheetLineOverview(
+                UUID projectId,
+                String projectName,
+                String clientName,
+                String activityType,
+                boolean billable,
+                String comment,
+                int lineTotalMinutes,
+                List<DayEntryOverview> entries
+        ) {
+            this(projectId, projectName, clientName, null, null, activityType, billable, comment, lineTotalMinutes, entries);
+        }
     }
 
     public record DayEntryOverview(
             LocalDate date,
-            int minutes
+            int minutes,
+            String comment
     ) {
+        public DayEntryOverview(LocalDate date, int minutes) {
+            this(date, minutes, null);
+        }
     }
 }

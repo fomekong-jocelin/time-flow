@@ -4,117 +4,98 @@ Format inspiré de Keep a Changelog. Versioning Semantic Versioning.
 
 ## [Unreleased]
 
+### Added : TICKET-0022, écran de consultation et suivi des feuilles de temps des collaborateurs (N+1 / Manager / Direction)
+
+- **Écran dédié de suivi d'équipe (`/equipe/temps` — « Temps équipe »)** :
+  - Accessible aux rôles `MANAGER`, `DIRECTION` et `ADMIN` dans la barre de navigation desktop et mobile.
+  - Vue d'ensemble YouTrack-style pour visualiser l'activité et le temps passé par chaque membre de son équipe sans devoir attendre la soumission formelle pour validation.
+- **Filtres multi-critères réactifs** :
+  - Filtre collaborateur (subordonnés directs ou vue globale pour Direction/Admin).
+  - Navigation rapide par semaine (`Semaine précédente`, `Cette semaine`, `Semaine suivante`, ou `Toutes les semaines`).
+  - Filtre par statut (Tous, Brouillon, Soumise, Validée, Rejetée).
+  - Filtre par projet actif.
+  - Bouton de réinitialisation instantanée des filtres.
+- **Indicateurs clés d'équipe (KPIs)** :
+  - Total d'heures équipe (avec équivalent jours ouvrés standard).
+  - Heures facturables et taux TACE moyen de l'équipe.
+  - Nombre de collaborateurs actifs / suivis.
+  - État d'avancement des feuilles (décompte des feuilles en attente, validées et brouillons).
+- **Tableau et cartes mobiles YouTrack-style** :
+  - Jauge de complétude visuelle par rapport à l'objectif hebdomadaire (ex: 35h cible).
+  - Badges de projets et alertes de conformité du temps de travail.
+  - Suppression de tout effet ring sur les inputs / sélecteurs conformément aux exigences d'élégance UI.
+- **Consultation détaillée haute fidélité** :
+  - Modale YouTrack-style avec navigation directe entre semaines pour le collaborateur sélectionné.
+  - Grille matricielle Lun-Dim avec Work Items Azure DevOps (#ID et titre) et commentaires journaliers.
+  - Consultation de l'historique des validations et actions directes d'approbation / renvoi avec motif obligatoire pour les feuilles au statut `SUBMITTED`.
+- **API & Sécurité backend** :
+  - Endpoint `GET /api/v1/manager/timesheets/view?userId={userId}&weekStart={weekStart}` avec contrôle strict `ValidationPolicy.ensureManagerScope` (deny-by-default, 403 Forbidden hors périmètre).
+  - Génération gracieuse d'une structure vide (`buildEmptyOverview`) pour les semaines sans imputations préalables.
+  - Tri naturel par semaine (`ORDER BY t.weekStart DESC, t.submittedAt DESC`) dans `TimesheetRepository`.
+  - Support du filtre `status=ALL` dans `TimesheetManagerController.listPending`.
+- **Tests & Qualité** :
+  - 20 tests backend passants (`TimesheetValidationServiceTest`, `TimesheetManagerSecurityTest`).
+  - 58 tests frontend Node/ESM et i18n passants (`team-timesheets.test.mjs`, `i18n.test.mjs`).
+  - Build Angular validé sans avertissement avec chargement paresseux du chunk.
+  - Voir [TICKET-0022](tickets/TICKET-0022-manager-subordinates-timesheets-view.md).
+
+### Added / Changed : TICKET-0021, refonte de la feuille de temps YouTrack-style (mobile, desktop light et work items)
+
+- **Expérience Mobile-First YouTrack-style** :
+  - Calendar strip tactile sur 7 jours avec indicateurs visuels d'avancement (vert si >= 7h, ambre si partiel, violet pour le jour sélectionné).
+  - Fiche récapitulative quotidienne avec barre de progression YouTrack, heures saisies vs objectif (7h standard), et heures restantes.
+  - Cartes d'imputation journalières avec ajustements rapides tactiles (`-½h`, `+½h`, presets `3.5h`, `7h`), sélecteur de ligne, et modale d'ajout rapide.
+- **Grille Desktop Thème Light haute fidélité** :
+  - Design épuré inspiré de JetBrains YouTrack adapté à la palette TimeFlow (Indigo, Slate, Violet, Teal).
+  - Badges distinctifs pour les Work Items Azure DevOps / tickets externes (`#ID` et libellé du work item).
+  - Indicateur de progression YouTrack-style intégré sous chaque total journalier.
+  - Saisie de commentaires par cellule journalière avec icône dédiée et popover / modale réactive.
+- **Modèle de données & Granularité unitaire** :
+  - Migration Flyway `V12__time_entry_work_item_and_entry_comments.sql` ajoutant `work_item_id` (varchar 100), `work_item_title` (varchar 255) et index de recherche.
+  - Support unitaire des commentaires journaliers par date d'imputation dans `time_entry`, avec fallback rétrocompatible vers le commentaire de ligne si non renseigné.
+  - Mise à jour des contrats API (`SaveTimesheetCommand`, `TimesheetOverview`).
+- **Tests & Qualité** :
+  - Tests unitaires et d'intégration backend (`TimesheetServiceTest`) : 213 tests Maven passants (0 échec).
+  - Tests frontend Node/ESM dédiés (`timesheets-workitems-mobile.test.mjs`) : 55 tests passants (0 échec).
+  - Build de production Angular (`npm run build`) validé sans avertissement ni régression.
+  - Voir [TICKET-0021](tickets/TICKET-0021-timesheet-redesign-mobile-workitems.md).
+
+### Fixed : TICKET-0020, défilement des modales
+
+- Une seule barre de défilement dans les modales `tf-dialog` (corps défilant, en-tête fixe, page de fond bloquée). Voir [TICKET-0020](tickets/TICKET-0020-dialog-single-scroll.md).
+
+### Fixed : TICKET-0019, participants et formateurs
+
+- Retrait d'un inscrit avec confirmation nommée, annulations séparées et historique conservé.
+- Correction administrative d'une présence ou participation clôturée, avec motif obligatoire, contrôle de rôle/CSRF et statut attendu.
+- Interdiction du cumul formateur/participant actif sur une même session dans les parcours UI et serveur.
+- Transfert explicite d'un inscrit vers le rôle de formateur dans une seule transaction; présence existante à corriger préalablement.
+- Affichage séparé des dates d'inscription et de présence, sans réutiliser la date d'inscription comme date de présence.
+- V11 additive pour les motifs et types d'événements, sans réécriture des migrations ni nettoyage automatique des données.
+- Tests ciblés exécutés : 16 tests Node et 29 assertions de politique Java. Tests Spring/PostgreSQL et build Angular à confirmer. Voir [TICKET-0019](tickets/TICKET-0019-participants-and-trainers.md).
+
+### Fixed : TICKET-0018, audit des formations et de la facturation
+
+- Vérification serveur de l'affectation du TRAINER avant modification de présence; validation du statut obligatoire et erreurs métier codées.
+- Contrat de planification conservant dates civiles, horaires et fuseau; compatibilité des anciennes sessions sans horaire et édition d'une journée sans déplacement artificiel.
+- Capacité commune aux participants REGISTERED et ATTENDED, verrou de session pour les commandes concurrentes et contrôle de réduction de capacité.
+- Désinscription par annulation logique, réactivation de la même participation et événements d'historique. Protection des présences et sessions clôturées contre les suppressions destructives.
+- Recherche paginée côté base avec comptages groupés; détail complet, validations alignées, formateurs éligibles, erreurs contextualisées et dialogue natif.
+- Totaux financiers regroupés par devise et valorisation manquante explicitée. Aucun change implicite, ni conversion du tarif utilisateur historique EUR vers une autre devise.
+- Budget restant fondé sur la consommation globale du projet; distinction entre périmètre filtré et cumul autorisé.
+- Neutralisation des textes CSV destinés aux tableurs et devises explicites dans les XLSX.
+
 ### Added
 
-- Tableau de bord d'Analyses & Reporting (KPI, TACE, OT, Projets, Équipe) (TICKET-0007) :
-  - Métriques de rentabilité et performance opérationnelle : calcul du TACE (Taux d'Activité Congés Exclus / Taux de Facturabilité), heures facturables, heures internes/support et suivi consolidé des heures supplémentaires (OT).
-  - Répartition dynamique par projet avec part relative (%) et par collaborateur (temps total, facturable, OT et TACE individuel).
-  - Contrôle d'accès et cloisonnement strict (DDD / Sécurité deny-by-default) : Collaborateur restreint à ses statistiques personnelles, Manager restreint à son équipe directe (`manager_id`) et à lui-même, Direction et Administrateurs avec vision globale multi-critères.
-  - API REST `/api/v1/analytics/overview` supportant le filtrage par période (mois, trimestre, année), utilisateur et projet.
-  - Interface Angular `/analyses` Mobile-First : intégration des composants partagés (`tf-kpi-card`, `tf-avatar`, `tf-status-badge`), sélecteur de période dynamique, barres d'activité proportionnelles, tables desktop sans coupure et cartes tactiles pour smartphones.
+- Migration additive V10 pour les horaires et événements de participation, sans réécriture de V9 ni destruction des données existantes.
+- Tests de sécurité objet, transitions, capacité, concurrence PostgreSQL, horaires, budgets et devises.
+- Workflow de vérification Maven/PostgreSQL/Angular et script autonome `scripts/verify-audit-helpers.sh`.
 
-- Composants UI réutilisables & Expérience Mobile-First unifiée (TICKET-0013) :
-  - Création de composants partagés dans `frontend/src/app/shared/ui/` : `AvatarComponent` (`tf-avatar`) avec génération automatique d'initiales et badge, `StatusBadgeComponent` (`tf-status-badge`) avec dot indicator et palette sémantique, et `KpiCardComponent` (`tf-kpi-card`) pour les métriques de synthèse.
-  - Ajout de l'icône `x` (fermeture) dans `IconComponent`.
-- Optimisation de l'espace et refonte du tableau Utilisateurs (TICKET-0013) :
-  - Suppression de l'espace vide à droite : grille conditionnelle n'appliquant la colonne latérale que si le panneau d'édition est ouvert (`panel() !== null`), le tableau occupant 100% de la largeur disponible par défaut.
-  - Vrai tableau HTML desktop (`hidden md:block`) sans troncature abusive : `whitespace-nowrap`, padding généreux, affichage intégral des noms de managers et des profils horaires (`Temps plein standard (35 h)`).
-  - Vue mobile tactile native (`md:hidden`) avec cartes modernes Linear-style intégrant l'avatar, les statuts, les rôles, les régimes horaires et les boutons d'action au doigt.
-  - Intégration de 3 cartes synthétiques KPI en en-tête et bouton « X » de fermeture du volet latéral.
-- Refonte mobile de la Validation des temps / Espace Manager (TICKET-0013) :
-  - Remplacement du tableau horizontal rigide (`min-w-[58rem]`) sur mobile par des cartes tactiles interactives adaptées aux smartphones (`md:hidden`).
-  - Affichage direct sur mobile du collaborateur, de la semaine de soumission, des heures et de l'objectif, des alertes de conformité légale et des boutons d'approbation rapide (« Valider » / « Rejeter ») ou badge « Validation tierce ».
-  - Adaptation responsive de la modale d'examen détaillé (`grid-cols-1 sm:grid-cols-3` pour les KPI et boutons enveloppés pour les écrans étroits).
-- Amélioration de la liste des projets (`/projets`) sur mobile (TICKET-0013) : wrapping fluide des badges et éléments de métadonnées.
+### Vérification
 
-- Refonte Responsive Mobile & Expérience Mobile-App (TICKET-0012) :
-  - Unification de l'en-tête mobile sticky et de la barre de navigation dans `AppShellComponent` avec défilement tactile fluide sans coupure de contenu ni masquage de titres.
-  - Remplacement du tableau horizontal tronqué sur mobile par des cartes d'application modernes (Linear/Pilot App style) pour chaque régime horaire, intégrant nom, statut, jours ouvrés en pilules tactiles, indicateurs de cibles/plafonds et actions complètes.
-  - Élimination des retours à la ligne intempestifs sur desktop (`whitespace-nowrap` sur l'ensemble des `<th>`, `<td>` et boutons d'action « Modifier », « Par défaut », « Activer/Désactiver »).
-  - Navigation par sous-onglets dans `/admin/configuration-temps` : « Régimes horaires », « Politiques OT & ET », « Jours fériés ».
-- Gestion des Jours Fériés légaux et d'entreprise (TICKET-0012) :
-  - Modèle de données & Migration Flyway `V6__holidays_and_overtime_extratime.sql` créant la table `public_holiday` et pré-remplissant les 11 jours fériés légaux français pour 2026 et 2027.
-  - API REST `/api/v1/holidays` avec endpoints de consultation par année et de gestion (création, modification, suppression, bascule Chômé/Travaillé) sécurisée pour `ADMIN` et `DIRECTION`.
-  - Panneau d'administration dédié `PublicHolidaysPanelComponent` avec sélecteur d'année, compteurs de jours chômés/travaillés, tableau desktop et cartes mobiles.
-  - Reflet automatique dans « Mes temps » (CRA) : badge violet « Férié » avec nom du jour férié en infobulle dans l'en-tête de colonne et surlignage des cellules de saisie.
-- Configuration des OT (Overtime / Heures supplémentaires) et ET (Extra Time / Heures complémentaires) (TICKET-0012) :
-  - Extension de `work_schedule_profile` pour héberger les règles OT (seuil de déclenchement hebdo, taux majoration tranche 1 à 25%, tranche 2 à 50%, dimanche/férié à 100%, mode de compensation Paiement/RTT/Hybride).
-  - Extension pour les règles ET (autorisation, plafond hebdomadaire, majoration standard à 10%, mode de compensation).
-  - Panneau dédié `OvertimePoliciesPanelComponent` avec vue comparative des règles OT/ET entre les régimes, et intégration dans la modale d'édition.
-  - Détection automatique et affichage du badge « +X h OT » dans la synthèse KPI du CRA.
-  - Suite de tests de sécurité et unitaires `PublicHolidaySecurityTest`, `PublicHolidayServiceTest`, et passage de la suite de tests backend à 110 tests 100% au vert.
+PR réelle: [#19](https://github.com/fomekong-jocelin/time-flow/pull/19), vers main, non fusionnée.
+Statut: **IN_REVIEW**, pas DONE. Les 21 tests ciblés Node et 29 assertions Java de TICKET-0018 ont été exécutés lors de l'intervention précédente. Les suites/builds complets et la recette visuelle restent non validés. Voir [les preuves et limites](verification/TICKET-0018-checks.md), [TICKET-0018](tickets/TICKET-0018-audit-remediation.md) et les vérifications propres à TICKET-0019 ci-dessus.
 
-- Configuration dynamique des temps de travail & régimes horaires (TICKET-0011) :
-  - Modèle de données & Migration Flyway `V5__work_schedule_profiles.sql` créant la table `work_schedule_profile` et rattachant `work_schedule_profile_id` à la table `app_user`.
-  - Profils par défaut pré-provisionnés du marché ESN/Conseil : Standard 35h, Cadre & RTT 38h30, Temps partiel 80% (mercredi libéré), Support & Astreinte (week-end autorisé).
-  - Règles de domaine et invariants (`WorkSchedulePolicy`) : unicité de code/nom, cohérence des bornes de temps, au moins un jour ouvré, interdiction de désactiver le profil par défaut.
-  - API REST d'administration `/api/v1/admin/work-schedules` : liste avec décompte des utilisateurs, création, mise à jour, passage en profil par défaut et activation/désactivation, protégée pour `ADMIN` et `DIRECTION` avec CSRF.
-  - Endpoint collaborateur `/api/v1/work-schedules/me` et `/api/v1/users/me/work-schedule` permettant au SPA de récupérer le régime contractuel du collaborateur connecté.
-  - Interface Angular `/admin/configuration-temps` : dashboard avec indicateurs synthétiques, tableau détaillé des régimes avec pilules de jours ouvrés interactives, modale de création/édition, bascule par défaut et activation/désactivation.
-  - Affectation dans l'administration des utilisateurs (`/admin/utilisateurs`) : sélection du régime horaire dans le formulaire de création/édition et affichage du badge de régime dans la liste des utilisateurs.
-  - Adaptation dynamique de « Mes temps » (CRA) : affichage explicite des jours non ouvrés (« Repos »), inputs de saisie stylisés pour les jours chômés, objectif hebdomadaire dynamique issu du profil et seuils d'alerte de conformité légale alignés sur le régime contractuel.
-  - Icônes de navigation : ajout des icônes `sliders` et `calendar` à `IconComponent` et entrée « Configuration temps » dans le shell applicatif.
-  - Tests unitaires et d'intégration : `WorkSchedulePolicyTest`, `WorkScheduleSecurityTest`, `WorkScheduleServiceTest` portant la suite backend à 99 tests automatisés sans régression.
+## Historique antérieur conservé intégralement
 
-- Conformité légale et plafonds du Code du travail (CRA) : plafonnement journalier strict à 12h max (`ABSOLUTE_MAX_DAILY_MINUTES = 720`), seuil d'alerte quotidienne à 10h (`STATUTORY_MAX_DAILY_MINUTES = 600`), plafond hebdomadaire dérogatoire à 60h (`ABSOLUTE_MAX_WEEKLY_MINUTES = 3600`) et seuil d'alerte hebdomadaire légal à 48h (`STATUTORY_MAX_WEEKLY_MINUTES = 2880`).
-- Séparation des contrôles et principe des 4 yeux : détection automatique de `selfTimesheet`, masquage des boutons d'approbation sur sa propre feuille dans l'espace manager avec badge « Validation tierce requise », et exclusion de ses propres feuilles du compteur de tâches « À valider ».
-- UX avancée Espace Manager : refonte de la colonne Actions en groupe horizontal ergonomique, affichage des initiales en avatar, badges des vrais noms de projets (au lieu du chiffre brut), badges d'alerte de conformité légale si > 48h ou > 10h/jour, modale d'examen avec différenciation des jours de repos (week-end).
-- UX « Mes temps » (Collaborateur) : avertissement visuel immédiat en cas de dépassement hebdomadaire de 48h, contrainte `max="12"` sur les champs de saisie journalière.
-- Validation manager des feuilles de temps (TICKET-0005) : API manager `/api/v1/manager/timesheets`, consultation des feuilles en attente avec périmètre d'équipe strict (ou organisationnel pour Direction/Admin), consultation détaillée par jour et projet, approbation (`VALIDATED`) et rejet (`REJECTED`) avec motif obligatoire (min 3 caractères).
-- Traçabilité et historique de validation (TICKET-0005) : entité et table `timesheet_validation` conservant l'historique complet des décisions, horodatages et commentaires/motifs.
-- Règles de garde de validation (TICKET-0005) : vérification de statut `SUBMITTED`, interdiction d'auto-validation par un manager sur sa propre feuille, validation stricte du périmètre d'équipe `app_user.manager_id`.
-- Interface Angular « Validation » (TICKET-0005) : écran dédié `/validation` protégé par `managerGuard`, filtres par statut, tableau de synthèse d'équipe, modale d'examen détaillé des heures journalières par projet avec historique des décisions, actions de validation directe et rejet avec modale de saisie du motif.
-- Shell applicatif (TICKET-0005) : ajout du lien « Validation » pour les rôles `MANAGER`, `DIRECTION` et `ADMIN`.
-- Feuille de temps / CRA (TICKET-0004) : API hebdomadaire `/api/v1/timesheets`, consultation, sauvegarde de brouillon et soumission pour validation manager.
-- Règles de garde et d'invariants (TICKET-0004) : validation du lundi obligatoire, dates d'entrées dans la semaine, plafond journalier à 24h et vérification de projet actif.
-- Calcul dynamique des métriques CRA : total des heures saisies, heures facturables, heures internes, calcul par rapport au temps théorique hebdomadaire du profil.
-- Interface « Mes temps » (TICKET-0004) : navigation de semaine interactive, grille de saisie réactive zoneless, modale d'ajout de projet/activité, gestion des statuts (brouillon, soumis, rejeté, validé, verrouillé) et affichage du motif de rejet manager.
-- Icônes outline (TICKET-0004) : ajout des symboles `trash`, `chevron-left` et `chevron-right` à `IconComponent`.
-- Gestion des utilisateurs (ADMIN) : liste SSO/locaux, création de compte local, pré-provisioning SSO, rôle, manager, temps hebdomadaire théorique, activation/désactivation, réinitialisation de mot de passe et déverrouillage des comptes locaux.
-- Écran Angular `/admin/utilisateurs` réservé aux administrateurs.
-- Migration V4 : type de compte, manager, contrainte de temps hebdomadaire, audit des actions d'administration.
-- Catalogue Projets : recherche, filtre de disponibilité, états de chargement/erreur/vide et navigation mobile.
-- API authentifiée du catalogue et synchronisation Azure DevOps réservée ADMIN avec CSRF.
-- Import paginé par identifiant externe, conservation des paramètres de facturation et des historiques, audit des succès/échecs.
-- Tests du client Azure, de l'orchestration d'import et des accès HTTP au catalogue/synchronisation.
-- Import/export Excel des projets indépendant d'Azure : modèle de test, réimport par référence stable et export des sources externes dans un onglet de consultation.
-- Validation des classeurs avant import transactionnel, audit Excel, limites de taille et refus des formules/macros/liens externes.
-
-- Gouvernance IA TimeFlow.
-- Architecture monorepo backend/frontend.
-- Socle Spring Boot, PostgreSQL et Flyway.
-- Socle Angular standalone, zoneless et Tailwind CSS v4.
-- Première règle de domaine pour le workflow des feuilles de temps.
-- Authentification hybride : SSO Microsoft Entra ID + comptes locaux externes.
-- Écran de connexion TimeFlow avec choix SSO ou email/mot de passe.
-- Affichage permanent des deux parcours de connexion : SSO Microsoft et compte TimeFlow.
-- Provisioning administrateur des comptes locaux.
-- Création automatique du premier administrateur local `admin@indyli-services.com` au premier démarrage avec mot de passe aléatoire affiché une seule fois dans la console.
-- Script PostgreSQL idempotent pour créer la base `timeflow` et le rôle applicatif local.
-- `.nvmrc` pour standardiser le frontend sur Node 24 LTS.
-- Charte visuelle v0.1 : logo SVG TimeFlow by INDYLI (symbole, icône app, favicon), design tokens, Dark Mode, police Inter auto-hébergée, icônes outline.
-- Shell applicatif avec navigation latérale, utilisateur connecté et déconnexion.
-
-### Changed
-
-- `POST /api/v1/admin/users/local` : champs optionnels `managerId` et `weeklyTargetMinutes`, réponse enrichie (`accountType`, `managerId`, `weeklyTargetMinutes`) ; contrat existant conservé.
-
-### Fixed
-
-- Injection Spring : suppression des constructeurs multiples sur `UserDirectoryService` et `UserAdministrationService` éliminant l'erreur `No default constructor found` au démarrage de l'application.
-- Connexion : le bouton restait désactivé sans message quand l'email était incomplet (ex. `admin` pré-rempli par le navigateur) ; erreurs désormais affichées sous chaque champ.
-- UI connexion / Mes temps : contraste de l'avertissement SSO, états désactivés, état vide, fond bleu de l'autocomplétion Chrome.
-- Alignement Angular 22.2 / TypeScript 6.0 pour corriger l'erreur npm `ERESOLVE`.
-
-### Security
-
-- Révocation des sessions serveur d'un utilisateur désactivé, changé de rôle ou dont le mot de passe est réinitialisé.
-- Liaison d'un compte SSO pré-provisionné limitée au tenant Entra configuré ; jamais de liaison d'un compte local.
-- Règles de garde : pas d'auto-désactivation/rétrogradation, au moins un ADMIN actif, hiérarchie sans cycle.
-- Politique backend deny-by-default au bootstrap ; seule la sonde de santé est publique.
-- Session serveur HttpOnly : aucun access token OAuth n'est stocké dans le navigateur.
-- CSRF activé, Argon2id pour les mots de passe locaux et verrouillage temporaire après échecs répétés.
-- Liaison automatique entre identité SSO et locale interdite.
-- Aucun mot de passe administrateur par défaut n'est codé en dur dans le dépôt ; le secret initial est généré avec `SecureRandom`.
-- Le bootstrap local ne modifie jamais le mot de passe d'un compte existant.
-- Le rôle PostgreSQL local n'obtient aucun privilège SUPERUSER, CREATEDB, CREATEROLE ou REPLICATION.
+Les entrées précédentes (tickets 0001 à 0017, livraisons avant cette remédiation) sont conservées sans modification dans [le changelog historique](history/CHANGELOG-before-TICKET-0018.md), blob `35afe4f0ca0cd0c1af5fe09c5c3503813c8bd82d`. Leurs mentions de tests réussis décrivent les livraisons antérieures et ne valent pas validation de cette PR.

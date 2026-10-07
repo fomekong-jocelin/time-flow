@@ -1,0 +1,699 @@
+<section class="space-y-6">
+  <!-- En-tête de la page -->
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <div class="flex items-center gap-2 text-sm font-medium text-brand-600 dark:text-brand-400">
+        <span>{{ 'validation.managerSpace' | translate }}</span>
+        <span class="text-muted">/</span>
+        <span>{{ 'teamTimesheets.title' | translate }}</span>
+      </div>
+      <h1 class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{{ 'teamTimesheets.title' | translate }}</h1>
+      <p class="mt-1 text-sm text-muted">{{ 'teamTimesheets.sub' | translate }}</p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        (click)="loadTimesheets()"
+        [disabled]="loading()"
+        class="inline-flex h-9 sm:h-10 items-center gap-2 rounded-xl border border-border bg-surface px-3.5 sm:px-4 text-xs font-semibold text-foreground shadow-xs transition hover:bg-app disabled:opacity-50 cursor-pointer">
+        <tf-icon name="clock" [size]="14" />
+        <span>{{ 'common.refresh' | translate }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages d'alerte / succès -->
+  @if (errorMessage()) {
+    <div class="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-600 dark:text-rose-400 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <tf-icon name="alert" [size]="16" class="text-rose-500 shrink-0" />
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button type="button" (click)="errorMessage.set(null)" class="text-rose-500 hover:text-rose-700 cursor-pointer">
+        <tf-icon name="x" [size]="16" />
+      </button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-700 dark:text-emerald-400 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <tf-icon name="check" [size]="16" class="text-emerald-600 shrink-0" />
+        <span>{{ successMessage() }}</span>
+      </div>
+      <button type="button" (click)="successMessage.set(null)" class="text-emerald-600 hover:text-emerald-800 cursor-pointer">
+        <tf-icon name="x" [size]="16" />
+      </button>
+    </div>
+  }
+
+  <!-- KPIs de synthèse sur la sélection filtrée -->
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <tf-kpi-card
+      icon="clock"
+      iconColor="brand"
+      [label]="'teamTimesheets.kpiTotalHours' | translate"
+      [value]="formatHours(totalMinutesSum())"
+      variant="brand"
+      [description]="'teamTimesheets.daysEquivalent' | translate:{ days: totalDaysEquivalent() }" />
+
+    <tf-kpi-card
+      icon="file"
+      iconColor="blue"
+      [label]="'teamTimesheets.kpiBillable' | translate"
+      [value]="formatHours(billableMinutesSum())"
+      variant="success"
+      [description]="'teamTimesheets.kpiAverageTace' | translate:{ rate: averageTace() }" />
+
+    <tf-kpi-card
+      icon="users"
+      iconColor="purple"
+      [label]="'teamTimesheets.kpiActiveCollaborators' | translate"
+      [value]="uniqueUsersCount() + ' / ' + subordinates().length"
+      variant="default"
+      [description]="'teamTimesheets.kpiTotalSheetsCount' | translate:{ count: timesheets().length }" />
+
+    <tf-kpi-card
+      icon="calendar"
+      iconColor="default"
+      [label]="'teamTimesheets.kpiStatusProgress' | translate"
+      [value]="'teamTimesheets.kpiPendingCount' | translate:{ count: submittedCount() }"
+      [variant]="submittedCount() > 0 ? 'brand' : 'default'"
+      [description]="'teamTimesheets.kpiStatusSummary' | translate:{ validated: validatedCount(), draft: draftCount() }" />
+  </section>
+
+  <!-- Panneau de filtres YouTrack-style (sans ring sur les inputs) -->
+  <div class="rounded-2xl border border-border bg-surface p-4 sm:p-5 shadow-2xs space-y-4">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-center gap-2">
+        <tf-icon name="sliders" [size]="16" class="text-brand-600 dark:text-brand-400" />
+        <span class="text-xs font-semibold uppercase tracking-wider text-foreground">{{ 'common.filter' | translate }}</span>
+      </div>
+      @if (hasActiveFilters()) {
+        <button
+          type="button"
+          (click)="resetFilters()"
+          class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer self-start sm:self-auto">
+          {{ 'teamTimesheets.resetFilters' | translate }}
+        </button>
+      }
+    </div>
+
+    <!-- Navigation de période / semaine rapide -->
+    <div class="flex flex-wrap items-center gap-2 pb-2 border-b border-border/60">
+      <div class="flex items-center gap-1 bg-app rounded-xl p-1 border border-border">
+        <button
+          type="button"
+          (click)="setPreviousWeek()"
+          [title]="'teamTimesheets.previousWeek' | translate"
+          class="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface transition cursor-pointer">
+          <tf-icon name="chevron-left" [size]="16" />
+        </button>
+
+        <button
+          type="button"
+          (click)="setThisWeek()"
+          class="px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer"
+          [class]="selectedWeekDate() !== null ? 'bg-surface text-brand-600 dark:text-brand-400 shadow-2xs' : 'text-muted hover:text-foreground'">
+          {{ selectedWeekDate() !== null ? selectedWeekLabel() : ('teamTimesheets.thisWeek' | translate) }}
+        </button>
+
+        <button
+          type="button"
+          (click)="setNextWeek()"
+          [title]="'teamTimesheets.nextWeek' | translate"
+          class="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface transition cursor-pointer">
+          <tf-icon name="chevron-right" [size]="16" />
+        </button>
+      </div>
+
+      <button
+        type="button"
+        (click)="setAllWeeks()"
+        class="px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer border"
+        [class]="selectedWeekDate() === null ? 'bg-brand-600 text-white border-transparent' : 'bg-app text-muted hover:text-foreground border-border'">
+        {{ 'teamTimesheets.allWeeks' | translate }}
+      </button>
+    </div>
+
+    <!-- Filtres rapides par statut -->
+    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+      <button
+        type="button"
+        (click)="setStatusFilter('ALL')"
+        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer"
+        [class]="selectedStatus() === 'ALL' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-foreground border border-border'">
+        <span>{{ 'teamTimesheets.allStatuses' | translate }}</span>
+        <span class="rounded-full bg-white/20 px-1.5 py-0.2 text-[10px]">{{ timesheets().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setStatusFilter('SUBMITTED')"
+        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer"
+        [class]="selectedStatus() === 'SUBMITTED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-foreground border border-border'">
+        <span>{{ 'teamTimesheets.statusSubmitted' | translate }}</span>
+        @if (submittedCount() > 0) {
+          <span class="rounded-full bg-brand-500/30 px-1.5 py-0.2 text-[10px] font-bold">{{ submittedCount() }}</span>
+        }
+      </button>
+
+      <button
+        type="button"
+        (click)="setStatusFilter('VALIDATED')"
+        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer"
+        [class]="selectedStatus() === 'VALIDATED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-foreground border border-border'">
+        <span>{{ 'teamTimesheets.statusValidated' | translate }}</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setStatusFilter('DRAFT')"
+        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer"
+        [class]="selectedStatus() === 'DRAFT' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-foreground border border-border'">
+        <span>{{ 'teamTimesheets.statusDraft' | translate }}</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="setStatusFilter('REJECTED')"
+        class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition cursor-pointer"
+        [class]="selectedStatus() === 'REJECTED' ? 'bg-brand-600 text-white shadow-xs' : 'bg-app text-muted hover:text-foreground border border-border'">
+        <span>{{ 'teamTimesheets.statusRejected' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Menus déroulants : Collaborateur et Projet (pas de ring) -->
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2 border-t border-border/60">
+      <!-- Filtre Collaborateur -->
+      <div>
+        <label for="filter-subordinate" class="block text-xs font-medium text-muted mb-1">
+          {{ 'teamTimesheets.filterCollaborator' | translate }}
+        </label>
+        <div class="relative">
+          <select
+            id="filter-subordinate"
+            [ngModel]="selectedUserId()"
+            (ngModelChange)="setUserFilter($event)"
+            class="w-full rounded-xl border border-border bg-app/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:border-brand-500 transition">
+            <option value="">{{ 'teamTimesheets.allSubordinates' | translate }}</option>
+            @for (sub of subordinates(); track sub.id) {
+              <option [value]="sub.id">{{ sub.displayName }} ({{ sub.email }})</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Filtre Projet -->
+      <div>
+        <label for="filter-project" class="block text-xs font-medium text-muted mb-1">
+          {{ 'teamTimesheets.filterProject' | translate }}
+        </label>
+        <div class="relative">
+          <select
+            id="filter-project"
+            [ngModel]="selectedProjectId()"
+            (ngModelChange)="selectedProjectId.set($event); onFilterChange()"
+            class="w-full rounded-xl border border-border bg-app/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:border-brand-500 transition">
+            <option value="">{{ 'teamTimesheets.allProjects' | translate }}</option>
+            @for (proj of projects(); track proj.id) {
+              <option [value]="proj.id">{{ proj.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste / Tableau YouTrack-style des feuilles de temps de l'équipe -->
+  <article class="rounded-2xl border border-border bg-surface shadow-2xs overflow-hidden">
+    @if (loading()) {
+      <div class="flex flex-col items-center justify-center p-12 text-center text-muted">
+        <tf-icon name="clock" [size]="28" class="animate-spin text-brand-600 mb-2" />
+        <p class="text-xs font-medium">{{ 'common.loading' | translate }}</p>
+      </div>
+    } @else if (timesheets().length === 0) {
+      <div class="flex flex-col items-center justify-center p-12 text-center">
+        <div class="grid size-12 place-items-center rounded-2xl bg-app border border-border text-muted mb-3">
+          <tf-icon name="calendar" [size]="24" />
+        </div>
+        <h3 class="text-sm font-semibold text-foreground">{{ 'teamTimesheets.emptyTeamTitle' | translate }}</h3>
+        <p class="mt-1 text-xs text-muted max-w-sm">{{ 'teamTimesheets.emptyTeamSub' | translate }}</p>
+
+        <!-- Raccourci pour consulter la semaine d'un collaborateur directement s'il n'a pas encore de feuille enregistrée -->
+        @if (selectedUserId() && selectedWeekDate()) {
+          <div class="mt-4">
+            <button
+              type="button"
+              (click)="openUserWeekDetail(selectedUserId())"
+              class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-brand-500 transition cursor-pointer">
+              <tf-icon name="eye" [size]="14" />
+              <span>{{ 'teamTimesheets.consultEmptySheet' | translate }}</span>
+            </button>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Vue Mobile (< md) : Cards individuelles YouTrack-style -->
+      <div class="divide-y divide-border md:hidden">
+        @for (item of timesheets(); track item.id) {
+          <div class="p-4 space-y-3 hover:bg-app/30 transition">
+            <div class="flex items-start justify-between gap-2">
+              <tf-avatar [name]="item.userDisplayName" [subtext]="item.userEmail" />
+              <span
+                class="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold border"
+                [class]="statusBadgeClass(item.status)">
+                {{ ('teamTimesheets.status' + (item.status === 'SUBMITTED' ? 'Submitted' : (item.status === 'VALIDATED' ? 'Validated' : (item.status === 'REJECTED' ? 'Rejected' : (item.status === 'DRAFT' ? 'Draft' : 'Locked'))))) | translate }}
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-muted">
+              <div class="flex items-center gap-1.5">
+                <span class="rounded bg-app px-1.5 py-0.5 text-[11px] font-bold border border-border">
+                  {{ 'timesheets.weekShort' | translate }}{{ getWeekNumber(item.weekStart) }}
+                </span>
+                <span>{{ formatDate(item.weekStart) }} – {{ formatDate(item.weekEnd) }}</span>
+              </div>
+              <div class="text-right">
+                <span class="font-bold text-foreground">{{ formatHours(item.totalMinutes) }}</span>
+                <span class="text-[11px] text-muted"> / {{ formatHours(item.weeklyTargetMinutes) }}</span>
+              </div>
+            </div>
+
+            <!-- Jauge de progression vs cible hebdo -->
+            <div class="w-full bg-app rounded-full h-1.5 overflow-hidden border border-border/50">
+              <div
+                class="h-full rounded-full transition-all"
+                [class]="item.totalMinutes >= item.weeklyTargetMinutes ? 'bg-emerald-500' : 'bg-brand-500'"
+                [style.width.%]="getCompletionPercent(item.totalMinutes, item.weeklyTargetMinutes)"></div>
+            </div>
+
+            <!-- Projets associés -->
+            @if (item.projectNames.length > 0) {
+              <div class="flex flex-wrap gap-1">
+                @for (p of item.projectNames; track p) {
+                  <span class="rounded-md bg-app border border-border px-2 py-0.5 text-[10px] text-muted font-medium">
+                    {{ p }}
+                  </span>
+                }
+              </div>
+            }
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                (click)="openDetail(item)"
+                class="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-surface px-3 py-2 text-xs font-semibold text-foreground hover:bg-app transition cursor-pointer">
+                <tf-icon name="eye" [size]="14" />
+                <span>{{ 'teamTimesheets.viewSheet' | translate }}</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Vue Desktop (>= md) : Tableau YouTrack-style sans coupure -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-border bg-app/50 text-xs text-muted">
+            <tr>
+              <th scope="col" class="px-5 py-3 text-left font-medium whitespace-nowrap">{{ 'teamTimesheets.colCollaborator' | translate }}</th>
+              <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap">{{ 'teamTimesheets.colWeek' | translate }}</th>
+              <th scope="col" class="px-4 py-3 text-right font-medium whitespace-nowrap">{{ 'teamTimesheets.colHours' | translate }}</th>
+              <th scope="col" class="px-4 py-3 text-right font-medium whitespace-nowrap">{{ 'teamTimesheets.colBillable' | translate }}</th>
+              <th scope="col" class="px-4 py-3 text-left font-medium whitespace-nowrap">{{ 'teamTimesheets.colProjects' | translate }}</th>
+              <th scope="col" class="px-3 py-3 text-center font-medium whitespace-nowrap">{{ 'teamTimesheets.colStatus' | translate }}</th>
+              <th scope="col" class="px-5 py-3 text-right font-medium whitespace-nowrap">{{ 'teamTimesheets.colActions' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            @for (item of timesheets(); track item.id) {
+              <tr class="transition hover:bg-app/40">
+                <!-- Collaborateur -->
+                <td class="px-5 py-3">
+                  <tf-avatar
+                    [name]="item.userDisplayName"
+                    [subtext]="item.userEmail"
+                    [badge]="item.selfTimesheet ? ('common.you' | translate) : ''" />
+                </td>
+
+                <!-- Semaine -->
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <span class="rounded bg-app px-2 py-0.5 text-[11px] font-bold text-foreground border border-border">
+                      {{ 'timesheets.weekShort' | translate }}{{ getWeekNumber(item.weekStart) }}
+                    </span>
+                    <span class="text-xs text-foreground">
+                      {{ 'common.from' | translate }} {{ formatDate(item.weekStart) }} {{ 'common.to' | translate }} {{ formatDate(item.weekEnd) }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Heures saisies & jauge de complétude -->
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                  <div class="flex flex-col items-end">
+                    <span class="font-bold tabular-nums text-foreground">{{ formatHours(item.totalMinutes) }}</span>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                      <span class="text-[11px] text-muted">/ {{ formatHours(item.weeklyTargetMinutes) }}</span>
+                      <div class="w-12 bg-app rounded-full h-1 overflow-hidden border border-border/40">
+                        <div
+                          class="h-full rounded-full"
+                          [class]="item.totalMinutes >= item.weeklyTargetMinutes ? 'bg-emerald-500' : 'bg-brand-500'"
+                          [style.width.%]="getCompletionPercent(item.totalMinutes, item.weeklyTargetMinutes)"></div>
+                      </div>
+                    </div>
+                    @if (item.complianceAlert) {
+                      <span class="mt-1 inline-flex items-center gap-1 rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 text-[10px] font-semibold text-amber-500">
+                        <tf-icon name="alert" [size]="10" />
+                        {{ 'common.legalAlert' | translate }}
+                      </span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Facturable & TACE -->
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                  <div class="flex flex-col items-end">
+                    <span class="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">{{ formatHours(item.billableMinutes) }}</span>
+                    <span class="text-[11px] text-muted">{{ getBillableRate(item) }}</span>
+                  </div>
+                </td>
+
+                <!-- Projets -->
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap gap-1 max-w-[14rem]">
+                    @for (proj of item.projectNames.slice(0, 2); track proj) {
+                      <span class="inline-block truncate max-w-[12rem] rounded-md bg-brand-50/70 border border-brand-200/60 px-2 py-0.5 text-[11px] font-medium text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800/60" [title]="proj">
+                        {{ proj }}
+                      </span>
+                    }
+                    @if (item.projectNames.length > 2) {
+                      <span class="inline-block rounded-md bg-app border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted" [title]="item.projectNames.slice(2).join(', ')">
+                        +{{ item.projectNames.length - 2 }}
+                      </span>
+                    }
+                    @if (item.projectNames.length === 0) {
+                      <span class="text-xs text-muted">—</span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Statut -->
+                <td class="px-3 py-3 text-center whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold border"
+                    [class]="statusBadgeClass(item.status)">
+                    {{ ('teamTimesheets.status' + (item.status === 'SUBMITTED' ? 'Submitted' : (item.status === 'VALIDATED' ? 'Validated' : (item.status === 'REJECTED' ? 'Rejected' : (item.status === 'DRAFT' ? 'Draft' : 'Locked'))))) | translate }}
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td class="px-5 py-3 text-right whitespace-nowrap">
+                  <button
+                    type="button"
+                    (click)="openDetail(item)"
+                    class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-foreground hover:bg-app transition shadow-xs cursor-pointer">
+                    <tf-icon name="eye" [size]="14" />
+                    <span>{{ 'teamTimesheets.viewSheet' | translate }}</span>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </article>
+
+  <!-- Modale YouTrack-style de consultation détaillée complète -->
+  @if (selectedDetail()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xs" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+      <div class="w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border border-border bg-surface p-5 sm:p-6 shadow-2xl space-y-6">
+        <!-- En-tête de la modale avec navigation semaine intégrée -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4">
+          <div class="flex items-center gap-3">
+            <tf-avatar
+              [name]="selectedDetail()?.userDisplayName || ''"
+              [subtext]="selectedDetail()?.userEmail || ''"
+              size="lg" />
+            <div>
+              <div class="flex items-center gap-2">
+                <span
+                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold border"
+                  [class]="statusBadgeClass(selectedDetail()?.overview?.status || 'DRAFT')">
+                  {{ ('teamTimesheets.status' + (selectedDetail()?.overview?.status === 'SUBMITTED' ? 'Submitted' : (selectedDetail()?.overview?.status === 'VALIDATED' ? 'Validated' : (selectedDetail()?.overview?.status === 'REJECTED' ? 'Rejected' : (selectedDetail()?.overview?.status === 'DRAFT' ? 'Draft' : 'Locked'))))) | translate }}
+                </span>
+                @if (selectedDetail()?.overview?.status === 'DRAFT') {
+                  <span class="text-[11px] text-muted italic">({{ 'teamTimesheets.draftNotice' | translate }})</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 self-end sm:self-auto">
+            <!-- Navigation de semaine directe dans la modale -->
+            <div class="flex items-center gap-1 bg-app rounded-xl p-1 border border-border">
+              <button
+                type="button"
+                (click)="prevDetailWeek()"
+                [disabled]="detailLoading()"
+                [title]="'teamTimesheets.previousWeek' | translate"
+                class="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface transition cursor-pointer disabled:opacity-50">
+                <tf-icon name="chevron-left" [size]="16" />
+              </button>
+              <button
+                type="button"
+                (click)="todayDetailWeek()"
+                [disabled]="detailLoading()"
+                class="px-2.5 py-1 rounded-lg text-xs font-semibold text-foreground hover:bg-surface transition cursor-pointer disabled:opacity-50">
+                {{ 'timesheets.weekShort' | translate }}{{ getWeekNumber(selectedDetail()?.overview?.weekStart || '') }} ({{ formatDate(selectedDetail()?.overview?.weekStart || '') }} – {{ formatDate(selectedDetail()?.overview?.weekEnd || '') }})
+              </button>
+              <button
+                type="button"
+                (click)="nextDetailWeek()"
+                [disabled]="detailLoading()"
+                [title]="'teamTimesheets.nextWeek' | translate"
+                class="p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface transition cursor-pointer disabled:opacity-50">
+                <tf-icon name="chevron-right" [size]="16" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              (click)="closeDetail()"
+              class="text-muted hover:text-foreground p-1.5 rounded-xl hover:bg-app transition cursor-pointer"
+              [attr.aria-label]="'common.close' | translate">
+              <tf-icon name="x" [size]="20" />
+            </button>
+          </div>
+        </div>
+
+        @if (detailLoading()) {
+          <div class="flex flex-col items-center justify-center p-8 text-center text-muted">
+            <tf-icon name="clock" [size]="24" class="animate-spin text-brand-600 mb-2" />
+            <p class="text-xs font-medium">{{ 'common.loading' | translate }}</p>
+          </div>
+        } @else {
+          <!-- Alertes de conformité légale & heures sup -->
+          @if (selectedDetail()?.overview?.totalMinutes! > 2880) {
+            <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-600 dark:text-amber-400 flex items-start gap-3">
+              <tf-icon name="alert" [size]="18" class="text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-semibold text-amber-500">{{ 'validation.legalWarningTitle' | translate }}</p>
+                <p class="mt-0.5 text-amber-600 dark:text-amber-400">
+                  {{ 'validation.legalWarningDesc' | translate:{ hours: formatHours(selectedDetail()?.overview?.totalMinutes || 0) } }}
+                </p>
+              </div>
+            </div>
+          }
+
+          <!-- Cartes KPI de la feuille examinée -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="rounded-xl border border-border bg-app/40 p-3">
+              <p class="text-xs text-muted">{{ 'validation.totalHoursExamined' | translate }}</p>
+              <p class="text-xl font-bold tabular-nums text-foreground">{{ formatHours(selectedDetail()?.overview?.totalMinutes || 0) }}</p>
+              <p class="text-[11px] text-muted">{{ 'teamTimesheets.weeklyTarget' | translate:{ target: formatHours(selectedDetail()?.overview?.weeklyTargetMinutes || 2100) } }}</p>
+            </div>
+            <div class="rounded-xl border border-border bg-app/40 p-3">
+              <p class="text-xs text-muted">{{ 'timesheets.billableHours' | translate }}</p>
+              <p class="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{{ formatHours(selectedDetail()?.overview?.billableMinutes || 0) }}</p>
+              <p class="text-[11px] text-muted">{{ 'validation.billableDirect' | translate }}</p>
+            </div>
+            <div class="rounded-xl border border-border bg-app/40 p-3">
+              <p class="text-xs text-muted">{{ 'validation.internalNonProject' | translate }}</p>
+              <p class="text-xl font-bold tabular-nums text-foreground">{{ formatHours(selectedDetail()?.overview?.internalMinutes || 0) }}</p>
+              <p class="text-[11px] text-muted">{{ 'validation.internalSub' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- Grille matricielle hebdomadaire complète YouTrack-style -->
+          @if ((selectedDetail()?.overview?.lines?.length || 0) === 0) {
+            <div class="rounded-xl border border-dashed border-border p-8 text-center text-muted">
+              <p class="text-xs">{{ 'timesheets.emptyTitle' | translate }}</p>
+            </div>
+          } @else {
+            <div class="overflow-x-auto rounded-xl border border-border">
+              <table class="w-full min-w-[38rem] text-xs">
+                <thead class="bg-app/60 border-b border-border text-muted">
+                  <tr>
+                    <th scope="col" class="px-3 py-2.5 text-left font-medium">{{ 'validation.project' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium">{{ 'validation.activity' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium">{{ 'validation.billableShort' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium">{{ 'timesheets.days.mon' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium">{{ 'timesheets.days.tue' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium">{{ 'timesheets.days.wed' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium">{{ 'timesheets.days.thu' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium">{{ 'timesheets.days.fri' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium bg-app/40 text-muted/70">{{ 'timesheets.days.sat' | translate }}</th>
+                    <th scope="col" class="px-2 py-2.5 text-center font-medium bg-app/40 text-muted/70">{{ 'timesheets.days.sun' | translate }}</th>
+                    <th scope="col" class="px-3 py-2.5 text-right font-medium">{{ 'common.total' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                  @for (line of selectedDetail()?.overview?.lines; track $index) {
+                    <tr>
+                      <td class="px-3 py-2.5">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <p class="font-semibold text-foreground">{{ line.projectName }}</p>
+                          @if (line.workItemId) {
+                            <span class="inline-flex items-center rounded-md bg-brand-500/10 border border-brand-500/20 px-1.5 py-0.2 text-[10px] font-mono font-medium text-brand-600 dark:text-brand-400">
+                              #{{ line.workItemId }}
+                            </span>
+                          }
+                        </div>
+                        @if (line.workItemTitle) {
+                          <p class="text-[11px] text-muted truncate max-w-xs">{{ line.workItemTitle }}</p>
+                        }
+                        @if (line.comment) {
+                          <p class="italic text-muted text-[10px] mt-0.5">« {{ line.comment }} »</p>
+                        }
+                      </td>
+                      <td class="px-2 py-2.5 text-center">
+                        <span class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium border"
+                          [class]="activityBadgeClass(line.activityType)">
+                          {{ ('activities.' + line.activityType) | translate }}
+                        </span>
+                      </td>
+                      <td class="px-2 py-2.5 text-center text-xs">
+                        {{ line.billable ? '✓' : '—' }}
+                      </td>
+                      @for (entry of line.entries.slice(0, 5); track $index) {
+                        <td class="px-2 py-2.5 text-center tabular-nums" [class.bg-amber-500/10]="entry.minutes > 600">
+                          <span [title]="entry.comment || ''">
+                            {{ entry.minutes > 0 ? (entry.minutes / 60) + ' h' : '—' }}
+                          </span>
+                        </td>
+                      }
+                      @for (entry of line.entries.slice(5, 7); track $index) {
+                        <td class="px-2 py-2.5 text-center tabular-nums bg-app/30 text-muted/80">
+                          <span [title]="entry.comment || ''">
+                            {{ entry.minutes > 0 ? (entry.minutes / 60) + ' h' : '—' }}
+                          </span>
+                        </td>
+                      }
+                      <td class="px-3 py-2.5 text-right font-bold tabular-nums text-foreground">
+                        {{ formatHours(line.lineTotalMinutes) }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- Historique des validations précédentes -->
+          @if ((selectedDetail()?.history?.length || 0) > 0) {
+            <div class="space-y-2 border-t border-border pt-4">
+              <h4 class="text-xs font-semibold text-muted uppercase tracking-wider">{{ 'teamTimesheets.validationHistory' | translate }}</h4>
+              <div class="space-y-2">
+                @for (h of selectedDetail()?.history; track h.id) {
+                  <div class="rounded-xl border border-border bg-app/30 p-2.5 text-xs flex justify-between items-start">
+                    <div>
+                      <span class="font-semibold" [class.text-emerald-600]="h.decision === 'VALIDATED'" [class.text-rose-600]="h.decision === 'REJECTED'">
+                        {{ h.decision === 'VALIDATED' ? ('✓ ' + ('common.validated' | translate)) : ('✗ ' + ('common.rejected' | translate)) }}
+                      </span>
+                      <span class="text-muted ml-2">{{ 'validation.by' | translate }} {{ h.validatorDisplayName }}</span>
+                      @if (h.comment) {
+                        <p class="mt-1 italic text-foreground">« {{ h.comment }} »</p>
+                      }
+                    </div>
+                    <span class="text-muted text-[10px]">{{ h.decidedAt }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Boutons de pied de modale (Valider / Rejeter directs si statut SUBMITTED) -->
+          <div class="flex items-center justify-between border-t border-border pt-4">
+            <button
+              type="button"
+              (click)="closeDetail()"
+              class="rounded-xl border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-app transition cursor-pointer">
+              {{ 'common.close' | translate }}
+            </button>
+
+            @if (canValidateDetail()) {
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  (click)="openRejectModalFromDetail()"
+                  [disabled]="actionPending()"
+                  class="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/40 bg-surface px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-500/10 transition cursor-pointer disabled:opacity-50">
+                  <tf-icon name="alert" [size]="14" />
+                  <span>{{ 'teamTimesheets.rejectDirect' | translate }}</span>
+                </button>
+
+                <button
+                  type="button"
+                  (click)="validateFromDetail()"
+                  [disabled]="actionPending()"
+                  class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 transition shadow-xs cursor-pointer disabled:opacity-50">
+                  <tf-icon name="check" [size]="14" />
+                  <span>{{ 'teamTimesheets.validateDirect' | translate }}</span>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Modale de Rejet avec motif obligatoire (pas de ring) -->
+  @if (rejectModalOpen()) {
+    <div class="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" role="dialog" aria-modal="true">
+      <div class="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl space-y-4">
+        <div class="flex items-center gap-2 text-rose-600">
+          <tf-icon name="alert" [size]="20" />
+          <h3 class="text-sm font-bold text-foreground">{{ 'validation.rejectReason' | translate }}</h3>
+        </div>
+
+        <p class="text-xs text-muted">{{ 'validation.rejectPlaceholder' | translate }}</p>
+
+        <textarea
+          [(ngModel)]="rejectComment"
+          rows="3"
+          placeholder="Ex: Heures excessives sur le projet X, merci de corriger..."
+          class="w-full rounded-xl border border-border bg-app/40 p-3 text-xs text-foreground focus:outline-none focus:border-brand-500 transition resize-none"></textarea>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button
+            type="button"
+            (click)="rejectModalOpen.set(false)"
+            class="rounded-xl border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-app transition cursor-pointer">
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button
+            type="button"
+            (click)="confirmReject()"
+            [disabled]="rejectComment.trim().length < 3 || actionPending()"
+            class="rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-rose-500 transition disabled:opacity-50 cursor-pointer">
+            {{ 'validation.reject' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

@@ -1,0 +1,830 @@
+    <section class="space-y-6">
+      <!-- En-tête : navigation de semaine, statut et actions -->
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-sm font-medium text-brand-600">
+            <span>{{ 'nav.timesheets' | translate }}</span>
+            <span class="text-muted">/</span>
+            <span>{{ 'timesheets.cra' | translate }}</span>
+          </div>
+          <div class="mt-1 flex flex-wrap items-center gap-3">
+            <h1 class="text-3xl font-bold tracking-tight">{{ 'timesheets.week' | translate }} {{ week().number }}</h1>
+
+            <!-- Badge de statut -->
+            @switch (status()) {
+              @case ('DRAFT') {
+                <tf-status-badge variant="neutral">{{ 'timesheets.statusDraft' | translate }}</tf-status-badge>
+              }
+              @case ('SUBMITTED') {
+                <tf-status-badge variant="brand">{{ 'timesheets.statusSubmitted' | translate }}</tf-status-badge>
+              }
+              @case ('REJECTED') {
+                <tf-status-badge variant="danger">{{ 'timesheets.statusRejected' | translate }}</tf-status-badge>
+              }
+              @case ('VALIDATED') {
+                <tf-status-badge variant="success">{{ 'timesheets.statusValidated' | translate }}</tf-status-badge>
+              }
+              @case ('LOCKED') {
+                <tf-status-badge variant="neutral">{{ 'timesheets.statusLocked' | translate }}</tf-status-badge>
+              }
+            }
+          </div>
+          <p class="mt-1 text-sm text-muted">{{ week().range }}</p>
+        </div>
+
+        <!-- Navigation de semaine & boutons d'action -->
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          <!-- Sélecteur semaine précédente / courante / suivante -->
+          <div class="inline-flex items-center rounded-ui border border-border bg-surface p-1 shadow-xs">
+            <button
+              type="button"
+              (click)="previousWeek()"
+              [title]="'timesheets.previousWeek' | translate"
+              class="grid size-9 place-items-center rounded-lg text-muted transition hover:bg-app hover:text-foreground">
+              <tf-icon name="chevron-left" [size]="16" />
+            </button>
+            <button
+              type="button"
+              (click)="resetToCurrentWeek()"
+              class="px-3 text-xs font-semibold text-foreground transition hover:text-brand-600">
+              {{ 'timesheets.today' | translate }}
+            </button>
+            <button
+              type="button"
+              (click)="nextWeek()"
+              [title]="'timesheets.nextWeek' | translate"
+              class="grid size-9 place-items-center rounded-lg text-muted transition hover:bg-app hover:text-foreground">
+              <tf-icon name="chevron-right" [size]="16" />
+            </button>
+          </div>
+
+          @if (isEditable()) {
+            <button
+              type="button"
+              (click)="saveDraft()"
+              [disabled]="saving() || rows().length === 0"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-ui border border-border bg-surface px-4 text-sm font-semibold text-foreground shadow-xs transition hover:bg-app disabled:cursor-not-allowed disabled:opacity-50">
+              <tf-icon name="check" [size]="16" />
+              <span>{{ 'timesheets.saveDraft' | translate }}</span>
+            </button>
+
+            <button
+              type="button"
+              (click)="submit()"
+              [disabled]="saving() || totalHours() === 0"
+              [title]="'timesheets.submit' | translate"
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-ui bg-brand-600 px-5 text-sm font-semibold text-white shadow-xs transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-border disabled:text-muted">
+              <span>{{ 'timesheets.submit' | translate }}</span>
+              <tf-icon name="send" [size]="16" />
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Messages d'information / alerte -->
+      @if (errorMessage()) {
+        <div class="flex items-center gap-3 rounded-ui border border-danger-200 bg-danger-50 p-4 text-sm text-danger-700">
+          <tf-icon name="alert" [size]="20" />
+          <p class="flex-1">{{ errorMessage() }}</p>
+          <button type="button" (click)="errorMessage.set(null)" class="text-danger-700 hover:opacity-75">×</button>
+        </div>
+      }
+
+      @if (successMessage()) {
+        <div class="flex items-center gap-3 rounded-ui border border-success-200 bg-success-50 p-4 text-sm text-success-700">
+          <tf-icon name="check" [size]="20" />
+          <p class="flex-1">{{ successMessage() }}</p>
+          <button type="button" (click)="successMessage.set(null)" class="text-success-700 hover:opacity-75">×</button>
+        </div>
+      }
+
+      @if (status() === 'REJECTED' && timesheet()?.rejectionComment) {
+        <div class="rounded-ui border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <div class="flex items-center gap-2 font-semibold text-amber-800">
+            <tf-icon name="alert" [size]="18" />
+            <span>{{ 'timesheets.rejectionNoticeTitle' | translate }}</span>
+          </div>
+          <p class="mt-1 pl-6 text-amber-900">{{ timesheet()?.rejectionComment }}</p>
+          <p class="mt-2 pl-6 text-xs text-amber-700">{{ 'timesheets.rejectionNoticeSub' | translate }}</p>
+        </div>
+      }
+
+      @if (totalHours() > maxWeeklyHours()) {
+        <div class="rounded-ui border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-600 flex items-start gap-2.5">
+          <tf-icon name="alert" [size]="18" class="text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <span class="font-semibold text-amber-500">{{ 'common.error' | translate }} :</span>
+            {{ 'timesheets.complianceNoticeWeekly' | translate:{ hours: formatHours(totalHours()), maxHours: formatHours(maxWeeklyHours()) } }}
+          </div>
+        </div>
+      }
+
+      @if (!isEditable() && status() !== 'REJECTED') {
+        <div class="rounded-ui border border-border bg-surface p-3 text-xs text-muted flex items-center gap-2">
+          <tf-icon name="lock" [size]="16" />
+          <span>{{ 'timesheets.lockedNotice' | translate:{ status: i18n.t('statuses.' + status()) } }}</span>
+        </div>
+      }
+
+      <!-- Grille principale et panneau latéral -->
+      <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div class="min-w-0 space-y-6">
+          <!-- KPIs -->
+          <div class="grid gap-3 sm:grid-cols-3">
+            <article class="flex items-center gap-4 rounded-ui border border-border bg-surface p-4">
+              <span class="grid size-11 place-items-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-300">
+                <tf-icon name="clock" />
+              </span>
+              <div>
+                <p class="text-2xl font-bold tabular-nums leading-tight">{{ formatHours(totalHours()) }}</p>
+                <div class="mt-0.5 flex items-center gap-1.5 flex-wrap text-xs text-muted">
+                  <span>{{ 'timesheets.target' | translate }} : {{ formatHours(targetHours()) }}</span>
+                  @if (overtimeHours() > 0) {
+                    <span class="inline-flex items-center rounded bg-brand-50 px-1.5 py-0.2 text-[10px] font-bold text-brand-700 whitespace-nowrap dark:bg-brand-950/60 dark:text-brand-300">
+                      +{{ formatHours(overtimeHours()) }} OT
+                    </span>
+                  }
+                </div>
+              </div>
+            </article>
+
+            <article class="flex items-center gap-4 rounded-ui border border-border bg-surface p-4">
+              <span class="grid size-11 place-items-center rounded-full bg-success-50 text-success-700 dark:bg-success-950/60 dark:text-success-300">
+                <tf-icon name="bars" />
+              </span>
+              <div>
+                <p class="text-2xl font-bold tabular-nums leading-tight">{{ formatHours(billableHours()) }}</p>
+                <p class="text-xs text-muted">{{ 'timesheets.billable' | translate }}</p>
+              </div>
+            </article>
+
+            <article class="flex items-center gap-4 rounded-ui border border-border bg-surface p-4">
+              <span class="grid size-11 place-items-center rounded-full bg-slate/15 text-slate dark:bg-slate-800 dark:text-slate-300">
+                <tf-icon name="database" />
+              </span>
+              <div>
+                <p class="text-2xl font-bold tabular-nums leading-tight">{{ formatHours(internalHours()) }}</p>
+                <p class="text-xs text-muted">{{ 'timesheets.internalNonBillable' | translate }}</p>
+              </div>
+            </article>
+          </div>
+
+          <!-- Chargement -->
+          @if (loading()) {
+            <article class="overflow-hidden rounded-ui border border-border bg-surface shadow-xs p-12 text-center text-sm text-muted">
+              <p>{{ 'common.loading' | translate }}</p>
+            </article>
+          } @else {
+            <!-- 1. VUE DESKTOP (Grille matricielle haute définition, Thème Light YouTrack-style) -->
+            <article class="hidden md:block overflow-hidden rounded-ui border border-border bg-surface shadow-xs">
+              <div class="overflow-x-auto">
+                <table class="w-full min-w-[46rem] text-sm">
+                  <thead class="border-b border-border bg-app/50 text-xs text-muted">
+                    <tr>
+                      <th scope="col" class="px-4 py-3 text-left font-medium">{{ 'timesheets.projectAndActivity' | translate }}</th>
+                      <th scope="col" class="w-24 px-3 py-3 text-center font-medium">{{ 'timesheets.typeShort' | translate }}</th>
+                      <th scope="col" class="w-20 px-3 py-3 text-center font-medium">{{ 'timesheets.billableShort' | translate }}</th>
+                      @for (day of week().days; track day.isoDate) {
+                        <th scope="col" class="w-20 px-2 py-2 text-center font-medium" [class]="day.isToday ? 'bg-brand-50 text-brand-600 font-semibold dark:bg-brand-950/60 dark:text-brand-300' : ''">
+                          <div class="flex items-center justify-center gap-1">
+                            <span>{{ day.label }}</span>
+                            @if (day.holiday) {
+                              <span class="rounded bg-purple-100 text-purple-800 px-1 text-[9px] font-semibold whitespace-nowrap dark:bg-purple-950/60 dark:text-purple-300" [title]="day.holiday.name + ' · ' + ((day.holiday.isWorked ? 'workSchedules.holidays.worked' : 'workSchedules.holidays.off') | translate)">{{ 'timesheets.holiday' | translate }}</span>
+                            } @else if (!day.isWorkingDay) {
+                              <span class="rounded bg-amber-100 text-amber-800 px-1 text-[9px] font-medium dark:bg-amber-950/60 dark:text-amber-300" [title]="'timesheets.nonWorkingDay' | translate">{{ 'timesheets.offDay' | translate }}</span>
+                            }
+                          </div>
+                          <span class="block tabular-nums" [class.font-normal]="!day.isToday">{{ day.date }}</span>
+                        </th>
+                      }
+                      <th scope="col" class="w-20 px-4 py-3 text-right font-medium">{{ 'common.total' | translate }}</th>
+                      @if (isEditable()) {
+                        <th scope="col" class="w-12 px-2 py-3 text-center"><span class="sr-only">{{ 'common.actions' | translate }}</span></th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-border">
+                    @if (rows().length === 0) {
+                      <tr>
+                        <td [attr.colspan]="columnCount()" class="px-6 py-12 text-center">
+                          <div class="mx-auto flex max-w-md flex-col items-center">
+                            <span class="grid size-12 place-items-center rounded-full bg-brand-50 text-brand-600">
+                              <tf-icon name="folder-plus" [size]="24" />
+                            </span>
+                            <h2 class="mt-3 font-semibold text-foreground">{{ 'timesheets.emptyTitle' | translate }}</h2>
+                            <p class="mt-1 text-xs text-muted">{{ 'timesheets.emptySub' | translate }}</p>
+                            @if (isEditable()) {
+                              <button
+                                type="button"
+                                (click)="openAddLineModal()"
+                                class="mt-4 inline-flex h-9 items-center gap-1.5 rounded-ui bg-brand-600 px-4 text-xs font-semibold text-white transition hover:bg-brand-700">
+                                <tf-icon name="plus" [size]="14" />{{ 'timesheets.addProjectBtn' | translate }}</button>
+                            }
+                          </div>
+                        </td>
+                      </tr>
+                    } @else {
+                      @for (row of rows(); track $index; let rowIndex = $index) {
+                        <tr class="transition hover:bg-app/40">
+                          <!-- Projet & Azure DevOps Work Item -->
+                          <td class="px-4 py-3">
+                            <p class="font-semibold text-foreground leading-tight">{{ row.projectName }}</p>
+                            @if (row.workItemTitle) {
+                              <p class="text-xs text-brand-600 font-medium flex items-center gap-1 mt-0.5">
+                                <span class="inline-flex items-center rounded bg-brand-50 px-1 py-0.2 font-mono text-[10px] font-bold text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">#{{ row.workItemId || 'Task' }}</span>
+                                <span class="truncate max-w-[14rem]">{{ row.workItemTitle }}</span>
+                              </p>
+                            }
+                            @if (row.comment) {
+                              <p class="text-xs text-muted mt-0.5 italic truncate max-w-[16rem]">{{ row.comment }}</p>
+                            }
+                          </td>
+
+                          <!-- Activité -->
+                          <td class="px-3 py-3 text-center">
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border border-border"
+                              [class]="activityBadgeClass(row.activityType)">
+                              {{ activityLabel(row.activityType) }}
+                            </span>
+                          </td>
+
+                          <!-- Facturable -->
+                          <td class="px-3 py-3 text-center">
+                            @if (row.billable) {
+                              <span class="inline-flex size-5 items-center justify-center rounded-full bg-success-50 text-success-700 text-xs font-bold" [title]="'timesheets.sidePanel.billableBadge' | translate">✓</span>
+                            } @else {
+                              <span class="text-xs text-muted" [title]="'projects.nonBillable' | translate">—</span>
+                            }
+                          </td>
+
+                          <!-- Saisie par jour avec popover de commentaire -->
+                          @for (day of week().days; track day.isoDate) {
+                            <td class="px-1.5 py-2 text-center group"
+                              [class.bg-brand-50/40]="day.isToday"
+                              [class.bg-purple-50/20]="day.holiday && !day.isToday"
+                              [class.bg-app/70]="!day.isWorkingDay && !day.holiday && !day.isToday"
+                              [title]="day.holiday ? (day.holiday.name + ' · ' + ((day.holiday.isWorked ? 'timesheets.workedHoliday' : 'timesheets.offHoliday') | translate)) : (!day.isWorkingDay ? ('timesheets.nonWorkingDay' | translate) : '')">
+                              @if (isEditable()) {
+                                <div class="relative inline-flex items-center justify-center">
+                                  <input
+                                    type="number"
+                                    step="0.5"
+                                    min="0"
+                                    max="24"
+                                    [ngModel]="row.hoursByDate[day.isoDate] || 0"
+                                    (ngModelChange)="onHourChange(row, day.isoDate, $event)"
+                                    [attr.aria-label]="row.projectName + ' ' + day.label"
+                                    class="w-16 rounded-md border bg-surface px-1.5 py-1.5 text-center text-sm tabular-nums text-foreground transition focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0"
+                                    [class.border-border]="day.isWorkingDay"
+                                    [class.border-dashed]="!day.isWorkingDay"
+                                    [class.border-amber-300]="!day.isWorkingDay && (row.hoursByDate[day.isoDate] || 0) > 0" />
+
+                                  <button
+                                    type="button"
+                                    (click)="openCommentModal(row, day.isoDate, day.label + ' ' + day.date)"
+                                    [title]="hasDayComment(row, day.isoDate) ? getDayComment(row, day.isoDate) : ('timesheets.editComment' | translate)"
+                                    class="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full transition shadow-xs"
+                                    [class]="hasDayComment(row, day.isoDate)
+                                      ? 'bg-brand-600 text-white hover:bg-brand-700'
+                                      : 'bg-border text-muted hover:bg-app hover:text-foreground opacity-0 group-hover:opacity-100 focus:opacity-100'">
+                                    <tf-icon name="chat" [size]="9" />
+                                  </button>
+                                </div>
+                              } @else {
+                                <div class="flex flex-col items-center">
+                                  <span class="tabular-nums font-medium text-foreground">
+                                    {{ (row.hoursByDate[day.isoDate] || 0) > 0 ? (row.hoursByDate[day.isoDate] || 0) + ' h' : '—' }}
+                                  </span>
+                                  @if (hasDayComment(row, day.isoDate)) {
+                                    <span class="text-[10px] text-muted italic truncate max-w-[5rem]" [title]="getDayComment(row, day.isoDate)">
+                                      💬 {{ getDayComment(row, day.isoDate) }}
+                                    </span>
+                                  }
+                                </div>
+                              }
+                            </td>
+                          }
+
+                          <!-- Total ligne -->
+                          <td class="px-4 py-3 text-right font-bold tabular-nums text-foreground">
+                            {{ formatHours(calculateRowTotal(row)) }}
+                          </td>
+
+                          <!-- Action supprimer ligne -->
+                          @if (isEditable()) {
+                            <td class="px-2 py-3 text-center">
+                              <button
+                                type="button"
+                                (click)="removeLine(rowIndex)"
+                                [title]="'timesheets.deleteLine' | translate"
+                                class="grid size-8 place-items-center rounded-lg text-muted transition hover:bg-danger-50 hover:text-danger-700">
+                                <tf-icon name="trash" [size]="16" />
+                              </button>
+                            </td>
+                          }
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                  <!-- Ligne Total jour avec jauge de complétude YouTrack-style -->
+                  <tfoot class="border-t border-border bg-app/60 text-sm font-semibold">
+                    <tr>
+                      <th scope="row" colspan="3" class="px-4 py-3 text-left">{{ 'timesheets.totalDay' | translate }}</th>
+                      @for (day of week().days; track day.isoDate) {
+                        <td class="px-2 py-2 text-center tabular-nums font-bold"
+                          [class]="day.isToday ? 'bg-brand-50 text-brand-600' : 'text-foreground'">
+                          <p>{{ formatHours(dailyTotals()[day.isoDate] || 0) }}</p>
+                          @if (day.isWorkingDay) {
+                            <div class="mt-1 h-1 w-12 mx-auto rounded-full bg-border overflow-hidden">
+                              <div class="h-full rounded-full transition-all"
+                                [style.width.%]="completionPercent(dailyTotals()[day.isoDate] || 0)"
+                                [class.bg-emerald-500]="(dailyTotals()[day.isoDate] || 0) >= targetDayHours()"
+                                [class.bg-amber-400]="(dailyTotals()[day.isoDate] || 0) > 0 && (dailyTotals()[day.isoDate] || 0) < targetDayHours()"
+                                [class.bg-transparent]="!(dailyTotals()[day.isoDate] || 0)"></div>
+                            </div>
+                          }
+                        </td>
+                      }
+                      <td class="px-4 py-3 text-right tabular-nums text-base font-bold text-brand-600">
+                        {{ formatHours(totalHours()) }}
+                      </td>
+                      @if (isEditable()) {
+                        <td></td>
+                      }
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              @if (isEditable() && rows().length > 0) {
+                <div class="border-t border-border px-4 py-3">
+                  <button
+                    type="button"
+                    (click)="openAddLineModal()"
+                    class="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 transition hover:text-brand-700">
+                    <tf-icon name="plus" [size]="16" />
+                    <span>{{ 'timesheets.addLine' | translate }}</span>
+                  </button>
+                </div>
+              }
+            </article>
+
+            <!-- 2. VUE MOBILE (Calendar Strip tactile & Cartes d'imputation journalières) -->
+            <div class="block md:hidden space-y-4">
+              <!-- Calendar Strip tactile Sticky -->
+              <div class="sticky top-16 z-20 -mx-4 px-4 py-2.5 bg-surface/95 backdrop-blur-xs border-b border-border shadow-2xs">
+                <div class="grid grid-cols-7 gap-1">
+                  @for (day of week().days; track day.isoDate) {
+                    <button
+                      type="button"
+                      (click)="selectMobileDate(day.isoDate)"
+                      [class]="selectedMobileDate() === day.isoDate
+                        ? 'bg-brand-600 text-white shadow-sm'
+                        : 'bg-surface text-foreground hover:bg-app border border-border'"
+                      class="flex flex-col items-center py-2 px-1 rounded-xl transition text-center min-w-0">
+                      <span class="text-[10px] font-semibold uppercase tracking-wider opacity-80">{{ day.label }}</span>
+                      <span class="text-sm font-bold tabular-nums">{{ day.date.split('/')[0] }}</span>
+                      <span class="mt-1 size-1.5 rounded-full"
+                        [class.bg-emerald-500]="(dailyTotals()[day.isoDate] || 0) >= targetDayHours()"
+                        [class.bg-amber-400]="(dailyTotals()[day.isoDate] || 0) > 0 && (dailyTotals()[day.isoDate] || 0) < targetDayHours()"
+                        [class.bg-purple-500]="day.holiday"
+                        [class.bg-border]="!(dailyTotals()[day.isoDate] || 0)"></span>
+                    </button>
+                  }
+                </div>
+              </div>
+
+              <!-- Fiche d'en-tête du jour sélectionné -->
+              <div class="flex items-center justify-between rounded-ui border border-border bg-surface p-3.5 shadow-xs">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="font-bold text-foreground text-sm">
+                      {{ selectedDay().label }} {{ selectedDay().date }}
+                    </h2>
+                    @if (selectedDay().holiday) {
+                      <span class="rounded bg-purple-100 text-purple-800 px-1.5 py-0.5 text-[10px] font-semibold dark:bg-purple-950/60 dark:text-purple-300">
+                        {{ selectedDay().holiday?.name }}
+                      </span>
+                    } @else if (!selectedDay().isWorkingDay) {
+                      <span class="rounded bg-amber-100 text-amber-800 px-1.5 py-0.5 text-[10px] font-medium dark:bg-amber-950/60 dark:text-amber-300">
+                        {{ 'timesheets.offDay' | translate }}
+                      </span>
+                    }
+                  </div>
+                  <p class="text-xs text-muted mt-0.5">
+                    {{ 'timesheets.target' | translate }} : {{ formatHours(targetDayHours()) }}
+                  </p>
+                </div>
+
+                <div class="text-right">
+                  <span class="text-xl font-bold tabular-nums leading-tight text-foreground"
+                    [class.text-emerald-600]="(dailyTotals()[selectedMobileDate()] || 0) >= targetDayHours()">
+                    {{ formatHours(dailyTotals()[selectedMobileDate()] || 0) }}
+                  </span>
+                  <p class="text-[10px] font-medium"
+                    [class.text-emerald-600]="(dailyTotals()[selectedMobileDate()] || 0) >= targetDayHours()"
+                    [class.text-muted]="(dailyTotals()[selectedMobileDate()] || 0) < targetDayHours()">
+                    @if ((dailyTotals()[selectedMobileDate()] || 0) >= targetDayHours()) {
+                      ✓ {{ 'timesheets.dayTargetReached' | translate }}
+                    } @else {
+                      {{ 'timesheets.dayTargetRemaining' | translate }} : {{ formatHours(remainingDayHours(selectedMobileDate())) }}
+                    }
+                  </p>
+                </div>
+              </div>
+
+              <!-- Cartes d'imputation du jour -->
+              @if (rows().length === 0) {
+                <div class="rounded-ui border border-border bg-surface p-8 text-center">
+                  <span class="mx-auto grid size-12 place-items-center rounded-full bg-brand-50 text-brand-600">
+                    <tf-icon name="folder-plus" [size]="24" />
+                  </span>
+                  <h2 class="mt-3 font-semibold text-foreground text-sm">{{ 'timesheets.emptyTitle' | translate }}</h2>
+                  <p class="mt-1 text-xs text-muted">{{ 'timesheets.emptySub' | translate }}</p>
+                  @if (isEditable()) {
+                    <button
+                      type="button"
+                      (click)="openAddLineModal()"
+                      class="mt-4 inline-flex h-9 items-center gap-1.5 rounded-ui bg-brand-600 px-4 text-xs font-semibold text-white transition hover:bg-brand-700">
+                      <tf-icon name="plus" [size]="14" />{{ 'timesheets.addProjectBtn' | translate }}
+                    </button>
+                  }
+                </div>
+              } @else {
+                <div class="space-y-3">
+                  @for (row of rows(); track $index; let rowIndex = $index) {
+                    <div class="rounded-ui border border-border bg-surface p-4 shadow-xs space-y-3 transition hover:border-brand-300">
+                      <!-- En-tête de carte : Projet + Work Item + Badges -->
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <h4 class="font-bold text-foreground text-sm leading-snug truncate">{{ row.projectName }}</h4>
+                          @if (row.workItemTitle) {
+                            <p class="text-xs text-brand-600 font-medium flex items-center gap-1 mt-0.5">
+                              <span class="inline-flex items-center rounded bg-brand-50 px-1 py-0.2 font-mono text-[10px] font-bold text-brand-700 dark:bg-brand-950/60 dark:text-brand-300">#{{ row.workItemId || 'Task' }}</span>
+                              <span class="truncate">{{ row.workItemTitle }}</span>
+                            </p>
+                          }
+                          @if (row.comment) {
+                            <p class="text-xs text-muted mt-0.5 italic truncate">{{ row.comment }}</p>
+                          }
+                        </div>
+
+                        <div class="flex items-center gap-1.5 shrink-0">
+                          <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-border"
+                            [class]="activityBadgeClass(row.activityType)">
+                            {{ activityLabel(row.activityType) }}
+                          </span>
+                          @if (row.billable) {
+                            <span class="inline-flex size-5 items-center justify-center rounded-full bg-success-50 text-success-700 text-xs font-bold" [title]="'timesheets.sidePanel.billableBadge' | translate">✓</span>
+                          }
+                          @if (isEditable()) {
+                            <button
+                              type="button"
+                              (click)="removeLine(rowIndex)"
+                              [title]="'timesheets.deleteLine' | translate"
+                              class="grid size-7 place-items-center rounded text-muted hover:bg-danger-50 hover:text-danger-700">
+                              <tf-icon name="trash" [size]="14" />
+                            </button>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Saisie tactile de la durée avec stepper et presets -->
+                      @if (isEditable()) {
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/60">
+                          <div class="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              (click)="adjustHours(row, selectedMobileDate(), -0.5)"
+                              class="size-9 rounded-lg border border-border bg-app grid place-items-center text-foreground font-bold text-sm transition hover:bg-border active:scale-95">
+                              -½
+                            </button>
+                            <input
+                              type="number"
+                              step="0.5"
+                              min="0"
+                              max="24"
+                              [ngModel]="row.hoursByDate[selectedMobileDate()] || 0"
+                              (ngModelChange)="onHourChange(row, selectedMobileDate(), $event)"
+                              class="w-16 h-9 rounded-lg border border-border bg-surface text-center font-bold tabular-nums text-foreground focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
+                            <button
+                              type="button"
+                              (click)="adjustHours(row, selectedMobileDate(), 0.5)"
+                              class="size-9 rounded-lg border border-border bg-app grid place-items-center text-foreground font-bold text-sm transition hover:bg-border active:scale-95">
+                              +½
+                            </button>
+                          </div>
+
+                          <div class="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              (click)="setHours(row, selectedMobileDate(), 3.5)"
+                              class="h-9 px-2.5 text-xs font-semibold rounded-lg border border-border bg-surface text-foreground transition hover:bg-app active:scale-95">
+                              3.5h
+                            </button>
+                            <button
+                              type="button"
+                              (click)="setHours(row, selectedMobileDate(), 7.0)"
+                              class="h-9 px-2.5 text-xs font-semibold rounded-lg border border-border bg-brand-50 text-brand-700 transition hover:bg-brand-100 active:scale-95 dark:bg-brand-950/60 dark:text-brand-300">
+                              7h
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Commentaire de l'imputation du jour -->
+                        <div class="pt-1">
+                          <input
+                            type="text"
+                            [ngModel]="getDayComment(row, selectedMobileDate())"
+                            (ngModelChange)="row.commentsByDate[selectedMobileDate()] = $event"
+                            [placeholder]="'timesheets.dailyCommentPlaceholder' | translate"
+                            class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground placeholder:text-muted focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
+                        </div>
+                      } @else {
+                        <div class="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
+                          <span class="font-bold tabular-nums text-foreground">
+                            {{ (row.hoursByDate[selectedMobileDate()] || 0) > 0 ? (row.hoursByDate[selectedMobileDate()] || 0) + ' h' : '—' }}
+                          </span>
+                          @if (hasDayComment(row, selectedMobileDate())) {
+                            <span class="text-muted italic truncate max-w-[15rem]">
+                              💬 {{ getDayComment(row, selectedMobileDate()) }}
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if (isEditable()) {
+                    <button
+                      type="button"
+                      (click)="openAddLineModal()"
+                      class="w-full inline-flex h-11 items-center justify-center gap-2 rounded-ui border-2 border-dashed border-border bg-surface/50 text-sm font-semibold text-brand-600 transition hover:bg-surface hover:border-brand-400">
+                      <tf-icon name="plus" [size]="16" />
+                      <span>{{ 'timesheets.addLine' | translate }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Panneau latéral -->
+        <tf-timesheet-side-panel
+          [hasProjects]="activeProjects().length > 0"
+          [hasEntries]="rows().length > 0"
+          [isSubmitted]="status() === 'SUBMITTED' || status() === 'VALIDATED'" />
+      </div>
+
+      <!-- Modal Éditer le commentaire du jour (Desktop & Mobile) -->
+      @if (activeCommentCell(); as active) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="comment-modal-title">
+          <div class="w-full max-w-md rounded-2xl border border-border bg-surface text-foreground shadow-2xl overflow-hidden transition-all">
+            <!-- En-tête -->
+            <div class="flex items-center justify-between border-b border-border/80 px-5 py-4 bg-surface">
+              <div class="flex items-center gap-3">
+                <div class="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 border border-brand-200/80 dark:border-brand-800/40">
+                  <tf-icon name="chat" [size]="16" />
+                </div>
+                <div>
+                  <h3 id="comment-modal-title" class="text-sm font-bold text-foreground tracking-tight">
+                    {{ 'timesheets.editCommentTitle' | translate }}
+                  </h3>
+                  <p class="text-xs text-muted">
+                    {{ active.row.projectName }} · <span class="font-medium text-foreground">{{ active.dayLabel }}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="closeCommentModal()"
+                [attr.aria-label]="'common.close' | translate"
+                class="grid size-8 place-items-center rounded-lg text-muted transition hover:bg-app hover:text-foreground">
+                <tf-icon name="x" [size]="16" />
+              </button>
+            </div>
+
+            <!-- Corps -->
+            <div class="p-5">
+              <label for="comment-modal-textarea" class="block text-xs font-semibold text-foreground mb-1.5">
+                {{ 'timesheets.editComment' | translate }}
+              </label>
+              <textarea
+                #commentTextarea
+                id="comment-modal-textarea"
+                rows="3"
+                [value]="getDayComment(active.row, active.date)"
+                [placeholder]="'timesheets.dailyCommentPlaceholder' | translate"
+                class="block w-full rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 p-3 text-xs text-foreground transition placeholder:text-muted/60 hover:border-brand-400 focus:bg-surface focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0"></textarea>
+            </div>
+
+            <!-- Pied de modal -->
+            <div class="flex items-center justify-end gap-2.5 border-t border-border/80 px-5 py-3.5 bg-slate-50/50 dark:bg-slate-950/30">
+              <button
+                type="button"
+                (click)="closeCommentModal()"
+                class="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-muted transition hover:bg-app hover:text-foreground">
+                {{ 'common.cancel' | translate }}
+              </button>
+              <button
+                type="button"
+                (click)="saveCommentFromModal(commentTextarea.value)"
+                class="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:from-brand-700 hover:to-indigo-700">
+                <tf-icon name="check" [size]="13" [strokeWidth]="2.5" />
+                <span>{{ 'timesheets.saveComment' | translate }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Modal Ajouter une ligne avec Work Items (Design YouTrack raffiné) -->
+      @if (showAddLineModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <div class="w-full max-w-lg rounded-2xl border border-border bg-surface text-foreground shadow-2xl overflow-hidden transition-all">
+            <!-- En-tête YouTrack-style -->
+            <div class="flex items-center justify-between border-b border-border/80 px-6 py-4 bg-surface">
+              <div class="flex items-center gap-3">
+                <div class="grid size-9 place-items-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 border border-brand-200/80 dark:border-brand-800/40">
+                  <tf-icon name="plus" [size]="18" [strokeWidth]="2.2" />
+                </div>
+                <div>
+                  <h3 id="modal-title" class="text-base font-bold text-foreground tracking-tight">
+                    {{ 'timesheets.modalAddLineTitle' | translate }}
+                  </h3>
+                  <p class="text-xs text-muted">
+                    {{ 'timesheets.modalAddLineSub' | translate }}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="showAddLineModal.set(false)"
+                [attr.aria-label]="'common.close' | translate"
+                class="grid size-8 place-items-center rounded-lg text-muted transition hover:bg-app hover:text-foreground">
+                <tf-icon name="x" [size]="18" />
+              </button>
+            </div>
+
+            <form (ngSubmit)="confirmAddLine()" class="flex flex-col">
+              <div class="p-6 space-y-4 max-h-[calc(90dvh-130px)] overflow-y-auto">
+                <!-- Ligne 1 : Projet et Type d'activité (Grille 2 colonnes équilibrée) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <!-- Projet -->
+                  <div>
+                    <label for="project-select" class="flex items-center justify-between text-xs font-semibold text-foreground mb-1.5">
+                      <span>{{ 'timesheets.modalProject' | translate }}</span>
+                      <span class="text-[10px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 px-1.5 py-0.5 rounded">
+                        {{ 'timesheets.requiredBadge' | translate }}
+                      </span>
+                    </label>
+                    <div class="relative">
+                      <select
+                        id="project-select"
+                        [(ngModel)]="selectedProjectId"
+                        name="projectSelect"
+                        required
+                        class="w-full appearance-none rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3 py-2 pr-8 text-xs font-medium text-foreground transition hover:border-brand-400 focus:bg-surface focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0">
+                        <option value="" disabled>{{ 'timesheets.modalChooseProject' | translate }}</option>
+                        @for (project of activeProjects(); track project.id) {
+                          <option [value]="project.id">{{ project.name }}</option>
+                        }
+                      </select>
+                      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-muted">
+                        <tf-icon name="chevron-left" class="-rotate-90" [size]="13" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Type d'activité -->
+                  <div>
+                    <label for="activity-select" class="block text-xs font-semibold text-foreground mb-1.5">
+                      {{ 'timesheets.modalActivityType' | translate }}
+                    </label>
+                    <div class="relative">
+                      <select
+                        id="activity-select"
+                        [(ngModel)]="selectedActivityType"
+                        name="activitySelect"
+                        class="w-full appearance-none rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3 py-2 pr-8 text-xs font-medium text-foreground transition hover:border-brand-400 focus:bg-surface focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0">
+                        <option value="PROJECT">{{ 'activities.PROJECT' | translate }}</option>
+                        <option value="TRAINING">{{ 'activities.TRAINING' | translate }}</option>
+                        <option value="SUPPORT">{{ 'activities.SUPPORT' | translate }}</option>
+                        <option value="INTERNAL">{{ 'activities.INTERNAL' | translate }}</option>
+                      </select>
+                      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-muted">
+                        <tf-icon name="chevron-left" class="-rotate-90" [size]="13" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Section Work Item / Ticket Azure DevOps (Card stylisée YouTrack) -->
+                <div class="rounded-xl border border-border/80 bg-slate-50/70 dark:bg-slate-950/40 p-3.5 space-y-2.5">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                      <tf-icon name="tag" [size]="14" class="text-brand-600 dark:text-brand-400" />
+                      <span>{{ 'timesheets.modalWorkItemSection' | translate }}</span>
+                    </div>
+                    <span class="text-[10px] font-medium text-muted bg-surface dark:bg-slate-900 px-2 py-0.5 rounded-full border border-border">
+                      {{ 'timesheets.optionalBadge' | translate }}
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-muted">
+                    {{ 'timesheets.modalWorkItemSub' | translate }}
+                  </p>
+
+                  <div class="flex flex-col sm:flex-row gap-2.5">
+                    <!-- ID du ticket avec préfixe # intégré -->
+                    <div class="w-full sm:w-36 shrink-0">
+                      <label for="work-item-id-input" class="block text-[11px] font-semibold text-muted mb-1">
+                        {{ 'timesheets.modalWorkItemId' | translate }}
+                      </label>
+                      <div class="relative flex items-center">
+                        <span class="absolute left-2.5 text-xs font-bold text-brand-600 select-none">#</span>
+                        <input
+                          type="text"
+                          id="work-item-id-input"
+                          [(ngModel)]="selectedWorkItemId"
+                          name="workItemIdInput"
+                          [placeholder]="'timesheets.modalWorkItemIdPlaceholder' | translate"
+                          class="w-full rounded-lg border border-border bg-surface pl-6 pr-2.5 py-1.5 text-xs font-medium text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
+                      </div>
+                    </div>
+
+                    <!-- Titre du ticket -->
+                    <div class="flex-1 min-w-0">
+                      <label for="work-item-title-input" class="block text-[11px] font-semibold text-muted mb-1">
+                        {{ 'timesheets.modalWorkItemTitle' | translate }}
+                      </label>
+                      <input
+                        type="text"
+                        id="work-item-title-input"
+                        [(ngModel)]="selectedWorkItemTitle"
+                        name="workItemTitleInput"
+                        [placeholder]="'timesheets.modalWorkItemTitlePlaceholder' | translate"
+                        class="w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Commentaire / Mission optionnel -->
+                <div>
+                  <label for="comment-input" class="flex items-center justify-between text-xs font-semibold text-foreground mb-1.5">
+                    <span>{{ 'timesheets.modalComment' | translate }}</span>
+                    <span class="text-[10px] text-muted">{{ 'timesheets.optionalBadge' | translate }}</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="comment-input"
+                    [(ngModel)]="selectedComment"
+                    name="commentInput"
+                    [placeholder]="'timesheets.modalCommentPlaceholder' | translate"
+                    class="w-full rounded-xl border border-border bg-slate-50/70 dark:bg-slate-950/40 px-3.5 py-2 text-xs text-foreground transition placeholder:text-muted/50 hover:border-brand-400 focus:bg-surface focus:border-brand-600 dark:focus:border-brand-400 focus:outline-none focus:ring-0" />
+                </div>
+
+                <!-- Facturable : Carte toggle interactive stylisée -->
+                <div
+                  (click)="selectedBillable = !selectedBillable"
+                  class="group flex items-center justify-between rounded-xl border p-3 transition cursor-pointer select-none"
+                  [class]="selectedBillable
+                    ? 'border-brand-500/50 bg-brand-50/40 dark:bg-brand-950/20'
+                    : 'border-border bg-slate-50/40 dark:bg-slate-950/30 hover:border-brand-400/50'">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="grid size-5 place-items-center rounded-md border transition"
+                      [class]="selectedBillable
+                        ? 'border-brand-600 bg-brand-600 text-white'
+                        : 'border-border bg-surface text-transparent'">
+                      <tf-icon name="check" [size]="12" [strokeWidth]="3" />
+                    </div>
+                    <div>
+                      <p class="text-xs font-semibold text-foreground">{{ 'timesheets.modalBillableToClient' | translate }}</p>
+                      <p class="text-[11px] text-muted">{{ 'timesheets.modalBillableSub' | translate }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pied de modal avec boutons d'actions YouTrack-style -->
+              <div class="flex items-center justify-end gap-3 border-t border-border/80 px-6 py-3.5 bg-slate-50/50 dark:bg-slate-950/30">
+                <button
+                  type="button"
+                  (click)="showAddLineModal.set(false)"
+                  class="rounded-xl border border-border bg-surface px-4 py-2 text-xs font-semibold text-muted transition hover:bg-app hover:text-foreground">
+                  {{ 'common.cancel' | translate }}
+                </button>
+                <button
+                  type="submit"
+                  [disabled]="!selectedProjectId"
+                  class="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-xs transition hover:from-brand-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-40">
+                  <tf-icon name="plus" [size]="14" [strokeWidth]="2.5" />
+                  <span>{{ 'timesheets.addLine' | translate }}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+    </section>
